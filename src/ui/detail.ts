@@ -33,23 +33,17 @@ interface BreadcrumbEntry {
 }
 
 let breadcrumbTrail: BreadcrumbEntry[] = [];
-let breadcrumbPushed = false;
 
 /** Push current object onto trail before navigating to a nearby object.
  *  separationToNext = angular distance from current object to the nearby target. */
 export function pushBreadcrumb(currentId: string, currentName: string, separationToNext: number): void {
   breadcrumbTrail.push({ id: currentId, name: currentName, separation: separationToNext });
-  breadcrumbPushed = true;
 }
 
-/** Reset trail when entering detail from Tonight list (not from nearby).
- *  Call this from the route handler — it checks whether pushBreadcrumb was called first. */
-export function resetBreadcrumbIfNeeded(): void {
-  if (breadcrumbPushed) {
-    breadcrumbPushed = false;
-    return; // navigated via nearby card, keep trail
-  }
-  breadcrumbTrail = [];
+/** Restore trail from history.state (called by route handler on every detail entry). */
+export function restoreBreadcrumb(): void {
+  const state = history.state as { breadcrumb?: BreadcrumbEntry[] } | null;
+  breadcrumbTrail = Array.isArray(state?.breadcrumb) ? state.breadcrumb : [];
 }
 
 function renderBreadcrumb(currentName: string): string {
@@ -87,7 +81,6 @@ function attachBreadcrumbHandlers(container: HTMLElement): void {
     const action = target.dataset.bcAction;
     if (action === "root") {
       breadcrumbTrail = [];
-      breadcrumbPushed = false;
       navigate("#/");
       return;
     }
@@ -98,8 +91,7 @@ function attachBreadcrumbHandlers(container: HTMLElement): void {
     // Navigate to the clicked trail entry, keeping trail up to (not including) it
     const entry = breadcrumbTrail[idx];
     breadcrumbTrail = breadcrumbTrail.slice(0, idx);
-    breadcrumbPushed = false;
-    navigate(`#/detail/${entry.id}`);
+    navigate(`#/detail/${entry.id}`, { breadcrumb: [...breadcrumbTrail] });
   });
 }
 
@@ -416,11 +408,12 @@ async function searchWikimediaCommons(name: string): Promise<WikiImageResult | n
     const pages = data.query?.pages;
     if (!pages) return null;
 
-    // Find the best image: prefer larger, skip SVGs and tiny images
+    // Find the best image: prefer larger, only accept raster image MIME types
     for (const page of Object.values(pages)) {
       const info = page.imageinfo?.[0];
       if (!info) continue;
-      if (info.mime === "image/svg+xml") continue;
+      // Only allow raster images — skip SVGs, PDFs, videos, audio, etc.
+      if (!info.mime.startsWith("image/") || info.mime === "image/svg+xml") continue;
       if (info.width < 200 || info.height < 200) continue;
 
       const imgUrl = info.thumburl ?? info.url;
@@ -668,7 +661,7 @@ function renderSkyContextContent(
       card.className = "nearby-card";
       card.addEventListener("click", () => {
         pushBreadcrumb(event.id, event.name, obj.separation);
-        navigate(`#/detail/${obj.id}`);
+        navigate(`#/detail/${obj.id}`, { breadcrumb: [...breadcrumbTrail] });
       });
       card.innerHTML = `
         <div class="nearby-card-header">

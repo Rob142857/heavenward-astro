@@ -14,12 +14,18 @@ export function route(path: string, handler: RouteHandler): void {
   });
 }
 
-export function navigate(hash: string): void {
-  window.location.hash = hash;
+let doRoute: (() => void) | null = null;
+
+export function navigate(hash: string, state?: unknown): void {
+  const url = hash.startsWith("#") ? hash : `#${hash}`;
+  history.pushState(state ?? null, "", url);
+  doRoute?.();
 }
 
 export function startRouter(): void {
-  const onHash = () => {
+  history.scrollRestoration = "manual";
+
+  doRoute = () => {
     const hash = window.location.hash.slice(1) || "/";
     for (const r of routes) {
       const match = hash.match(r.pattern);
@@ -35,9 +41,10 @@ export function startRouter(): void {
     }
     // fallback to home
     if (hash !== "/") {
-      window.location.hash = "#/";
+      navigate("#/");
     }
   };
-  window.addEventListener("hashchange", onHash);
-  onHash();
+  window.addEventListener("popstate", doRoute);
+  window.addEventListener("hashchange", doRoute);
+  doRoute();
 }
