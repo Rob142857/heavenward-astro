@@ -4,7 +4,7 @@ import { requestGPS, getSavedLocation } from "./services/geolocation.js";
 import { loadPrefs } from "./services/prefs.js";
 import { route, startRouter } from "./ui/router.js";
 import { renderTonight } from "./ui/tonight.js";
-import { renderDetail, renderDSODetail, renderStarDetail } from "./ui/detail.js";
+import { renderDetail, renderDSODetail, renderStarDetail, resetBreadcrumbIfNeeded } from "./ui/detail.js";
 import { renderSources } from "./ui/sources.js";
 import { renderLocation } from "./ui/location.js";
 import { renderAccount, tryLoadUser } from "./ui/account.js";
@@ -55,6 +55,7 @@ async function boot(): Promise<void> {
 
   route("/detail/:id", (params) => {
     const id = params.p0;
+    resetBreadcrumbIfNeeded();
     if (id.startsWith("dso-")) {
       renderDSODetail(app, ctx, id);
     } else if (id.startsWith("star-")) {

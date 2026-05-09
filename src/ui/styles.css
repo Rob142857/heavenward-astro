@@ -726,6 +726,44 @@ body {
 }
 
 /* ── Detail view ─────────────────────────────────────── */
+/* Breadcrumb trail */
+.detail-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.78rem;
+  margin-bottom: 14px;
+  min-height: 44px;
+  line-height: 1.6;
+}
+.bc-link {
+  color: var(--gold);
+  text-decoration: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.bc-link:hover {
+  color: var(--gold-light);
+  background: rgba(255, 215, 0, 0.08);
+}
+.bc-sep {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  opacity: 0.7;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+.bc-current {
+  color: var(--text);
+  font-weight: 500;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+
 .detail-back {
   font-size: 0.82rem;
   color: var(--gold);

@@ -24,6 +24,85 @@ import {
 } from "../services/llm.js";
 import { navigate } from "./router.js";
 
+// ── Breadcrumb trail for nearby-object navigation ─────────────────
+
+interface BreadcrumbEntry {
+  id: string;
+  name: string;
+  separation: number | null; // degrees from previous entry
+}
+
+let breadcrumbTrail: BreadcrumbEntry[] = [];
+let breadcrumbPushed = false;
+
+/** Push current object onto trail before navigating to a nearby object.
+ *  separationToNext = angular distance from current object to the nearby target. */
+export function pushBreadcrumb(currentId: string, currentName: string, separationToNext: number): void {
+  breadcrumbTrail.push({ id: currentId, name: currentName, separation: separationToNext });
+  breadcrumbPushed = true;
+}
+
+/** Reset trail when entering detail from Tonight list (not from nearby).
+ *  Call this from the route handler — it checks whether pushBreadcrumb was called first. */
+export function resetBreadcrumbIfNeeded(): void {
+  if (breadcrumbPushed) {
+    breadcrumbPushed = false;
+    return; // navigated via nearby card, keep trail
+  }
+  breadcrumbTrail = [];
+}
+
+function renderBreadcrumb(currentName: string): string {
+  const parts: string[] = [];
+
+  // "Tonight" root — always shown
+  parts.push(`<a href="#/" class="bc-link bc-root" data-bc-action="root">Tonight</a>`);
+
+  // Trail entries with separation arrows between them
+  for (let i = 0; i < breadcrumbTrail.length; i++) {
+    const entry = breadcrumbTrail[i];
+    const sep = entry.separation !== null ? `${entry.separation.toFixed(1)}°` : "";
+    parts.push(`<span class="bc-sep">${sep ? ` — ${sep} →` : " →"}</span>`);
+    parts.push(`<a class="bc-link" data-bc-index="${i}">${entry.name}</a>`);
+  }
+
+  // Current object (not clickable)
+  if (breadcrumbTrail.length) {
+    parts.push(`<span class="bc-sep"> →</span>`);
+  }
+  parts.push(`<span class="bc-current">${currentName}</span>`);
+
+  return `<nav class="detail-breadcrumb">${parts.join("")}</nav>`;
+}
+
+function attachBreadcrumbHandlers(container: HTMLElement): void {
+  const nav = container.querySelector(".detail-breadcrumb");
+  if (!nav) return;
+
+  nav.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.classList.contains("bc-link")) return;
+    e.preventDefault();
+
+    const action = target.dataset.bcAction;
+    if (action === "root") {
+      breadcrumbTrail = [];
+      breadcrumbPushed = false;
+      navigate("#/");
+      return;
+    }
+
+    const idx = parseInt(target.dataset.bcIndex ?? "", 10);
+    if (isNaN(idx)) return;
+
+    // Navigate to the clicked trail entry, keeping trail up to (not including) it
+    const entry = breadcrumbTrail[idx];
+    breadcrumbTrail = breadcrumbTrail.slice(0, idx);
+    breadcrumbPushed = false;
+    navigate(`#/detail/${entry.id}`);
+  });
+}
+
 // ── Abort controller for LLM — cancelled on every route change ────
 
 let llmAbort: AbortController | null = null;
@@ -81,7 +160,7 @@ function renderEventDetail(
 
   const content = document.createElement("div");
   content.innerHTML = `
-    <a href="#/" class="detail-back">← Tonight</a>
+    ${renderBreadcrumb(event.name)}
     <h2 class="detail-title">${event.name}</h2>
     <p class="detail-brief">${event.brief}</p>
     <div class="detail-grid">
@@ -98,6 +177,7 @@ function renderEventDetail(
     </div>
   `;
   container.appendChild(content);
+  attachBreadcrumbHandlers(container);
 
   appendLLMSection(container, event, ctx);
   appendFinderAndSkyView(container, event);
@@ -121,7 +201,7 @@ function renderDSODetailFull(
   const catalogId = entry.id !== displayName ? entry.id : '';
 
   let html = `
-    <a href="#/" class="detail-back">← Tonight</a>
+    ${renderBreadcrumb(displayName)}
     <h2 class="detail-title">${displayName}</h2>
     ${catalogId ? `<div class="detail-catalog-id">${catalogId}</div>` : ''}
     <p class="detail-brief">${entry.description}</p>
@@ -178,6 +258,7 @@ function renderDSODetailFull(
 
   content.innerHTML = html;
   container.appendChild(content);
+  attachBreadcrumbHandlers(container);
 
   appendLLMSection(container, event, ctx);
   appendFinderAndSkyView(container, event);
@@ -201,7 +282,7 @@ function renderStarDetailFull(
     .filter(Boolean).join(' ');
 
   let html = `
-    <a href="#/" class="detail-back">← Tonight</a>
+    ${renderBreadcrumb(entry.name)}
     <h2 class="detail-title">${entry.name}</h2>
     ${designation ? `<div class="detail-catalog-id">${designation}</div>` : ''}
     <p class="detail-brief">${entry.description}</p>
@@ -272,8 +353,7 @@ function renderStarDetailFull(
   }
 
   content.innerHTML = html;
-  container.appendChild(content);
-
+  container.appendChild(content);  attachBreadcrumbHandlers(container);
   appendLLMSection(container, event, ctx);
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
@@ -439,7 +519,7 @@ function renderMeteorDetailFull(
   const content = document.createElement("div");
 
   let html = `
-    <a href="#/" class="detail-back">← Tonight</a>
+    ${renderBreadcrumb(shower.name)}
     <h2 class="detail-title">${shower.name}</h2>
     <p class="detail-brief">Meteor shower from parent body ${wikiLink(shower.parentBody)}</p>
   `;
@@ -499,6 +579,7 @@ function renderMeteorDetailFull(
 
   content.innerHTML = html;
   container.appendChild(content);
+  attachBreadcrumbHandlers(container);
 
   appendLLMSection(container, event, ctx);
   appendFinderAndSkyView(container, event);
@@ -585,7 +666,10 @@ function renderSkyContextContent(
     for (const obj of skyCtx.nearby) {
       const card = document.createElement("div");
       card.className = "nearby-card";
-      card.addEventListener("click", () => navigate(`#/detail/${obj.id}`));
+      card.addEventListener("click", () => {
+        pushBreadcrumb(event.id, event.name, obj.separation);
+        navigate(`#/detail/${obj.id}`);
+      });
       card.innerHTML = `
         <div class="nearby-card-header">
           <span class="nearby-name">${obj.name}</span>
