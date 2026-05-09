@@ -42,6 +42,7 @@ export function deleteApiKey(id: string): Promise<ApiResponse<void>> {
   });
 }
 
-export function logout(): Promise<ApiResponse<void>> {
+export async function logout(): Promise<ApiResponse<void>> {
+  localStorage.removeItem("heavenward-has-session");
   return apiFetch<void>("/auth/logout", { method: "POST" });
 }

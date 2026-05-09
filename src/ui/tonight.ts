@@ -1,15 +1,69 @@
-import type { AppContext, CelestialEvent, TwilightTimes } from "../types.js";
+import type { AppContext, CelestialEvent, Equipment, TwilightTimes } from "../types.js";
 import {
   getTwilightTimes,
   getPlanetEvents,
   getMoonEvent,
+  getAltAzForRaDec,
+  getRiseSetForRaDec,
 } from "../engine/astro.js";
 import { loadDSOCatalog } from "../catalog/dso.js";
 import { loadStarCatalog } from "../catalog/stars.js";
 import { METEOR_SHOWERS } from "../catalog/meteors.js";
-import { getAltAzForRaDec } from "../engine/astro.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
+import { trackEvent } from "../services/analytics.js";
+import { savePrefs } from "../services/prefs.js";
+
+/* ── Equipment magnitude limits ─────────────────────── */
+const EQUIPMENT_LIMITS: Record<Equipment, number> = {
+  "naked-eye": 6.0,
+  "binoculars": 10.0,
+  "telescope": 13.0,
+  "deep-scope": 99,
+};
+
+const EQUIPMENT_LABELS: { key: Equipment; label: string; icon: string }[] = [
+  { key: "naked-eye", label: "Naked Eye", icon: "👁" },
+  { key: "binoculars", label: "Binoculars", icon: "🔭" },
+  { key: "telescope", label: "Telescope", icon: "🔬" },
+  { key: "deep-scope", label: "Deep Scope", icon: "🛰" },
+];
+
+const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
+
+/* ── Category filters ────────────────────────────────── */
+const CATEGORIES: { key: string; label: string; icon: string }[] = [
+  { key: "solar-system", label: "Solar System", icon: "🪐" },
+  { key: "galaxies", label: "Galaxies", icon: "🌌" },
+  { key: "nebulae", label: "Nebulae", icon: "💫" },
+  { key: "clusters", label: "Clusters", icon: "✨" },
+  { key: "double-stars", label: "Doubles", icon: "⚡" },
+  { key: "meteors", label: "Meteors", icon: "☄️" },
+];
+
+const DSO_GALAXY_TYPES = new Set(["galaxy", "galaxy-pair", "galaxy-group"]);
+const DSO_NEBULA_TYPES = new Set([
+  "nebula", "planetary-nebula", "emission-nebula", "reflection-nebula",
+  "dark-nebula", "supernova-remnant", "hii-region",
+]);
+const DSO_CLUSTER_TYPES = new Set(["cluster", "globular-cluster", "open-cluster"]);
+
+function eventCategory(ev: CelestialEvent): string {
+  if (ev.type === "planet" || ev.type === "moon") return "solar-system";
+  if (ev.type === "meteor-shower") return "meteors";
+  if (ev.type === "dso") {
+    const ct = ev.extra.catalogType as string | undefined;
+    if (ct) {
+      if (DSO_GALAXY_TYPES.has(ct)) return "galaxies";
+      if (DSO_NEBULA_TYPES.has(ct)) return "nebulae";
+      if (DSO_CLUSTER_TYPES.has(ct)) return "clusters";
+    }
+    if (ev.extra.isDouble) return "double-stars";
+    // Stars without isDouble fall through to "solar-system" as default visible
+    return "solar-system";
+  }
+  return "solar-system";
+}
 
 export function renderTonight(container: HTMLElement, ctx: AppContext): void {
   container.innerHTML = "";
@@ -21,6 +75,200 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
 
   renderTwilightBar(container, twilight);
 
+  // Placeholder for cards while async data loads
+  const cardsHolder = document.createElement("div");
+  cardsHolder.className = "card-grid";
+  for (let i = 0; i < 4; i++) {
+    const skel = document.createElement("div");
+    skel.className = "card skeleton skeleton-card";
+    skel.style.setProperty("--i", String(i));
+    cardsHolder.appendChild(skel);
+  }
+  container.appendChild(cardsHolder);
+
+  // Collect all events (sync + async) then render together
+  collectAllEvents(ctx, now).then((events) => {
+    cardsHolder.remove();
+
+    // Apply equipment mag filter + category filter
+    const equipLimit = EQUIPMENT_LIMITS[ctx.prefs.equipment ?? "naked-eye"];
+    const cats = ctx.prefs.enabledCategories ?? CATEGORIES.map((c) => c.key);
+    const filtered = events.filter(
+      (e) =>
+        (e.magnitude === null || e.magnitude <= equipLimit) &&
+        cats.includes(eventCategory(e)),
+    );
+
+    const visible = filtered
+      .filter((e) => (e.altitude ?? -1) > 0)
+      .sort((a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99));
+
+    const below = filtered
+      .filter((e) => (e.altitude ?? -1) <= 0)
+      .sort((a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99));
+
+    // Controls bar (equipment + limit)
+    renderControls(container, ctx, filtered.length, events.length, () => {
+      // Re-render on filter change
+      renderTonight(container, ctx);
+    });
+
+    const limit = ctx.prefs.displayLimit ?? 50;
+
+    const section = document.createElement("h3");
+    section.className = "section-title";
+    section.textContent = `Visible Now (${visible.length})`;
+    container.appendChild(section);
+
+    const visibleSlice = limit > 0 ? visible.slice(0, limit) : visible;
+    renderEventCards(container, visibleSlice, 0);
+
+    const remaining = limit > 0 ? visible.length - limit : 0;
+    if (remaining > 0) {
+      renderShowMore(container, visible, visibleSlice.length, 0);
+    }
+
+    if (below.length) {
+      const belowSection = document.createElement("h3");
+      belowSection.className = "section-title";
+      belowSection.textContent = `Below Horizon (${below.length})`;
+      container.appendChild(belowSection);
+
+      const belowLimit = limit > 0 ? Math.max(0, limit - visible.length) : below.length;
+      const belowSlice = belowLimit > 0 ? below.slice(0, belowLimit) : [];
+      if (belowSlice.length > 0) {
+        renderEventCards(container, belowSlice, visibleSlice.length);
+      }
+
+      const belowRemaining = below.length - belowSlice.length;
+      if (belowRemaining > 0) {
+        renderShowMore(container, below, belowSlice.length, visibleSlice.length);
+      }
+    }
+  });
+}
+
+/* ── Controls bar: equipment filter + display limit ── */
+function renderControls(
+  container: HTMLElement,
+  ctx: AppContext,
+  filteredCount: number,
+  totalCount: number,
+  onChange: () => void,
+): void {
+  const bar = document.createElement("div");
+  bar.className = "tonight-controls";
+
+  // Equipment pills
+  const eqWrap = document.createElement("div");
+  eqWrap.className = "eq-pills";
+  for (const eq of EQUIPMENT_LABELS) {
+    const pill = document.createElement("button");
+    pill.className = `eq-pill${(ctx.prefs.equipment ?? "naked-eye") === eq.key ? " active" : ""}`;
+    pill.setAttribute("title", eq.label);
+    pill.innerHTML = `<span class="eq-icon">${eq.icon}</span><span class="eq-text">${eq.label}</span>`;
+    pill.addEventListener("click", () => {
+      ctx.prefs.equipment = eq.key;
+      ctx.prefs.magnitudeLimit = EQUIPMENT_LIMITS[eq.key];
+      savePrefs(ctx.prefs);
+      onChange();
+    });
+    eqWrap.appendChild(pill);
+  }
+  bar.appendChild(eqWrap);
+
+  // Limit selector
+  const limitWrap = document.createElement("div");
+  limitWrap.className = "limit-select-wrap";
+  const limitLabel = document.createElement("span");
+  limitLabel.className = "limit-label";
+  limitLabel.textContent = "Show";
+  limitWrap.appendChild(limitLabel);
+  const sel = document.createElement("select");
+  sel.className = "limit-select";
+  for (const n of LIMIT_OPTIONS) {
+    const opt = document.createElement("option");
+    opt.value = String(n);
+    opt.textContent = n === 0 ? "All" : String(n);
+    if ((ctx.prefs.displayLimit ?? 50) === n) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  sel.addEventListener("change", () => {
+    ctx.prefs.displayLimit = Number(sel.value);
+    savePrefs(ctx.prefs);
+    onChange();
+  });
+  limitWrap.appendChild(sel);
+
+  const countBadge = document.createElement("span");
+  countBadge.className = "filter-count";
+  countBadge.textContent = filteredCount < totalCount
+    ? `${filteredCount}/${totalCount}`
+    : `${totalCount}`;
+  limitWrap.appendChild(countBadge);
+
+  bar.appendChild(limitWrap);
+  container.appendChild(bar);
+
+  // Category filter pills (second row)
+  const catBar = document.createElement("div");
+  catBar.className = "tonight-controls cat-row";
+  const cats = ctx.prefs.enabledCategories ?? CATEGORIES.map((c) => c.key);
+  const catNote = document.createElement("span");
+  catNote.className = "cat-note";
+  catNote.textContent = "Filters";
+  catBar.appendChild(catNote);
+  const catPills = document.createElement("div");
+  catPills.className = "eq-pills cat-pills";
+  for (const cat of CATEGORIES) {
+    const pill = document.createElement("button");
+    pill.className = `eq-pill cat-pill${cats.includes(cat.key) ? " active" : ""}`;
+    pill.setAttribute("title", cat.label);
+    pill.innerHTML = `<span class="eq-icon">${cat.icon}</span><span class="eq-text">${cat.label}</span>`;
+    pill.addEventListener("click", () => {
+      const cur = ctx.prefs.enabledCategories ?? CATEGORIES.map((c) => c.key);
+      if (cur.includes(cat.key)) {
+        ctx.prefs.enabledCategories = cur.filter((k) => k !== cat.key);
+      } else {
+        ctx.prefs.enabledCategories = [...cur, cat.key];
+      }
+      savePrefs(ctx.prefs);
+      onChange();
+    });
+    catPills.appendChild(pill);
+  }
+  catBar.appendChild(catPills);
+  container.appendChild(catBar);
+}
+
+/* ── "Show more" button ──────────────────────────────── */
+function renderShowMore(
+  container: HTMLElement,
+  allEvents: CelestialEvent[],
+  alreadyShown: number,
+  indexOffset: number,
+): void {
+  const remaining = allEvents.length - alreadyShown;
+  const btn = document.createElement("button");
+  btn.className = "btn btn-ghost show-more-btn";
+  btn.textContent = `Show ${remaining} more`;
+  btn.addEventListener("click", () => {
+    btn.remove();
+    const grid = document.createElement("div");
+    grid.className = "card-grid";
+    for (let i = alreadyShown; i < allEvents.length; i++) {
+      const ev = allEvents[i];
+      grid.appendChild(buildCard(ev, indexOffset + i));
+    }
+    container.appendChild(grid);
+  });
+  container.appendChild(btn);
+}
+
+async function collectAllEvents(
+  ctx: AppContext,
+  now: Date,
+): Promise<CelestialEvent[]> {
   const events: CelestialEvent[] = [];
 
   if (ctx.prefs.enabledSources.includes("moon")) {
@@ -30,120 +278,23 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
     events.push(...getPlanetEvents(ctx.location, now));
   }
 
-  // DSOs (async)
-  if (ctx.prefs.enabledSources.includes("dso")) {
-    // Show skeleton cards while loading
-    const skelHolder = document.createElement("div");
-    skelHolder.setAttribute("data-dso-skel", "");
-    for (let i = 0; i < 3; i++) {
-      const skel = document.createElement("div");
-      skel.className = "card skeleton skeleton-card";
-      skel.style.setProperty("--i", String(i));
-      skelHolder.appendChild(skel);
-    }
-    container.appendChild(skelHolder);
-
-    loadDSOCatalog().then((dsos) => {
-      skelHolder.remove();
-      const dsoEvents = dsos
-        .filter((d) => d.magnitude <= ctx.prefs.magnitudeLimit)
-        .map((d): CelestialEvent => {
-          const hor = getAltAzForRaDec(d.ra, d.dec, ctx.location, now);
-          return {
-            id: `dso-${d.id}`,
-            name: d.commonName || d.name,
-            type: "dso",
-            source: "catalog",
-            brief: `${d.type} · Mag ${d.magnitude.toFixed(1)} in ${d.constellation}`,
-            rise: null,
-            set: null,
-            transit: null,
-            altitude: hor.altitude,
-            azimuth: hor.azimuth,
-            magnitude: d.magnitude,
-            constellation: d.constellation,
-            illumination: null,
-            ra: d.ra,
-            dec: d.dec,
-            angularSize: d.size,
-            distanceAU: null,
-            extra: { catalogType: d.type, size: d.size },
-          };
-        })
-        .filter((e) => (e.altitude ?? 0) > 0);
-      renderEventCards(container, dsoEvents);
-    });
-  }
-
-  // Stars (async, bright named stars)
-  if (ctx.prefs.enabledSources.includes("stars")) {
-    const starSkelHolder = document.createElement("div");
-    starSkelHolder.setAttribute("data-star-skel", "");
-    for (let i = 0; i < 3; i++) {
-      const skel = document.createElement("div");
-      skel.className = "card skeleton skeleton-card";
-      skel.style.setProperty("--i", String(i));
-      starSkelHolder.appendChild(skel);
-    }
-    container.appendChild(starSkelHolder);
-
-    loadStarCatalog().then((stars) => {
-      starSkelHolder.remove();
-      const starEvents = stars
-        .filter((s) => s.magnitude <= ctx.prefs.magnitudeLimit)
-        .map((s): CelestialEvent => {
-          const hor = getAltAzForRaDec(s.ra, s.dec, ctx.location, now);
-          return {
-            id: `star-${s.id}`,
-            name: s.name,
-            type: "dso",
-            source: "catalog",
-            brief: `${s.spectralType} · Mag ${s.magnitude.toFixed(2)} in ${s.constellation}${s.isDouble ? ' · Double' : ''}${s.isVariable ? ' · Variable' : ''}`,
-            rise: null,
-            set: null,
-            transit: null,
-            altitude: hor.altitude,
-            azimuth: hor.azimuth,
-            magnitude: s.magnitude,
-            constellation: s.constellation,
-            illumination: null,
-            ra: s.ra,
-            dec: s.dec,
-            angularSize: null,
-            distanceAU: null,
-            extra: {
-              spectralType: s.spectralType,
-              isDouble: s.isDouble,
-              isVariable: s.isVariable,
-            },
-          };
-        })
-        .filter((e) => (e.altitude ?? 0) > 0);
-      renderEventCards(container, starEvents);
-    });
-  }
-
-  // Meteors active now
+  // Meteors (sync)
   if (ctx.prefs.enabledSources.includes("meteors")) {
     const month = now.getMonth() + 1;
     const day = now.getDate();
     const active = METEOR_SHOWERS.filter((s) => isShowerActive(s, month, day));
     const meteorEvents = active.map((s): CelestialEvent => {
-      const hor = getAltAzForRaDec(
-        s.radiantRA,
-        s.radiantDec,
-        ctx.location,
-        now,
-      );
+      const hor = getAltAzForRaDec(s.radiantRA, s.radiantDec, ctx.location, now);
+      const rs = getRiseSetForRaDec(s.radiantRA, s.radiantDec, ctx.location, now);
       return {
         id: `meteor-${s.id}`,
         name: s.name,
         type: "meteor-shower",
         source: "catalog",
         brief: `ZHR ${s.zhr} · ${s.speed} km/s · Parent: ${s.parentBody}`,
-        rise: null,
-        set: null,
-        transit: null,
+        rise: rs.rise,
+        set: rs.set,
+        transit: rs.transit,
         altitude: hor.altitude,
         azimuth: hor.azimuth,
         magnitude: null,
@@ -159,48 +310,149 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
     events.push(...meteorEvents);
   }
 
-  // Sort: visible first (altitude > 0), then by magnitude
-  const visible = events
-    .filter((e) => (e.altitude ?? -1) > 0)
-    .sort((a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99));
+  // DSOs + Stars (async, in parallel)
+  const promises: Promise<CelestialEvent[]>[] = [];
 
-  const below = events
-    .filter((e) => (e.altitude ?? -1) <= 0)
-    .sort((a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99));
-
-  const section = document.createElement("h3");
-  section.className = "section-title";
-  section.textContent = `Visible Now (${visible.length})`;
-  container.appendChild(section);
-
-  renderEventCards(container, visible, 0);
-
-  if (below.length) {
-    const belowSection = document.createElement("h3");
-    belowSection.className = "section-title";
-    belowSection.textContent = `Below Horizon (${below.length})`;
-    container.appendChild(belowSection);
-    renderEventCards(container, below, visible.length);
+  if (ctx.prefs.enabledSources.includes("dso")) {
+    promises.push(
+      loadDSOCatalog().then((dsos) =>
+        dsos
+          .filter((d) => d.magnitude <= ctx.prefs.magnitudeLimit)
+          .map((d): CelestialEvent => {
+            const hor = getAltAzForRaDec(d.ra, d.dec, ctx.location, now);
+            const rs = getRiseSetForRaDec(d.ra, d.dec, ctx.location, now);
+            return {
+              id: `dso-${d.id}`,
+              name: d.commonName || d.name,
+              type: "dso",
+              source: "catalog",
+              brief: `${d.type} · Mag ${d.magnitude.toFixed(1)} in ${d.constellation}`,
+              rise: rs.rise,
+              set: rs.set,
+              transit: rs.transit,
+              altitude: hor.altitude,
+              azimuth: hor.azimuth,
+              magnitude: d.magnitude,
+              constellation: d.constellation,
+              illumination: null,
+              ra: d.ra,
+              dec: d.dec,
+              angularSize: d.size,
+              distanceAU: null,
+              extra: { catalogType: d.type, size: d.size },
+            };
+          }),
+      ),
+    );
   }
+
+  if (ctx.prefs.enabledSources.includes("stars")) {
+    promises.push(
+      loadStarCatalog().then((stars) =>
+        stars
+          .filter((s) => s.magnitude <= ctx.prefs.magnitudeLimit)
+          .map((s): CelestialEvent => {
+            const hor = getAltAzForRaDec(s.ra, s.dec, ctx.location, now);
+            const rs = getRiseSetForRaDec(s.ra, s.dec, ctx.location, now);
+            return {
+              id: `star-${s.id}`,
+              name: s.name,
+              type: "dso",
+              source: "catalog",
+              brief: `${s.spectralType} · Mag ${s.magnitude.toFixed(2)} in ${s.constellation}${s.isDouble ? ' · Double' : ''}${s.isVariable ? ' · Variable' : ''}`,
+              rise: rs.rise,
+              set: rs.set,
+              transit: rs.transit,
+              altitude: hor.altitude,
+              azimuth: hor.azimuth,
+              magnitude: s.magnitude,
+              constellation: s.constellation,
+              illumination: null,
+              ra: s.ra,
+              dec: s.dec,
+              angularSize: null,
+              distanceAU: null,
+              extra: {
+                spectralType: s.spectralType,
+                isDouble: s.isDouble,
+                isVariable: s.isVariable,
+              },
+            };
+          }),
+      ),
+    );
+  }
+
+  const results = await Promise.all(promises);
+  for (const batch of results) {
+    events.push(...batch);
+  }
+
+  return events;
 }
+
 
 function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {
   const bar = document.createElement("div");
-  bar.className = "twilight-bar";
+  bar.className = "twilight-bar compact";
   bar.innerHTML = `
-    <h2>Twilight</h2>
-    <div class="twilight-visual"></div>
-    <div class="twilight-grid">
-      <span class="label">Sunset</span><span class="time">${fmt(tw.sunset)}</span>
-      <span class="label">Civil dusk</span><span class="time">${fmt(tw.civilDusk)}</span>
-      <span class="label">Nautical dusk</span><span class="time">${fmt(tw.nauticalDusk)}</span>
-      <span class="label">Astro dusk</span><span class="time">${fmt(tw.astronomicalDusk)}</span>
-      <span class="label">Astro dawn</span><span class="time">${fmt(tw.astronomicalDawn)}</span>
-      <span class="label">Sunrise</span><span class="time">${fmt(tw.sunrise)}</span>
-      <span class="label">Dark hours</span><span class="time dark-hours">${tw.nightDurationHours.toFixed(1)}h</span>
+    <div class="twilight-summary">
+      <div class="twilight-visual"></div>
+      <div class="twilight-quick">
+        <span>☀↓ ${fmt(tw.sunset)}</span>
+        <span class="tw-sep">·</span>
+        <span>🌑 ${tw.nightDurationHours.toFixed(1)}h</span>
+        <span class="tw-sep">·</span>
+        <span>☀↑ ${fmt(tw.sunrise)}</span>
+      </div>
+      <button class="twilight-toggle" aria-label="Show details" aria-expanded="false">▾</button>
+    </div>
+    <div class="twilight-details">
+      <div class="twilight-grid">
+        <span class="label">Sunset</span><span class="time">${fmt(tw.sunset)}</span>
+        <span class="label">Civil dusk</span><span class="time">${fmt(tw.civilDusk)}</span>
+        <span class="label">Nautical dusk</span><span class="time">${fmt(tw.nauticalDusk)}</span>
+        <span class="label">Astro dusk</span><span class="time">${fmt(tw.astronomicalDusk)}</span>
+        <span class="label">Astro dawn</span><span class="time">${fmt(tw.astronomicalDawn)}</span>
+        <span class="label">Nautical dawn</span><span class="time">${fmt(tw.nauticalDawn)}</span>
+        <span class="label">Civil dawn</span><span class="time">${fmt(tw.civilDawn)}</span>
+        <span class="label">Sunrise</span><span class="time">${fmt(tw.sunrise)}</span>
+      </div>
     </div>
   `;
+  const toggle = bar.querySelector(".twilight-toggle")!;
+  toggle.addEventListener("click", () => {
+    const expanded = bar.classList.toggle("expanded");
+    toggle.setAttribute("aria-expanded", String(expanded));
+    toggle.textContent = expanded ? "▴" : "▾";
+  });
   container.appendChild(bar);
+}
+
+/* ── Card builder (shared by renderEventCards + showMore) */
+function buildCard(ev: CelestialEvent, index: number): HTMLElement {
+  const isUp = (ev.altitude ?? -1) > 0;
+  const card = document.createElement("div");
+  card.className = `card card-type-${ev.type}`;
+  card.style.setProperty("--i", String(index));
+  card.addEventListener("click", () => {
+    trackEvent("click", `#/detail/${ev.id}`, ev.name);
+    navigate(`#/detail/${ev.id}`);
+  });
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="card-title"><span class="vis-dot ${isUp ? "up" : "down"}"></span>${ev.name}</span>
+      ${ev.magnitude !== null ? `<span class="card-mag">mag ${ev.magnitude.toFixed(1)}</span>` : ""}
+    </div>
+    <div class="card-brief">${ev.brief}</div>
+    <div class="card-times">
+      ${ev.altitude !== null ? `<span>Alt ${ev.altitude.toFixed(1)}°</span>` : ""}
+      ${ev.azimuth !== null ? `<span>Az ${ev.azimuth.toFixed(0)}°</span>` : ""}
+      ${ev.rise ? `<span>↑${fmtShort(ev.rise)}</span>` : ""}
+      ${ev.set ? `<span>↓${fmtShort(ev.set)}</span>` : ""}
+    </div>
+  `;
+  return card;
 }
 
 function renderEventCards(
@@ -208,28 +460,12 @@ function renderEventCards(
   events: CelestialEvent[],
   startIndex = 0,
 ): void {
+  const grid = document.createElement("div");
+  grid.className = "card-grid";
   for (let i = 0; i < events.length; i++) {
-    const ev = events[i];
-    const isUp = (ev.altitude ?? -1) > 0;
-    const card = document.createElement("div");
-    card.className = `card card-type-${ev.type}`;
-    card.style.setProperty("--i", String(startIndex + i));
-    card.addEventListener("click", () => navigate(`#/detail/${ev.id}`));
-    card.innerHTML = `
-      <div class="card-header">
-        <span class="card-title"><span class="vis-dot ${isUp ? "up" : "down"}"></span>${ev.name}</span>
-        ${ev.magnitude !== null ? `<span class="card-mag">mag ${ev.magnitude.toFixed(1)}</span>` : ""}
-      </div>
-      <div class="card-brief">${ev.brief}</div>
-      <div class="card-times">
-        ${ev.altitude !== null ? `<span>Alt ${ev.altitude.toFixed(1)}°</span>` : ""}
-        ${ev.azimuth !== null ? `<span>Az ${ev.azimuth.toFixed(0)}°</span>` : ""}
-        ${ev.rise ? `<span>↑${fmtShort(ev.rise)}</span>` : ""}
-        ${ev.set ? `<span>↓${fmtShort(ev.set)}</span>` : ""}
-      </div>
-    `;
-    container.appendChild(card);
+    grid.appendChild(buildCard(events[i], startIndex + i));
   }
+  container.appendChild(grid);
 }
 
 function fmt(d: Date | null): string {

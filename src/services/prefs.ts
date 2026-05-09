@@ -14,6 +14,16 @@ const DEFAULT_PREFS: UserPrefs = {
   ],
   magnitudeLimit: 6.0,
   defaultLocation: null,
+  equipment: "naked-eye",
+  displayLimit: 50,
+  enabledCategories: [
+    "solar-system",
+    "galaxies",
+    "nebulae",
+    "clusters",
+    "double-stars",
+    "meteors",
+  ],
 };
 
 export function loadPrefs(): UserPrefs {

@@ -60,10 +60,15 @@ export interface UserProfile {
   provider: "google" | "microsoft";
 }
 
+export type Equipment = "naked-eye" | "binoculars" | "telescope" | "deep-scope";
+
 export interface UserPrefs {
   enabledSources: string[];
+  enabledCategories: string[];
   magnitudeLimit: number;
   defaultLocation: GeoLocation | null;
+  equipment: Equipment;
+  displayLimit: number;
 }
 
 export interface ApiKey {

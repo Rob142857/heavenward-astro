@@ -28,6 +28,7 @@ export function startRouter(): void {
         match.slice(1).forEach((v, i) => {
           params[`p${i}`] = v;
         });
+        window.scrollTo(0, 0);
         r.handler(params);
         return;
       }
