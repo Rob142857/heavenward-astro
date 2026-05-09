@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "wrangler pages dev dist",
     "deploy": "npm run build && wrangler pages deploy dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "refresh": "node --experimental-strip-types scripts/refresh-catalog.ts --all"
   },
   "keywords": [
     "astronomy",

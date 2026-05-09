@@ -44,6 +44,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,json}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB — catalog JSONs are large
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.open-meteo\.com\/.*/i,

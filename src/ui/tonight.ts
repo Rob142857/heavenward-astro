@@ -5,6 +5,7 @@ import {
   getMoonEvent,
 } from "../engine/astro.js";
 import { loadDSOCatalog } from "../catalog/dso.js";
+import { loadStarCatalog } from "../catalog/stars.js";
 import { METEOR_SHOWERS } from "../catalog/meteors.js";
 import { getAltAzForRaDec } from "../engine/astro.js";
 import { renderHeader, renderNav } from "./layout.js";
@@ -71,6 +72,54 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
         })
         .filter((e) => (e.altitude ?? 0) > 0);
       renderEventCards(container, dsoEvents);
+    });
+  }
+
+  // Stars (async, bright named stars)
+  if (ctx.prefs.enabledSources.includes("stars")) {
+    const starSkelHolder = document.createElement("div");
+    starSkelHolder.setAttribute("data-star-skel", "");
+    for (let i = 0; i < 3; i++) {
+      const skel = document.createElement("div");
+      skel.className = "card skeleton skeleton-card";
+      skel.style.setProperty("--i", String(i));
+      starSkelHolder.appendChild(skel);
+    }
+    container.appendChild(starSkelHolder);
+
+    loadStarCatalog().then((stars) => {
+      starSkelHolder.remove();
+      const starEvents = stars
+        .filter((s) => s.magnitude <= ctx.prefs.magnitudeLimit)
+        .map((s): CelestialEvent => {
+          const hor = getAltAzForRaDec(s.ra, s.dec, ctx.location, now);
+          return {
+            id: `star-${s.id}`,
+            name: s.name,
+            type: "dso",
+            source: "catalog",
+            brief: `${s.spectralType} · Mag ${s.magnitude.toFixed(2)} in ${s.constellation}${s.isDouble ? ' · Double' : ''}${s.isVariable ? ' · Variable' : ''}`,
+            rise: null,
+            set: null,
+            transit: null,
+            altitude: hor.altitude,
+            azimuth: hor.azimuth,
+            magnitude: s.magnitude,
+            constellation: s.constellation,
+            illumination: null,
+            ra: s.ra,
+            dec: s.dec,
+            angularSize: null,
+            distanceAU: null,
+            extra: {
+              spectralType: s.spectralType,
+              isDouble: s.isDouble,
+              isVariable: s.isVariable,
+            },
+          };
+        })
+        .filter((e) => (e.altitude ?? 0) > 0);
+      renderEventCards(container, starEvents);
     });
   }
 

@@ -5,6 +5,7 @@ import { renderHeader, renderNav } from "./layout.js";
 const SOURCES = [
   { key: "planets", label: "Planets" },
   { key: "moon", label: "Moon" },
+  { key: "stars", label: "Stars" },
   { key: "dso", label: "Deep Sky Objects" },
   { key: "meteors", label: "Meteor Showers" },
   { key: "eclipses", label: "Eclipses" },

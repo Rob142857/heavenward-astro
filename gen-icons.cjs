@@ -19,6 +19,6 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 </svg>`;
 const buf = Buffer.from(svg);
 Promise.all([
-  sharp(buf).resize(192, 192).png().toFile('public/icons/icon-192.png'),
-  sharp(buf).resize(512, 512).png().toFile('public/icons/icon-512.png'),
-]).then(() => console.log('Seba icons generated'));
+  sharp(buf).resize(192, 192).png().toFile("public/icons/icon-192.png"),
+  sharp(buf).resize(512, 512).png().toFile("public/icons/icon-512.png"),
+]).then(() => console.log("Seba icons generated"));

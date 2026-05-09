@@ -6,6 +6,7 @@ const DEFAULT_PREFS: UserPrefs = {
   enabledSources: [
     "planets",
     "moon",
+    "stars",
     "dso",
     "meteors",
     "eclipses",

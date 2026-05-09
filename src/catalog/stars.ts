@@ -4,8 +4,30 @@ export interface StarEntry {
   ra: number;
   dec: number;
   magnitude: number;
+  absMagnitude: number;
   spectralType: string;
   constellation: string;
+  distanceLY: number | null;
+  distancePC: number | null;
+  colorIndex: number | null;
+  luminosity: string | null;
+  isDouble: boolean;
+  doubleCompanion: string | null;
+  isVariable: boolean;
+  variableType: string | null;
+  variablePeriod: string | null;
+  hasExoplanets: boolean;
+  exoplanetCount: number;
+  exoplanetNotes: string | null;
+  mass: string | null;
+  radius: string | null;
+  temperature: number | null;
+  age: string | null;
+  description: string;
+  notableFeatures: string[];
+  properMotion: string | null;
+  bayerDesignation: string | null;
+  flamsteedNumber: string | null;
 }
 
 let cache: StarEntry[] | null = null;

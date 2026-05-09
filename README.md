@@ -26,14 +26,14 @@ Heavenward is a mobile-first PWA that computes what's in your sky right now: pla
 
 ## Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | TypeScript 6 (strict ESM) · vanilla DOM · Vite 8 |
+| Layer     | Technology                                                                           |
+| --------- | ------------------------------------------------------------------------------------ |
+| Frontend  | TypeScript 6 (strict ESM) · vanilla DOM · Vite 8                                     |
 | Astronomy | [astronomy-engine](https://github.com/cosinekitty/astronomy) — client-side ephemeris |
-| API | [Hono](https://hono.dev) on Cloudflare Pages Functions |
-| Auth | Google & Microsoft OAuth 2.0 PKCE |
-| Storage | Cloudflare D1 (users, API keys) · KV (preferences) |
-| PWA | vite-plugin-pwa · Workbox precaching |
+| API       | [Hono](https://hono.dev) on Cloudflare Pages Functions                               |
+| Auth      | Google & Microsoft OAuth 2.0 PKCE                                                    |
+| Storage   | Cloudflare D1 (users, API keys) · KV (preferences)                                   |
+| PWA       | vite-plugin-pwa · Workbox precaching                                                 |
 
 ## Project layout
 
@@ -62,12 +62,12 @@ npm run dev          # Vite dev server on localhost:5173
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | Type-check + production build |
-| `npm run preview` | Local preview via Wrangler |
-| `npm run deploy` | Build + deploy to Cloudflare Pages |
+| Command           | Description                        |
+| ----------------- | ---------------------------------- |
+| `npm run dev`     | Start Vite dev server              |
+| `npm run build`   | Type-check + production build      |
+| `npm run preview` | Local preview via Wrangler         |
+| `npm run deploy`  | Build + deploy to Cloudflare Pages |
 
 ## Architecture
 
