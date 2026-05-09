@@ -34,6 +34,7 @@ const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
 /* ── Category filters ────────────────────────────────── */
 const CATEGORIES: { key: string; label: string; icon: string }[] = [
   { key: "solar-system", label: "Solar System", icon: "🪐" },
+  { key: "stars", label: "Stars", icon: "⭐" },
   { key: "galaxies", label: "Galaxies", icon: "🌌" },
   { key: "nebulae", label: "Nebulae", icon: "💫" },
   { key: "clusters", label: "Clusters", icon: "✨" },
@@ -49,18 +50,22 @@ const DSO_NEBULA_TYPES = new Set([
 const DSO_CLUSTER_TYPES = new Set(["cluster", "globular-cluster", "open-cluster"]);
 
 function eventCategory(ev: CelestialEvent): string {
-  if (ev.type === "planet" || ev.type === "moon") return "solar-system";
+  if (ev.type === "planet" || ev.type === "moon" || ev.type === "sun") return "solar-system";
+  if (ev.type === "eclipse" || ev.type === "conjunction") return "solar-system";
   if (ev.type === "meteor-shower") return "meteors";
+  if (ev.type === "comet" || ev.type === "asteroid") return "solar-system";
   if (ev.type === "dso") {
     const ct = ev.extra.catalogType as string | undefined;
+    // Stars from the star catalog have spectralType but no catalogType
+    if (ev.extra.spectralType) {
+      return ev.extra.isDouble ? "double-stars" : "stars";
+    }
     if (ct) {
       if (DSO_GALAXY_TYPES.has(ct)) return "galaxies";
       if (DSO_NEBULA_TYPES.has(ct)) return "nebulae";
       if (DSO_CLUSTER_TYPES.has(ct)) return "clusters";
     }
-    if (ev.extra.isDouble) return "double-stars";
-    // Stars without isDouble fall through to "solar-system" as default visible
-    return "solar-system";
+    return "galaxies"; // Unclassified DSOs default to galaxies
   }
   return "solar-system";
 }

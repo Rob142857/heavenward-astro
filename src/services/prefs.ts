@@ -18,6 +18,7 @@ const DEFAULT_PREFS: UserPrefs = {
   displayLimit: 50,
   enabledCategories: [
     "solar-system",
+    "stars",
     "galaxies",
     "nebulae",
     "clusters",
