@@ -1,6 +1,6 @@
-import { Hono } from 'hono';
-import { handle } from 'hono/cloudflare-pages';
-import auth from '../auth/handler.js';
+import { Hono } from "hono";
+import { handle } from "hono/cloudflare-pages";
+import auth from "../auth/handler.js";
 
 interface Env {
   DB: D1Database;
@@ -12,6 +12,6 @@ interface Env {
 }
 
 const app = new Hono<{ Bindings: Env }>();
-app.route('/', auth);
+app.route("/", auth);
 
 export const onRequest = handle(app);

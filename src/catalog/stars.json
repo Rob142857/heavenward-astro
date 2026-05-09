@@ -1,22 +1,182 @@
 [
-  {"id":"sirius","name":"Sirius","ra":6.7525,"dec":-16.716,"magnitude":-1.46,"spectralType":"A1V","constellation":"Canis Major"},
-  {"id":"canopus","name":"Canopus","ra":6.3992,"dec":-52.696,"magnitude":-0.74,"spectralType":"F0II","constellation":"Carina"},
-  {"id":"arcturus","name":"Arcturus","ra":14.2611,"dec":19.182,"magnitude":-0.05,"spectralType":"K1.5III","constellation":"Boötes"},
-  {"id":"vega","name":"Vega","ra":18.6156,"dec":38.784,"magnitude":0.03,"spectralType":"A0V","constellation":"Lyra"},
-  {"id":"capella","name":"Capella","ra":5.2783,"dec":45.998,"magnitude":0.08,"spectralType":"G8III","constellation":"Auriga"},
-  {"id":"rigel","name":"Rigel","ra":5.2422,"dec":-8.202,"magnitude":0.13,"spectralType":"B8Ia","constellation":"Orion"},
-  {"id":"procyon","name":"Procyon","ra":7.6553,"dec":5.225,"magnitude":0.34,"spectralType":"F5IV","constellation":"Canis Minor"},
-  {"id":"betelgeuse","name":"Betelgeuse","ra":5.9194,"dec":7.407,"magnitude":0.42,"spectralType":"M1Ia","constellation":"Orion"},
-  {"id":"altair","name":"Altair","ra":19.8464,"dec":8.868,"magnitude":0.76,"spectralType":"A7V","constellation":"Aquila"},
-  {"id":"aldebaran","name":"Aldebaran","ra":4.5986,"dec":16.509,"magnitude":0.86,"spectralType":"K5III","constellation":"Taurus"},
-  {"id":"antares","name":"Antares","ra":16.4903,"dec":-26.432,"magnitude":0.96,"spectralType":"M1.5Ib","constellation":"Scorpius"},
-  {"id":"spica","name":"Spica","ra":13.4194,"dec":-11.161,"magnitude":0.97,"spectralType":"B1V","constellation":"Virgo"},
-  {"id":"pollux","name":"Pollux","ra":7.7553,"dec":28.026,"magnitude":1.14,"spectralType":"K0III","constellation":"Gemini"},
-  {"id":"fomalhaut","name":"Fomalhaut","ra":22.9608,"dec":-29.622,"magnitude":1.16,"spectralType":"A3V","constellation":"Piscis Austrinus"},
-  {"id":"deneb","name":"Deneb","ra":20.6906,"dec":45.280,"magnitude":1.25,"spectralType":"A2Ia","constellation":"Cygnus"},
-  {"id":"regulus","name":"Regulus","ra":10.1394,"dec":11.967,"magnitude":1.40,"spectralType":"B8IV","constellation":"Leo"},
-  {"id":"castor","name":"Castor","ra":7.5767,"dec":31.889,"magnitude":1.58,"spectralType":"A1V","constellation":"Gemini"},
-  {"id":"bellatrix","name":"Bellatrix","ra":5.4186,"dec":6.350,"magnitude":1.64,"spectralType":"B2III","constellation":"Orion"},
-  {"id":"polaris","name":"Polaris","ra":2.5303,"dec":89.264,"magnitude":1.98,"spectralType":"F8Ib","constellation":"Ursa Minor"},
-  {"id":"mizar","name":"Mizar","ra":13.3989,"dec":54.925,"magnitude":2.04,"spectralType":"A2V","constellation":"Ursa Major"}
+  {
+    "id": "sirius",
+    "name": "Sirius",
+    "ra": 6.7525,
+    "dec": -16.716,
+    "magnitude": -1.46,
+    "spectralType": "A1V",
+    "constellation": "Canis Major"
+  },
+  {
+    "id": "canopus",
+    "name": "Canopus",
+    "ra": 6.3992,
+    "dec": -52.696,
+    "magnitude": -0.74,
+    "spectralType": "F0II",
+    "constellation": "Carina"
+  },
+  {
+    "id": "arcturus",
+    "name": "Arcturus",
+    "ra": 14.2611,
+    "dec": 19.182,
+    "magnitude": -0.05,
+    "spectralType": "K1.5III",
+    "constellation": "Boötes"
+  },
+  {
+    "id": "vega",
+    "name": "Vega",
+    "ra": 18.6156,
+    "dec": 38.784,
+    "magnitude": 0.03,
+    "spectralType": "A0V",
+    "constellation": "Lyra"
+  },
+  {
+    "id": "capella",
+    "name": "Capella",
+    "ra": 5.2783,
+    "dec": 45.998,
+    "magnitude": 0.08,
+    "spectralType": "G8III",
+    "constellation": "Auriga"
+  },
+  {
+    "id": "rigel",
+    "name": "Rigel",
+    "ra": 5.2422,
+    "dec": -8.202,
+    "magnitude": 0.13,
+    "spectralType": "B8Ia",
+    "constellation": "Orion"
+  },
+  {
+    "id": "procyon",
+    "name": "Procyon",
+    "ra": 7.6553,
+    "dec": 5.225,
+    "magnitude": 0.34,
+    "spectralType": "F5IV",
+    "constellation": "Canis Minor"
+  },
+  {
+    "id": "betelgeuse",
+    "name": "Betelgeuse",
+    "ra": 5.9194,
+    "dec": 7.407,
+    "magnitude": 0.42,
+    "spectralType": "M1Ia",
+    "constellation": "Orion"
+  },
+  {
+    "id": "altair",
+    "name": "Altair",
+    "ra": 19.8464,
+    "dec": 8.868,
+    "magnitude": 0.76,
+    "spectralType": "A7V",
+    "constellation": "Aquila"
+  },
+  {
+    "id": "aldebaran",
+    "name": "Aldebaran",
+    "ra": 4.5986,
+    "dec": 16.509,
+    "magnitude": 0.86,
+    "spectralType": "K5III",
+    "constellation": "Taurus"
+  },
+  {
+    "id": "antares",
+    "name": "Antares",
+    "ra": 16.4903,
+    "dec": -26.432,
+    "magnitude": 0.96,
+    "spectralType": "M1.5Ib",
+    "constellation": "Scorpius"
+  },
+  {
+    "id": "spica",
+    "name": "Spica",
+    "ra": 13.4194,
+    "dec": -11.161,
+    "magnitude": 0.97,
+    "spectralType": "B1V",
+    "constellation": "Virgo"
+  },
+  {
+    "id": "pollux",
+    "name": "Pollux",
+    "ra": 7.7553,
+    "dec": 28.026,
+    "magnitude": 1.14,
+    "spectralType": "K0III",
+    "constellation": "Gemini"
+  },
+  {
+    "id": "fomalhaut",
+    "name": "Fomalhaut",
+    "ra": 22.9608,
+    "dec": -29.622,
+    "magnitude": 1.16,
+    "spectralType": "A3V",
+    "constellation": "Piscis Austrinus"
+  },
+  {
+    "id": "deneb",
+    "name": "Deneb",
+    "ra": 20.6906,
+    "dec": 45.28,
+    "magnitude": 1.25,
+    "spectralType": "A2Ia",
+    "constellation": "Cygnus"
+  },
+  {
+    "id": "regulus",
+    "name": "Regulus",
+    "ra": 10.1394,
+    "dec": 11.967,
+    "magnitude": 1.4,
+    "spectralType": "B8IV",
+    "constellation": "Leo"
+  },
+  {
+    "id": "castor",
+    "name": "Castor",
+    "ra": 7.5767,
+    "dec": 31.889,
+    "magnitude": 1.58,
+    "spectralType": "A1V",
+    "constellation": "Gemini"
+  },
+  {
+    "id": "bellatrix",
+    "name": "Bellatrix",
+    "ra": 5.4186,
+    "dec": 6.35,
+    "magnitude": 1.64,
+    "spectralType": "B2III",
+    "constellation": "Orion"
+  },
+  {
+    "id": "polaris",
+    "name": "Polaris",
+    "ra": 2.5303,
+    "dec": 89.264,
+    "magnitude": 1.98,
+    "spectralType": "F8Ib",
+    "constellation": "Ursa Minor"
+  },
+  {
+    "id": "mizar",
+    "name": "Mizar",
+    "ra": 13.3989,
+    "dec": 54.925,
+    "magnitude": 2.04,
+    "spectralType": "A2V",
+    "constellation": "Ursa Major"
+  }
 ]

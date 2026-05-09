@@ -24,6 +24,11 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": "."
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "functions/**/*.ts", "*.config.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "functions/**/*.ts",
+    "*.config.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

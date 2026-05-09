@@ -7,7 +7,17 @@ export interface GeoLocation {
 export interface CelestialEvent {
   id: string;
   name: string;
-  type: 'planet' | 'moon' | 'sun' | 'dso' | 'meteor-shower' | 'satellite' | 'asteroid' | 'comet' | 'eclipse' | 'conjunction';
+  type:
+    | "planet"
+    | "moon"
+    | "sun"
+    | "dso"
+    | "meteor-shower"
+    | "satellite"
+    | "asteroid"
+    | "comet"
+    | "eclipse"
+    | "conjunction";
   source: string;
   brief: string;
   rise: Date | null;
@@ -47,7 +57,7 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string;
-  provider: 'google' | 'microsoft';
+  provider: "google" | "microsoft";
 }
 
 export interface UserPrefs {

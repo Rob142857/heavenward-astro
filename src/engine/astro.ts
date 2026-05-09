@@ -8,10 +8,10 @@
  * All times are UTC internally; UI converts to local.
  */
 
-import * as Astronomy from 'astronomy-engine';
-import type { GeoLocation, CelestialEvent, TwilightTimes } from '../types.js';
+import * as Astronomy from "astronomy-engine";
+import type { GeoLocation, CelestialEvent, TwilightTimes } from "../types.js";
 
-export type { GeoLocation, CelestialEvent, TwilightTimes } from '../types.js';
+export type { GeoLocation, CelestialEvent, TwilightTimes } from "../types.js";
 
 // ── Observer ───────────────────────────────────────────────────────
 
@@ -42,7 +42,9 @@ export function getTwilightTimes(loc: GeoLocation, date: Date): TwilightTimes {
 
   let nightDurationHours = 0;
   if (astronomicalDusk && astronomicalDawn) {
-    nightDurationHours = (astronomicalDawn.date.getTime() - astronomicalDusk.date.getTime()) / 3_600_000;
+    nightDurationHours =
+      (astronomicalDawn.date.getTime() - astronomicalDusk.date.getTime()) /
+      3_600_000;
   }
 
   return {
@@ -61,11 +63,19 @@ export function getTwilightTimes(loc: GeoLocation, date: Date): TwilightTimes {
 // ── Planets ────────────────────────────────────────────────────────
 
 const PLANETS: Astronomy.Body[] = [
-  Astronomy.Body.Mercury, Astronomy.Body.Venus, Astronomy.Body.Mars,
-  Astronomy.Body.Jupiter, Astronomy.Body.Saturn, Astronomy.Body.Uranus, Astronomy.Body.Neptune,
+  Astronomy.Body.Mercury,
+  Astronomy.Body.Venus,
+  Astronomy.Body.Mars,
+  Astronomy.Body.Jupiter,
+  Astronomy.Body.Saturn,
+  Astronomy.Body.Uranus,
+  Astronomy.Body.Neptune,
 ];
 
-export function getPlanetEvents(loc: GeoLocation, date: Date): CelestialEvent[] {
+export function getPlanetEvents(
+  loc: GeoLocation,
+  date: Date,
+): CelestialEvent[] {
   const obs = makeObserver(loc);
   return PLANETS.map((body) => {
     const rise = Astronomy.SearchRiseSet(body, obs, +1, date, 2);
@@ -74,14 +84,14 @@ export function getPlanetEvents(loc: GeoLocation, date: Date): CelestialEvent[] 
 
     const illum = Astronomy.Illumination(body, date);
     const eq = Astronomy.Equator(body, date, obs, true, true);
-    const hor = Astronomy.Horizon(date, obs, eq.ra, eq.dec, 'normal');
+    const hor = Astronomy.Horizon(date, obs, eq.ra, eq.dec, "normal");
     const info = Astronomy.Constellation(eq.ra, eq.dec);
 
     return {
       id: `planet-${String(body).toLowerCase()}`,
       name: String(body),
-      type: 'planet' as const,
-      source: 'astronomy-engine',
+      type: "planet" as const,
+      source: "astronomy-engine",
       brief: `Mag ${illum.mag.toFixed(1)} in ${info.name}`,
       rise: rise?.date ?? null,
       set: set?.date ?? null,
@@ -99,7 +109,7 @@ export function getPlanetEvents(loc: GeoLocation, date: Date): CelestialEvent[] 
         phaseAngle: illum.phase_angle,
         helioDistAU: illum.helio_dist,
         elongation: Astronomy.AngleFromSun(body, date),
-        visibility: hor.altitude > 0 ? 'visible' : 'below horizon',
+        visibility: hor.altitude > 0 ? "visible" : "below horizon",
       },
     };
   });
@@ -117,17 +127,17 @@ export function getMoonEvent(loc: GeoLocation, date: Date): CelestialEvent {
   const phase = Astronomy.MoonPhase(date);
   const illum = Astronomy.Illumination(Moon, date);
   const eq = Astronomy.Equator(Moon, date, obs, true, true);
-  const hor = Astronomy.Horizon(date, obs, eq.ra, eq.dec, 'normal');
+  const hor = Astronomy.Horizon(date, obs, eq.ra, eq.dec, "normal");
   const info = Astronomy.Constellation(eq.ra, eq.dec);
   const lib = Astronomy.Libration(date);
 
   const phaseName = getPhaseLabel(phase);
 
   return {
-    id: 'moon',
-    name: 'Moon',
-    type: 'moon',
-    source: 'astronomy-engine',
+    id: "moon",
+    name: "Moon",
+    type: "moon",
+    source: "astronomy-engine",
     brief: `${phaseName} (${(illum.phase_fraction * 100).toFixed(0)}%) in ${info.name}`,
     rise: rise?.date ?? null,
     set: set?.date ?? null,
@@ -152,15 +162,15 @@ export function getMoonEvent(loc: GeoLocation, date: Date): CelestialEvent {
 }
 
 function getPhaseLabel(angle: number): string {
-  if (angle < 22.5) return 'New Moon';
-  if (angle < 67.5) return 'Waxing Crescent';
-  if (angle < 112.5) return 'First Quarter';
-  if (angle < 157.5) return 'Waxing Gibbous';
-  if (angle < 202.5) return 'Full Moon';
-  if (angle < 247.5) return 'Waning Gibbous';
-  if (angle < 292.5) return 'Third Quarter';
-  if (angle < 337.5) return 'Waning Crescent';
-  return 'New Moon';
+  if (angle < 22.5) return "New Moon";
+  if (angle < 67.5) return "Waxing Crescent";
+  if (angle < 112.5) return "First Quarter";
+  if (angle < 157.5) return "Waxing Gibbous";
+  if (angle < 202.5) return "Full Moon";
+  if (angle < 247.5) return "Waning Gibbous";
+  if (angle < 292.5) return "Third Quarter";
+  if (angle < 337.5) return "Waning Crescent";
+  return "New Moon";
 }
 
 // ── Upcoming Moon Quarters ─────────────────────────────────────────
@@ -170,8 +180,11 @@ export interface MoonQuarterInfo {
   date: Date;
 }
 
-export function getUpcomingMoonQuarters(date: Date, count = 4): MoonQuarterInfo[] {
-  const labels = ['New Moon', 'First Quarter', 'Full Moon', 'Third Quarter'];
+export function getUpcomingMoonQuarters(
+  date: Date,
+  count = 4,
+): MoonQuarterInfo[] {
+  const labels = ["New Moon", "First Quarter", "Full Moon", "Third Quarter"];
   const results: MoonQuarterInfo[] = [];
   let mq = Astronomy.SearchMoonQuarter(date);
   for (let i = 0; i < count; i++) {
@@ -193,8 +206,11 @@ export interface SpecialEvent {
 export function getUpcomingConjunctions(date: Date, days = 30): SpecialEvent[] {
   const events: SpecialEvent[] = [];
   const superiorPlanets: Astronomy.Body[] = [
-    Astronomy.Body.Mars, Astronomy.Body.Jupiter, Astronomy.Body.Saturn,
-    Astronomy.Body.Uranus, Astronomy.Body.Neptune,
+    Astronomy.Body.Mars,
+    Astronomy.Body.Jupiter,
+    Astronomy.Body.Saturn,
+    Astronomy.Body.Uranus,
+    Astronomy.Body.Neptune,
   ];
 
   for (const body of superiorPlanets) {
@@ -205,10 +221,12 @@ export function getUpcomingConjunctions(date: Date, days = 30): SpecialEvent[] {
           name: `${body} at Opposition`,
           date: opp.date,
           description: `${body} is opposite the Sun — brightest and closest to Earth`,
-          type: 'opposition',
+          type: "opposition",
         });
       }
-    } catch { /* not found in range */ }
+    } catch {
+      /* not found in range */
+    }
   }
   return events;
 }
@@ -231,10 +249,14 @@ export interface BodyPosition {
   constellation: string;
 }
 
-export function getBodyPosition(body: Astronomy.Body, loc: GeoLocation, date: Date): BodyPosition {
+export function getBodyPosition(
+  body: Astronomy.Body,
+  loc: GeoLocation,
+  date: Date,
+): BodyPosition {
   const obs = makeObserver(loc);
   const eq = Astronomy.Equator(body, date, obs, true, true);
-  const hor = Astronomy.Horizon(date, obs, eq.ra, eq.dec, 'normal');
+  const hor = Astronomy.Horizon(date, obs, eq.ra, eq.dec, "normal");
   const con = Astronomy.Constellation(eq.ra, eq.dec);
   return {
     altitude: hor.altitude,
@@ -247,9 +269,14 @@ export function getBodyPosition(body: Astronomy.Body, loc: GeoLocation, date: Da
 
 // ── Altitude for a given RA/Dec (for DSOs, arbitrary objects) ──────
 
-export function getAltAzForRaDec(ra: number, dec: number, loc: GeoLocation, date: Date) {
+export function getAltAzForRaDec(
+  ra: number,
+  dec: number,
+  loc: GeoLocation,
+  date: Date,
+) {
   const obs = makeObserver(loc);
-  return Astronomy.Horizon(date, obs, ra, dec, 'normal');
+  return Astronomy.Horizon(date, obs, ra, dec, "normal");
 }
 
 // ── Sidereal time (for chart rendering) ────────────────────────────

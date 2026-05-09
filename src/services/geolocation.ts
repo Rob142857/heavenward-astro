@@ -1,6 +1,6 @@
-import type { GeoLocation } from '../types.js';
+import type { GeoLocation } from "../types.js";
 
-const STORAGE_KEY = 'heavenward-location';
+const STORAGE_KEY = "heavenward-location";
 
 export function getSavedLocation(): GeoLocation | null {
   try {
@@ -21,7 +21,7 @@ export function saveLocation(loc: GeoLocation): void {
 export function requestGPS(): Promise<GeoLocation> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error('Geolocation not supported'));
+      reject(new Error("Geolocation not supported"));
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -42,9 +42,13 @@ export function requestGPS(): Promise<GeoLocation> {
 
 function isGeoLocation(v: unknown): v is GeoLocation {
   return (
-    typeof v === 'object' && v !== null &&
-    'lat' in v && typeof (v as Record<string, unknown>).lat === 'number' &&
-    'lon' in v && typeof (v as Record<string, unknown>).lon === 'number' &&
-    'elev' in v && typeof (v as Record<string, unknown>).elev === 'number'
+    typeof v === "object" &&
+    v !== null &&
+    "lat" in v &&
+    typeof (v as Record<string, unknown>).lat === "number" &&
+    "lon" in v &&
+    typeof (v as Record<string, unknown>).lon === "number" &&
+    "elev" in v &&
+    typeof (v as Record<string, unknown>).elev === "number"
   );
 }

@@ -6,7 +6,7 @@ export function route(path: string, handler: RouteHandler): void {
   const paramNames: string[] = [];
   const pattern = path.replace(/:(\w+)/g, (_, name) => {
     paramNames.push(name);
-    return '([^/]+)';
+    return "([^/]+)";
   });
   routes.push({
     pattern: new RegExp(`^${pattern}$`),
@@ -20,7 +20,7 @@ export function navigate(hash: string): void {
 
 export function startRouter(): void {
   const onHash = () => {
-    const hash = window.location.hash.slice(1) || '/';
+    const hash = window.location.hash.slice(1) || "/";
     for (const r of routes) {
       const match = hash.match(r.pattern);
       if (match) {
@@ -33,10 +33,10 @@ export function startRouter(): void {
       }
     }
     // fallback to home
-    if (hash !== '/') {
-      window.location.hash = '#/';
+    if (hash !== "/") {
+      window.location.hash = "#/";
     }
   };
-  window.addEventListener('hashchange', onHash);
+  window.addEventListener("hashchange", onHash);
   onHash();
 }

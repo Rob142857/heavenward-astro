@@ -1,9 +1,16 @@
-import type { UserPrefs } from '../types.js';
+import type { UserPrefs } from "../types.js";
 
-const PREFS_KEY = 'heavenward-prefs';
+const PREFS_KEY = "heavenward-prefs";
 
 const DEFAULT_PREFS: UserPrefs = {
-  enabledSources: ['planets', 'moon', 'dso', 'meteors', 'eclipses', 'conjunctions'],
+  enabledSources: [
+    "planets",
+    "moon",
+    "dso",
+    "meteors",
+    "eclipses",
+    "conjunctions",
+  ],
   magnitudeLimit: 6.0,
   defaultLocation: null,
 };
@@ -13,7 +20,11 @@ export function loadPrefs(): UserPrefs {
     const raw = localStorage.getItem(PREFS_KEY);
     if (!raw) return { ...DEFAULT_PREFS };
     const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed === 'object' && parsed !== null && 'enabledSources' in parsed) {
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "enabledSources" in parsed
+    ) {
       return parsed as UserPrefs;
     }
     return { ...DEFAULT_PREFS };
