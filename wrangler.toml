@@ -1,0 +1,19 @@
+name = "heavenward"
+compatibility_date = "2026-05-09"
+pages_build_output_dir = "dist"
+
+# API functions live in functions/ and auto-map to routes
+
+# KV namespace for user preferences
+[[kv_namespaces]]
+binding = "USER_PREFS"
+id = "4c51a1b0722f4a6c8c19023e7e405325"
+
+# D1 database for user accounts + API key management
+[[d1_databases]]
+binding = "DB"
+database_name = "heavenward-db"
+database_id = "233ca2d5-d498-4aa2-8e40-9c992ac1d9e2"
+
+[vars]
+ENVIRONMENT = "development"
