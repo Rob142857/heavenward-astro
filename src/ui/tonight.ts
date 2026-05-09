@@ -31,7 +31,19 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
 
   // DSOs (async)
   if (ctx.prefs.enabledSources.includes("dso")) {
+    // Show skeleton cards while loading
+    const skelHolder = document.createElement("div");
+    skelHolder.setAttribute("data-dso-skel", "");
+    for (let i = 0; i < 3; i++) {
+      const skel = document.createElement("div");
+      skel.className = "card skeleton skeleton-card";
+      skel.style.setProperty("--i", String(i));
+      skelHolder.appendChild(skel);
+    }
+    container.appendChild(skelHolder);
+
     loadDSOCatalog().then((dsos) => {
+      skelHolder.remove();
       const dsoEvents = dsos
         .filter((d) => d.magnitude <= ctx.prefs.magnitudeLimit)
         .map((d): CelestialEvent => {
@@ -112,14 +124,14 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
   section.textContent = `Visible Now (${visible.length})`;
   container.appendChild(section);
 
-  renderEventCards(container, visible);
+  renderEventCards(container, visible, 0);
 
   if (below.length) {
     const belowSection = document.createElement("h3");
     belowSection.className = "section-title";
     belowSection.textContent = `Below Horizon (${below.length})`;
     container.appendChild(belowSection);
-    renderEventCards(container, below);
+    renderEventCards(container, below, visible.length);
   }
 }
 
@@ -128,6 +140,7 @@ function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {
   bar.className = "twilight-bar";
   bar.innerHTML = `
     <h2>Twilight</h2>
+    <div class="twilight-visual"></div>
     <div class="twilight-grid">
       <span class="label">Sunset</span><span class="time">${fmt(tw.sunset)}</span>
       <span class="label">Civil dusk</span><span class="time">${fmt(tw.civilDusk)}</span>
@@ -135,7 +148,7 @@ function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {
       <span class="label">Astro dusk</span><span class="time">${fmt(tw.astronomicalDusk)}</span>
       <span class="label">Astro dawn</span><span class="time">${fmt(tw.astronomicalDawn)}</span>
       <span class="label">Sunrise</span><span class="time">${fmt(tw.sunrise)}</span>
-      <span class="label">Dark hours</span><span class="time">${tw.nightDurationHours.toFixed(1)}h</span>
+      <span class="label">Dark hours</span><span class="time dark-hours">${tw.nightDurationHours.toFixed(1)}h</span>
     </div>
   `;
   container.appendChild(bar);
@@ -144,14 +157,18 @@ function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {
 function renderEventCards(
   container: HTMLElement,
   events: CelestialEvent[],
+  startIndex = 0,
 ): void {
-  for (const ev of events) {
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+    const isUp = (ev.altitude ?? -1) > 0;
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = `card card-type-${ev.type}`;
+    card.style.setProperty("--i", String(startIndex + i));
     card.addEventListener("click", () => navigate(`#/detail/${ev.id}`));
     card.innerHTML = `
       <div class="card-header">
-        <span class="card-title">${ev.name}</span>
+        <span class="card-title"><span class="vis-dot ${isUp ? "up" : "down"}"></span>${ev.name}</span>
         ${ev.magnitude !== null ? `<span class="card-mag">mag ${ev.magnitude.toFixed(1)}</span>` : ""}
       </div>
       <div class="card-brief">${ev.brief}</div>
