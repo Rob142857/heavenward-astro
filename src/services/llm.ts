@@ -24,12 +24,18 @@ interface LLMEngine {
       }) => AsyncIterable<{ choices: Array<{ delta: { content?: string } }> }>;
     };
   };
+  reload: (model: string, chatOpts?: Record<string, unknown>) => Promise<void>;
+  setInitProgressCallback: (cb: (p: { text: string; progress: number }) => void) => void;
 }
 
-type CreateMLCEngine = (
-  model: string,
-  opts: { initProgressCallback: (p: { text: string; progress: number }) => void },
-) => Promise<LLMEngine>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-unknown — CDN module shape
+interface WebLLMModule {
+  MLCEngine: new () => LLMEngine;
+  CreateMLCEngine: (
+    model: string,
+    opts: { initProgressCallback: (p: { text: string; progress: number }) => void },
+  ) => Promise<LLMEngine>;
+}
 
 // ── State ──────────────────────────────────────────────────────────
 
@@ -108,13 +114,16 @@ export async function loadLLM(
     const webllm = await import(
       // @ts-ignore — remote CDN module, typed manually
       /* @vite-ignore */ "https://esm.run/@mlc-ai/web-llm"
-    ) as { CreateMLCEngine: CreateMLCEngine };
+    ) as WebLLMModule;
 
-    engine = await webllm.CreateMLCEngine(MODEL_ID, {
-      initProgressCallback: (p: { text: string; progress: number }) => {
-        onProgress?.(p.text, p.progress);
-      },
+    // Use explicit MLCEngine + reload pattern instead of CreateMLCEngine
+    // CreateMLCEngine can silently fail to register the model on some mobile browsers
+    const eng = new webllm.MLCEngine();
+    eng.setInitProgressCallback((p: { text: string; progress: number }) => {
+      onProgress?.(p.text, p.progress);
     });
+    await eng.reload(MODEL_ID);
+    engine = eng;
 
     loading = false;
     return true;
@@ -202,9 +211,14 @@ export async function generateSkyNarrative(
       return full;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      const isMapAsync = /mapAsync|unmapped|mapping/i.test(msg);
-      if (isMapAsync && attempt < maxRetries) {
-        // GPUBuffer race — wait briefly then retry
+      const isRetryable =
+        /mapAsync|unmapped|mapping/i.test(msg) ||
+        /model not loaded|reload\(model\)/i.test(msg);
+      if (isRetryable && attempt < maxRetries) {
+        // Model state lost or GPUBuffer race — reload model then retry
+        if (/model not loaded|reload\(model\)/i.test(msg) && engine) {
+          try { await engine.reload(MODEL_ID); } catch { /* best effort */ }
+        }
         await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
         continue;
       }
