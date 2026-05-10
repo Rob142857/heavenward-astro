@@ -125,7 +125,7 @@ export async function loadLLM(
 
 // ── Generate sky narrative ────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a friendly expert astronomer and stargazing guide embedded in a mobile astronomy app called Heavenward. You help users explore the night sky from their location.
+const SYSTEM_PROMPT_FULL = `You are a friendly expert astronomer and stargazing guide embedded in a mobile astronomy app called Heavenward. You help users explore the night sky from their location.
 
 Rules:
 - Be concise but rich in detail. 2-3 short paragraphs max.
@@ -138,9 +138,17 @@ Rules:
 - When mentioning a notable astronomical object, catalog, or phenomenon for the first time, link it to Wikipedia the same way.
 - Do NOT use markdown headers or bullet lists — use flowing prose with HTML links where appropriate.`;
 
+// Shorter prompt for small models — avoids eating context budget
+const SYSTEM_PROMPT_COMPACT = `You are a friendly astronomer in the Heavenward stargazing app. Write 2-3 short paragraphs about the target. Include observing tips (compass direction, altitude), note if objects need binoculars or a telescope, and mention one interesting fact. Use plain text, no markdown.`;
+
+function getSystemPrompt(): string {
+  return isMobile() ? SYSTEM_PROMPT_COMPACT : SYSTEM_PROMPT_FULL;
+}
+
 export function buildPrompt(ctx: SkyContext): string {
+  const limit = isMobile() ? 5 : 8;
   const nearby = ctx.nearby
-    .slice(0, 8)
+    .slice(0, limit)
     .map(
       (n) =>
         `- ${n.name} (${n.type}, mag ${n.magnitude?.toFixed(1) ?? "?"}, ${n.separation.toFixed(1)}° away, ${n.direction}, alt ${n.altitude.toFixed(0)}°)`,
@@ -167,15 +175,16 @@ export async function generateSkyNarrative(
   if (!engine) throw new Error("LLM not loaded");
 
   const messages: ChatMessage[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: getSystemPrompt() },
     { role: "user", content: buildPrompt(ctx) },
   ];
 
   let full = "";
+  const maxTokens = isMobile() ? 300 : 512;
 
   const stream = await engine.chat.completions.create({
     messages,
-    max_tokens: 512,
+    max_tokens: maxTokens,
     temperature: 0.7,
     stream: true,
   });

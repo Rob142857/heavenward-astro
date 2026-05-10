@@ -749,8 +749,16 @@ function appendLLMSection(
       narrative.textContent = "Generating...";
       generateSkyNarrative(skyCtx, (text) => {
         if (!abort.signal.aborted) narrative.innerHTML = sanitizeLLMHtml(text);
-      }, abort.signal).catch(() => {
-        if (!abort.signal.aborted) narrative.textContent = "Could not generate description.";
+      }, abort.signal).then((result) => {
+        if (!abort.signal.aborted && !result) {
+          narrative.textContent = "Model returned an empty response. Try again.";
+        }
+      }).catch((err: unknown) => {
+        if (!abort.signal.aborted) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error("[LLM generate]", err);
+          narrative.textContent = `Could not generate description: ${msg}`;
+        }
       });
     };
 
