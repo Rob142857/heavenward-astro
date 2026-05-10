@@ -37,8 +37,23 @@ let engine: LLMEngine | null = null;
 let loading = false;
 let loadError: string | null = null;
 
-// f32 variant — works on all WebGPU devices (no f16 shader extension needed)
-const MODEL_ID = "Phi-3.5-mini-instruct-q4f32_1-MLC";
+// Desktop: Phi-3.5-mini (~5.5 GB VRAM) — rich, detailed narratives
+// Mobile:  Llama-3.2-1B (~1.1 GB VRAM) — fits in mobile GPU memory
+function isMobile(): boolean {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+}
+
+function getModelId(): string {
+  return isMobile()
+    ? "Llama-3.2-1B-Instruct-q4f32_1-MLC"
+    : "Phi-3.5-mini-instruct-q4f32_1-MLC";
+}
+
+/** Approximate download size for UI display */
+export function getModelSizeMB(): number {
+  return isMobile() ? 1100 : 4000;
+}
 
 // ── Capability check ──────────────────────────────────────────────
 
@@ -87,7 +102,7 @@ export async function loadLLM(
       /* @vite-ignore */ "https://esm.run/@mlc-ai/web-llm"
     ) as { CreateMLCEngine: CreateMLCEngine };
 
-    engine = await webllm.CreateMLCEngine(MODEL_ID, {
+    engine = await webllm.CreateMLCEngine(getModelId(), {
       initProgressCallback: (p: { text: string; progress: number }) => {
         onProgress?.(p.text, p.progress);
       },
@@ -97,8 +112,13 @@ export async function loadLLM(
     return true;
   } catch (err: unknown) {
     loading = false;
-    loadError =
-      err instanceof Error ? err.message : "Failed to load AI model";
+    const msg = err instanceof Error ? err.message : String(err);
+    // Detect OOM / device lost — common on mobile
+    if (/lost|destroyed|oom|out of memory|allocation/i.test(msg)) {
+      loadError = "Not enough GPU memory — try closing other tabs or apps";
+    } else {
+      loadError = msg || "Failed to load AI model";
+    }
     return false;
   }
 }

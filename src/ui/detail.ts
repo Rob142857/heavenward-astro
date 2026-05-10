@@ -19,8 +19,10 @@ import { buildSkyContext } from "../engine/nearby.js";
 import type { SkyContext, NearbyObject } from "../engine/nearby.js";
 import {
   getLLMStatus,
+  getLLMError,
   loadLLM,
   generateSkyNarrative,
+  getModelSizeMB,
 } from "../services/llm.js";
 import { navigate } from "./router.js";
 
@@ -714,9 +716,11 @@ function appendLLMSection(
   section.className = "detail-section llm-section";
 
   const status = getLLMStatus();
+  const sizeMB = getModelSizeMB();
+  const sizeLabel = sizeMB >= 1000 ? `~${(sizeMB / 1000).toFixed(1)} GB model` : `~${sizeMB} MB model`;
   const btnLabel = status === "ready"
     ? "Load AI Commentary on This Location"
-    : "Load AI Commentary on This Location (~4 GB model)";
+    : `Load AI Commentary on This Location (${sizeLabel})`;
 
   section.innerHTML = `
     <h3 class="detail-section-title">AI Sky Guide</h3>
@@ -771,7 +775,7 @@ function appendLLMSection(
         progress.style.display = "none";
         if (!ok) {
           narrative.style.display = "block";
-          narrative.textContent = "Could not load AI model. WebGPU may not be supported.";
+          narrative.textContent = getLLMError() ?? "Could not load AI model. WebGPU may not be supported.";
           return;
         }
         buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
