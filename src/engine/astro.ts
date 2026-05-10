@@ -21,6 +21,14 @@ function makeObserver(loc: GeoLocation): Astronomy.Observer {
 
 // ── Twilight ───────────────────────────────────────────────────────
 
+/** Current Sun altitude in degrees (positive = above horizon) */
+export function getSunAltitude(loc: GeoLocation, date: Date): number {
+  const obs = makeObserver(loc);
+  const eq = Astronomy.Equator(Astronomy.Body.Sun, date, obs, true, true);
+  const hor = Astronomy.Horizon(date, obs, eq.ra, eq.dec, "normal");
+  return hor.altitude;
+}
+
 export function getTwilightTimes(loc: GeoLocation, date: Date): TwilightTimes {
   const obs = makeObserver(loc);
 

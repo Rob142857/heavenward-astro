@@ -5,6 +5,7 @@ import {
   getMoonEvent,
   getAltAzForRaDec,
   getRiseSetForRaDec,
+  getSunAltitude,
 } from "../engine/astro.js";
 import { loadDSOCatalog } from "../catalog/dso.js";
 import { loadStarCatalog } from "../catalog/stars.js";
@@ -30,6 +31,9 @@ const EQUIPMENT_LABELS: { key: Equipment; label: string; icon: string }[] = [
 ];
 
 const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
+
+/** Daytime peek: user chose to see objects despite sunlight (resets on reload) */
+let daylightOverride = false;
 
 /* ── Category filters ────────────────────────────────── */
 const CATEGORIES: { key: string; label: string; icon: string }[] = [
@@ -118,19 +122,53 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
       renderTonight(container, ctx);
     });
 
+    // ── Daytime gate ───────────────────────────────────────────────
+    const sunAlt = getSunAltitude(ctx.location, now);
+    const isDaytime = sunAlt > 0;
+
     const limit = ctx.prefs.displayLimit ?? 50;
+    let visibleRendered = 0;
 
-    const section = document.createElement("h3");
-    section.className = "section-title";
-    section.textContent = `Visible Now (${visible.length})`;
-    container.appendChild(section);
+    if (isDaytime && !daylightOverride) {
+      // Sun is up — show friendly message instead of "Visible Now" cards
+      const banner = document.createElement("div");
+      banner.className = "daylight-banner";
+      banner.innerHTML = `
+        <div class="daylight-icon">☀️</div>
+        <p class="daylight-msg">
+          The Sun is ${sunAlt.toFixed(0)}° above the horizon right now.
+          Unless you have a radio telescope, atmospheric light is making
+          the sky's treasures invisible!
+        </p>
+        <p class="daylight-sub">
+          ${visible.length} object${visible.length !== 1 ? "s" : ""} above the horizon,
+          hidden behind the Sun's rays.
+        </p>
+        <button class="daylight-peek">Peek behind the sunlight</button>
+      `;
+      banner.querySelector(".daylight-peek")!.addEventListener("click", () => {
+        daylightOverride = true;
+        renderTonight(container, ctx);
+      });
+      container.appendChild(banner);
+    } else {
+      const sectionLabel = isDaytime
+        ? `Above Horizon (${visible.length}) — daytime peek`
+        : `Visible Now (${visible.length})`;
 
-    const visibleSlice = limit > 0 ? visible.slice(0, limit) : visible;
-    renderEventCards(container, visibleSlice, 0);
+      const section = document.createElement("h3");
+      section.className = "section-title";
+      section.textContent = sectionLabel;
+      container.appendChild(section);
 
-    const remaining = limit > 0 ? visible.length - limit : 0;
-    if (remaining > 0) {
-      renderShowMore(container, visible, visibleSlice.length, 0);
+      const visibleSlice = limit > 0 ? visible.slice(0, limit) : visible;
+      visibleRendered = visibleSlice.length;
+      renderEventCards(container, visibleSlice, 0);
+
+      const remaining = limit > 0 ? visible.length - limit : 0;
+      if (remaining > 0) {
+        renderShowMore(container, visible, visibleSlice.length, 0);
+      }
     }
 
     if (below.length) {
@@ -142,12 +180,12 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
       const belowLimit = limit > 0 ? Math.max(0, limit - visible.length) : below.length;
       const belowSlice = belowLimit > 0 ? below.slice(0, belowLimit) : [];
       if (belowSlice.length > 0) {
-        renderEventCards(container, belowSlice, visibleSlice.length);
+        renderEventCards(container, belowSlice, visibleRendered);
       }
 
       const belowRemaining = below.length - belowSlice.length;
       if (belowRemaining > 0) {
-        renderShowMore(container, below, belowSlice.length, visibleSlice.length);
+        renderShowMore(container, below, belowSlice.length, visibleRendered);
       }
     }
   });
