@@ -17,6 +17,7 @@ interface LLMEngine {
   chat: {
     completions: {
       create: (opts: {
+        model?: string;
         messages: ChatMessage[];
         max_tokens?: number;
         temperature?: number;
@@ -42,6 +43,7 @@ interface WebLLMModule {
 let engine: LLMEngine | null = null;
 let loading = false;
 let loadError: string | null = null;
+let loadedModelId: string | null = null;
 
 // Desktop: Phi-3.5-mini (~5.5 GB VRAM) - rich output
 // iOS/tablet: Llama-3.2-1B (~1.1 GB VRAM) - mobile quality/size balance
@@ -167,13 +169,17 @@ export async function loadLLM(
     eng.setInitProgressCallback((p: { text: string; progress: number }) => {
       onProgress?.(p.text, p.progress);
     });
-    await eng.reload(getModelId());
+    const modelId = getModelId();
+    await eng.reload(modelId);
     engine = eng;
+    loadedModelId = modelId;
 
     loading = false;
     return true;
   } catch (err: unknown) {
     loading = false;
+    engine = null;
+    loadedModelId = null;
     const msg = err instanceof Error ? err.message : String(err);
     // Detect OOM / device lost — common on mobile
     if (/lost|destroyed|oom|out of memory|allocation/i.test(msg)) {
@@ -237,6 +243,8 @@ export async function generateSkyNarrative(
   signal?: AbortSignal,
 ): Promise<string> {
   if (!engine) throw new Error("LLM not loaded");
+  if (!loadedModelId) throw new Error("LLM model ID not loaded");
+  const activeModelId = loadedModelId;
 
   const messages: ChatMessage[] = [
     { role: "system", content: getSystemPrompt() },
@@ -250,6 +258,7 @@ export async function generateSkyNarrative(
     try {
       let full = "";
       const stream = await engine.chat.completions.create({
+        model: activeModelId,
         messages,
         max_tokens: maxTokens,
         temperature: 0.7,
@@ -273,7 +282,12 @@ export async function generateSkyNarrative(
       if (isRetryable && attempt < maxRetries) {
         // Model state lost or GPUBuffer race — reload model then retry
         if (/model not loaded|reload\(model\)/i.test(msg) && engine) {
-          try { await engine.reload(getModelId()); } catch { /* best effort */ }
+          try {
+            loadedModelId = getModelId();
+            await engine.reload(loadedModelId);
+          } catch {
+            loadedModelId = null;
+          }
         }
         await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
         continue;
