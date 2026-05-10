@@ -116,6 +116,34 @@ body {
   gap: 10px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.install-app-btn {
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--gold-dark);
+  border-radius: 10px;
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--gold-light);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.install-app-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+}
+
+.install-app-btn:active {
+  transform: scale(0.96);
+}
+
 /* ── Seba Logo ───────────────────────────────────────── */
 .seba-logo {
   flex-shrink: 0;

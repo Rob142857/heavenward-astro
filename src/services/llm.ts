@@ -5,63 +5,18 @@
  */
 
 import type { SkyContext } from "../engine/nearby.js";
+import type {
+  ChatCompletion,
+  ChatCompletionChunk,
+  ChatCompletionMessageParam,
+  ChatOptions,
+  InitProgressReport,
+  MLCEngineConfig,
+  MLCEngineInterface,
+} from "@mlc-ai/web-llm";
 
-interface ChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
-
-interface StreamChunk {
-  choices: Array<{ delta?: { content?: string } }>;
-}
-
-interface ChatCompletionResponse {
-  choices: Array<{ message?: { content?: string | null }; text?: string | null }>;
-}
-
-interface ChatCompletionRequest {
-  model?: string;
-  messages: ChatMessage[];
-  max_tokens?: number;
-  temperature?: number;
-  stream?: boolean;
-}
-
-interface LLMEngine {
-  chat: {
-    completions: {
-      create: (opts: ChatCompletionRequest) => Promise<AsyncIterable<StreamChunk> | ChatCompletionResponse>;
-    };
-  };
-  reload: (model: string, chatOpts?: ChatOptions) => Promise<void>;
-  unload: () => Promise<void>;
-  getMaxStorageBufferBindingSize?: () => Promise<number>;
-  getGPUVendor?: () => Promise<string>;
-}
-
-interface ChatOptions {
-  context_window_size?: number;
-  max_history_size?: number;
-}
-
-interface WebLLMModule {
-  CreateMLCEngine: (
-    model: string,
-    engineConfig?: EngineConfig,
-    chatOpts?: ChatOptions,
-  ) => Promise<LLMEngine>;
-  CreateWebWorkerMLCEngine?: (
-    worker: Worker,
-    model: string,
-    engineConfig?: EngineConfig,
-    chatOpts?: ChatOptions,
-  ) => Promise<LLMEngine>;
-}
-
-interface EngineConfig {
-  initProgressCallback?: (p: { text: string; progress: number }) => void;
-  logLevel?: "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR" | "SILENT";
-}
+type WebLLMModule = typeof import("@mlc-ai/web-llm");
+type LLMEngine = MLCEngineInterface;
 
 interface ModelProfile {
   id: string;
@@ -284,10 +239,7 @@ export function getLLMError(): string | null {
 
 async function importWebLLM(): Promise<WebLLMModule> {
   if (webllmModule) return webllmModule;
-  webllmModule = await import(
-    // @ts-ignore - remote CDN module, typed manually
-    /* @vite-ignore */ "https://esm.run/@mlc-ai/web-llm"
-  ) as WebLLMModule;
+  webllmModule = await import("@mlc-ai/web-llm");
   return webllmModule;
 }
 
@@ -308,7 +260,10 @@ async function unloadEngine(): Promise<void> {
 }
 
 function createLLMWorker(): Worker {
-  const worker = new Worker("/webllm-worker.js", { type: "module", name: "heavenward-webllm" });
+  const worker = new Worker(new URL("./webllm-worker.ts", import.meta.url), {
+    type: "module",
+    name: "heavenward-webllm",
+  });
   worker.addEventListener("error", (event) => {
     lastDiagnostics = { ...lastDiagnostics, lastError: event.message || "WebLLM worker error" };
   });
@@ -321,12 +276,17 @@ function createLLMWorker(): Worker {
 async function createEngine(
   webllm: WebLLMModule,
   model: ModelProfile,
-  engineConfig: EngineConfig,
+  engineConfig: MLCEngineConfig,
 ): Promise<LLMEngine> {
-  if (webllm.CreateWebWorkerMLCEngine) {
-    llmWorker = createLLMWorker();
-    return webllm.CreateWebWorkerMLCEngine(llmWorker, model.id, engineConfig, model.chatOpts);
-  }
+  llmWorker = createLLMWorker();
+  return webllm.CreateWebWorkerMLCEngine(llmWorker, model.id, engineConfig, model.chatOpts);
+}
+
+async function createDirectEngine(
+  webllm: WebLLMModule,
+  model: ModelProfile,
+  engineConfig: MLCEngineConfig,
+): Promise<LLMEngine> {
   return webllm.CreateMLCEngine(model.id, engineConfig, model.chatOpts);
 }
 
@@ -338,14 +298,22 @@ async function loadModel(
   await unloadEngine();
 
   onProgress?.(`Loading ${model.label}...`, 0);
-  const engineConfig: EngineConfig = {
+  const engineConfig: MLCEngineConfig = {
     logLevel: isMobile() ? "DEBUG" : "INFO",
-    initProgressCallback: (p: { text: string; progress: number }) => {
+    initProgressCallback: (p: InitProgressReport) => {
       onProgress?.(p.text, p.progress);
     },
   };
 
-  engine = await createEngine(webllm, model, engineConfig);
+  try {
+    engine = await createEngine(webllm, model, engineConfig);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    lastDiagnostics = { ...lastDiagnostics, activeModelId: model.id, lastError: msg };
+    if (!/worker|module|import/i.test(msg)) throw err;
+    onProgress?.(`Worker load failed for ${model.label}. Trying direct WebGPU load...`, 0);
+    engine = await createDirectEngine(webllm, model, engineConfig);
+  }
   activeModel = model;
   lastDiagnostics = { ...lastDiagnostics, activeModelId: model.id, lastError: null };
 
@@ -451,13 +419,13 @@ Photography tips available: ${photoTips}
 Generate a rich, concise sky guide for this region of sky. Describe where to look, what is interesting nearby, photography opportunities, and any fascinating facts. Reference the nearby objects naturally.`;
 }
 
-function isAsyncIterable(value: unknown): value is AsyncIterable<StreamChunk> {
+function isAsyncIterable(value: unknown): value is AsyncIterable<ChatCompletionChunk> {
   return typeof value === "object" && value !== null && Symbol.asyncIterator in value;
 }
 
-function getResponseText(value: ChatCompletionResponse): string {
+function getResponseText(value: ChatCompletion): string {
   const first = value.choices[0];
-  return first?.message?.content ?? first?.text ?? "";
+  return first?.message?.content ?? "";
 }
 
 function isResourceError(msg: string): boolean {
@@ -488,19 +456,21 @@ async function fallBackToSmallerModel(onChunk: (text: string) => void): Promise<
 }
 
 async function completeOnce(
-  messages: ChatMessage[],
+  messages: ChatCompletionMessageParam[],
   onChunk: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
   if (!engine || !activeModel) throw new Error("LLM not loaded");
 
-  const result = await engine.chat.completions.create({
+  const request = {
     model: activeModel.id,
     messages,
     max_tokens: activeModel.maxTokens,
     temperature: 0.7,
-    stream: activeModel.stream,
-  });
+  };
+  const result = activeModel.stream
+    ? await engine.chat.completions.create({ ...request, stream: true })
+    : await engine.chat.completions.create({ ...request, stream: false });
 
   if (!activeModel.stream) {
     const text = isAsyncIterable(result) ? "" : getResponseText(result);
@@ -533,7 +503,7 @@ export async function generateSkyNarrative(
 ): Promise<string> {
   if (!engine || !activeModel) throw new Error("LLM not loaded");
 
-  const messages: ChatMessage[] = [
+  const messages: ChatCompletionMessageParam[] = [
     { role: "system", content: getSystemPrompt() },
     { role: "user", content: buildPrompt(ctx) },
   ];

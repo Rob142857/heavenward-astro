@@ -135,12 +135,12 @@ export function renderAbout(container: HTMLElement, ctx: AppContext): void {
         <div class="about-feature">
           <div class="about-feature-icon">🤖</div>
           <div>
-            <strong><a href="https://github.com/mlc-ai/web-llm" target="_blank" rel="noopener" class="wiki-link">WebLLM</a> + <a href="https://huggingface.co/microsoft/Phi-3.5-mini-instruct" target="_blank" rel="noopener" class="wiki-link">Phi-3.5 Mini</a></strong>
+            <strong><a href="https://github.com/mlc-ai/web-llm" target="_blank" rel="noopener" class="wiki-link">WebLLM</a> local sky guide</strong>
             <p>
               Optional on-device AI commentary powered by
               <a href="https://mlc.ai/" target="_blank" rel="noopener" class="wiki-link">MLC AI</a>'s WebLLM runtime
-              and Microsoft's Phi-3.5 Mini model. Runs entirely in your browser via WebGPU —
-              no data leaves your device. Thank you to the MLC and Microsoft Research teams
+              with desktop and mobile model profiles. Runs entirely in your browser via WebGPU —
+              no data leaves your device. Thank you to the MLC and open model teams
               for making local LLM inference accessible to everyone.
             </p>
           </div>

@@ -1,5 +1,6 @@
 import type { GeoLocation, AppContext } from "../types.js";
 import { navigate } from "./router.js";
+import { bindInstallButton } from "../services/pwa.js";
 
 /* ── Seba hieroglyph SVG (animated gold shimmer) ──── */
 const SEBA_SVG = `<svg class="seba-logo" viewBox="0 0 100 100" width="38" height="38" aria-hidden="true">
@@ -68,8 +69,22 @@ export function renderHeader(container: HTMLElement, ctx: AppContext): void {
   loc.textContent = formatLocation(ctx.location);
   loc.addEventListener("click", () => navigate("#/location"));
 
+  const install = document.createElement("button");
+  install.type = "button";
+  install.className = "install-app-btn";
+  install.textContent = "Install";
+  install.title = "Install Heavenward";
+  install.setAttribute("aria-label", "Install Heavenward");
+  install.hidden = true;
+  bindInstallButton(install);
+
+  const actions = document.createElement("div");
+  actions.className = "header-actions";
+  actions.appendChild(install);
+  actions.appendChild(loc);
+
   header.appendChild(logoContainer);
-  header.appendChild(loc);
+  header.appendChild(actions);
   container.insertBefore(header, container.firstChild);
 }
 

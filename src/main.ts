@@ -9,20 +9,12 @@ import { renderSources } from "./ui/sources.js";
 import { renderLocation } from "./ui/location.js";
 import { renderAccount, tryLoadUser } from "./ui/account.js";
 import { renderAbout } from "./ui/about.js";
-import { initAnalytics, trackEvent } from "./services/analytics.js";
-import { registerSW } from "virtual:pwa-register";
+import { initAnalytics } from "./services/analytics.js";
+import { initPWA } from "./services/pwa.js";
 
 const DEFAULT_LOCATION = { lat: 51.48, lon: -0.01, elev: 0 }; // Greenwich
 
-// Auto-reload when a new service worker activates
-const updateSW = registerSW({
-  onNeedRefresh() {
-    updateSW(true);
-  },
-  onOfflineReady() {
-    // silently ready for offline
-  },
-});
+initPWA();
 
 async function boot(): Promise<void> {
   const app = document.getElementById("app");

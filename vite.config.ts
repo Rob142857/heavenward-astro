@@ -44,7 +44,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,json}'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB — catalog JSONs are large
+        maximumFileSizeToCacheInBytes: 7 * 1024 * 1024, // WebLLM worker/runtime chunks are large
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
