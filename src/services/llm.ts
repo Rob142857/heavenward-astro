@@ -35,6 +35,8 @@ interface LLMEngine {
   };
   reload: (model: string, chatOpts?: ChatOptions) => Promise<void>;
   unload: () => Promise<void>;
+  getMaxStorageBufferBindingSize?: () => Promise<number>;
+  getGPUVendor?: () => Promise<string>;
 }
 
 interface ChatOptions {
@@ -45,9 +47,20 @@ interface ChatOptions {
 interface WebLLMModule {
   CreateMLCEngine: (
     model: string,
-    engineConfig?: { initProgressCallback?: (p: { text: string; progress: number }) => void },
+    engineConfig?: EngineConfig,
     chatOpts?: ChatOptions,
   ) => Promise<LLMEngine>;
+  CreateWebWorkerMLCEngine?: (
+    worker: Worker,
+    model: string,
+    engineConfig?: EngineConfig,
+    chatOpts?: ChatOptions,
+  ) => Promise<LLMEngine>;
+}
+
+interface EngineConfig {
+  initProgressCallback?: (p: { text: string; progress: number }) => void;
+  logLevel?: "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR" | "SILENT";
 }
 
 interface ModelProfile {
@@ -60,6 +73,15 @@ interface ModelProfile {
   stream: boolean;
 }
 
+interface LLMDiagnostics {
+  userAgent: string;
+  deviceMemoryGB: number | null;
+  maxStorageBufferBindingSize: number | null;
+  gpuVendor: string | null;
+  activeModelId: string | null;
+  lastError: string | null;
+}
+
 const DESKTOP_MODEL: ModelProfile = {
   id: "Phi-3.5-mini-instruct-q4f32_1-MLC",
   label: "Phi-3.5 Mini",
@@ -70,6 +92,15 @@ const DESKTOP_MODEL: ModelProfile = {
 };
 
 const ANDROID_HIGH_MODELS: ModelProfile[] = [
+  {
+    id: "RedPajama-INCITE-Chat-3B-v1-q4f32_1-MLC-1k",
+    label: "RedPajama 3B 1k",
+    sizeMB: 2600,
+    minDeviceMemoryGB: 6,
+    chatOpts: { context_window_size: 1024, max_history_size: 1 },
+    maxTokens: 220,
+    stream: false,
+  },
   {
     id: "Qwen2.5-1.5B-Instruct-q4f32_1-MLC",
     label: "Qwen2.5 1.5B",
@@ -124,11 +155,20 @@ const OTHER_MOBILE_MODELS: ModelProfile[] = [
 ];
 
 let engine: LLMEngine | null = null;
+let llmWorker: Worker | null = null;
 let webllmModule: WebLLMModule | null = null;
 let loading = false;
 let loadError: string | null = null;
 let activeModel: ModelProfile | null = null;
 let activeModelIndex = 0;
+let lastDiagnostics: LLMDiagnostics = {
+  userAgent: navigator.userAgent,
+  deviceMemoryGB: getDeviceMemoryGB(),
+  maxStorageBufferBindingSize: null,
+  gpuVendor: null,
+  activeModelId: null,
+  lastError: null,
+};
 
 function isAndroid(): boolean {
   return /Android/i.test(navigator.userAgent);
@@ -160,6 +200,10 @@ export function getModelSizeMB(): number {
 
 export function getModelLabel(): string {
   return (activeModel ?? getInitialModel()).label;
+}
+
+export function getLLMDiagnostics(): LLMDiagnostics {
+  return { ...lastDiagnostics, activeModelId: activeModel?.id ?? lastDiagnostics.activeModelId };
 }
 
 export function isWebGPUAvailable(): boolean {
@@ -195,6 +239,12 @@ export async function checkGPUCapability(): Promise<{ ok: boolean; reason?: stri
     }
 
     const maxBuffer = adapter.limits?.maxStorageBufferBindingSize ?? 0;
+    lastDiagnostics = {
+      ...lastDiagnostics,
+      deviceMemoryGB: deviceMemGB,
+      maxStorageBufferBindingSize: maxBuffer || null,
+      gpuVendor: getAdapterLabel(adapter),
+    };
     const minRequired = isMobile() ? 128 * 1024 * 1024 : 256 * 1024 * 1024;
     if (maxBuffer > 0 && maxBuffer < minRequired) {
       capabilityResult = {
@@ -210,6 +260,14 @@ export async function checkGPUCapability(): Promise<{ ok: boolean; reason?: stri
   }
 
   return capabilityResult;
+}
+
+function getAdapterLabel(adapter: GPUAdapter): string | null {
+  const info = (adapter as unknown as { info?: Record<string, unknown> }).info;
+  if (!info) return null;
+  const labelParts = [info.vendor, info.architecture, info.device, info.description]
+    .filter((part): part is string => typeof part === "string" && part.length > 0);
+  return labelParts.length ? labelParts.join(" / ") : null;
 }
 
 export function getLLMStatus(): "unavailable" | "not-loaded" | "loading" | "ready" | "error" {
@@ -234,14 +292,42 @@ async function importWebLLM(): Promise<WebLLMModule> {
 }
 
 async function unloadEngine(): Promise<void> {
-  if (!engine) return;
-  try {
-    await engine.unload();
-  } catch {
-    // Best-effort cleanup before trying a smaller model.
+  if (engine) {
+    try {
+      await engine.unload();
+    } catch {
+      // Best-effort cleanup before trying a smaller model.
+    }
   }
   engine = null;
   activeModel = null;
+  if (llmWorker) {
+    llmWorker.terminate();
+    llmWorker = null;
+  }
+}
+
+function createLLMWorker(): Worker {
+  const worker = new Worker("/webllm-worker.js", { type: "module", name: "heavenward-webllm" });
+  worker.addEventListener("error", (event) => {
+    lastDiagnostics = { ...lastDiagnostics, lastError: event.message || "WebLLM worker error" };
+  });
+  worker.addEventListener("messageerror", () => {
+    lastDiagnostics = { ...lastDiagnostics, lastError: "WebLLM worker message error" };
+  });
+  return worker;
+}
+
+async function createEngine(
+  webllm: WebLLMModule,
+  model: ModelProfile,
+  engineConfig: EngineConfig,
+): Promise<LLMEngine> {
+  if (webllm.CreateWebWorkerMLCEngine) {
+    llmWorker = createLLMWorker();
+    return webllm.CreateWebWorkerMLCEngine(llmWorker, model.id, engineConfig, model.chatOpts);
+  }
+  return webllm.CreateMLCEngine(model.id, engineConfig, model.chatOpts);
 }
 
 async function loadModel(
@@ -252,16 +338,28 @@ async function loadModel(
   await unloadEngine();
 
   onProgress?.(`Loading ${model.label}...`, 0);
-  engine = await webllm.CreateMLCEngine(
-    model.id,
-    {
-      initProgressCallback: (p: { text: string; progress: number }) => {
-        onProgress?.(p.text, p.progress);
-      },
+  const engineConfig: EngineConfig = {
+    logLevel: isMobile() ? "DEBUG" : "INFO",
+    initProgressCallback: (p: { text: string; progress: number }) => {
+      onProgress?.(p.text, p.progress);
     },
-    model.chatOpts,
-  );
+  };
+
+  engine = await createEngine(webllm, model, engineConfig);
   activeModel = model;
+  lastDiagnostics = { ...lastDiagnostics, activeModelId: model.id, lastError: null };
+
+  if (engine.getMaxStorageBufferBindingSize || engine.getGPUVendor) {
+    const [maxBuffer, gpuVendor] = await Promise.all([
+      engine.getMaxStorageBufferBindingSize?.().catch(() => null) ?? Promise.resolve(null),
+      engine.getGPUVendor?.().catch(() => null) ?? Promise.resolve(null),
+    ]);
+    lastDiagnostics = {
+      ...lastDiagnostics,
+      maxStorageBufferBindingSize: maxBuffer,
+      gpuVendor: gpuVendor || lastDiagnostics.gpuVendor,
+    };
+  }
 }
 
 export async function loadLLM(
@@ -290,6 +388,7 @@ export async function loadLLM(
       } catch (err: unknown) {
         await unloadEngine();
         const msg = err instanceof Error ? err.message : String(err);
+        lastDiagnostics = { ...lastDiagnostics, activeModelId: candidate.id, lastError: msg };
         if (index === candidates.length - 1) throw err;
         onProgress?.(`${candidate.label} did not fit this GPU. Trying a smaller model...`, 0);
         if (!isResourceError(msg)) throw err;
@@ -298,6 +397,7 @@ export async function loadLLM(
   } catch (err: unknown) {
     loading = false;
     const msg = err instanceof Error ? err.message : String(err);
+    lastDiagnostics = { ...lastDiagnostics, lastError: msg };
     loadError = friendlyLoadError(msg);
     return false;
   }
@@ -443,6 +543,7 @@ export async function generateSkyNarrative(
       return await completeOnce(messages, onChunk, signal);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
+      lastDiagnostics = { ...lastDiagnostics, lastError: msg };
       if ((isResourceError(msg) || isModelStateError(msg)) && await fallBackToSmallerModel(onChunk)) {
         continue;
       }

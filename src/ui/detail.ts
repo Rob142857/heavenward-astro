@@ -24,6 +24,7 @@ import {
   generateSkyNarrative,
   getModelSizeMB,
   getModelLabel,
+  getLLMDiagnostics,
   checkGPUCapability,
 } from "../services/llm.js";
 import { navigate } from "./router.js";
@@ -704,6 +705,18 @@ function sanitizeLLMHtml(raw: string): string {
   );
 }
 
+function formatLLMDiagnostics(): string {
+  const diagnostics = getLLMDiagnostics();
+  const parts: string[] = [];
+  if (diagnostics.activeModelId) parts.push(`model ${diagnostics.activeModelId}`);
+  if (diagnostics.maxStorageBufferBindingSize !== null) {
+    parts.push(`GPU buffer ${Math.round(diagnostics.maxStorageBufferBindingSize / 1_048_576)} MB`);
+  }
+  if (diagnostics.deviceMemoryGB !== null) parts.push(`RAM ${diagnostics.deviceMemoryGB} GB`);
+  if (diagnostics.gpuVendor) parts.push(`GPU ${diagnostics.gpuVendor}`);
+  return parts.length ? ` (${parts.join("; ")})` : "";
+}
+
 // ── LLM section (top of detail, always button-activated) ──────────
 
 function appendLLMSection(
@@ -773,7 +786,7 @@ function appendLLMSection(
         if (!abort.signal.aborted) {
           const msg = err instanceof Error ? err.message : String(err);
           console.error("[LLM generate]", err);
-          narrative.textContent = `Could not generate description: ${msg}`;
+          narrative.textContent = `Could not generate description: ${msg}${formatLLMDiagnostics()}`;
         }
       });
     };
@@ -799,7 +812,7 @@ function appendLLMSection(
         progress.style.display = "none";
         if (!ok) {
           narrative.style.display = "block";
-          narrative.textContent = getLLMError() ?? "Could not load AI model. WebGPU may not be supported.";
+          narrative.textContent = `${getLLMError() ?? "Could not load AI model. WebGPU may not be supported."}${formatLLMDiagnostics()}`;
           return;
         }
         buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
