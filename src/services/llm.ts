@@ -43,10 +43,16 @@ let engine: LLMEngine | null = null;
 let loading = false;
 let loadError: string | null = null;
 
-// Desktop: Phi-3.5-mini (~5.5 GB VRAM) — rich output
-// Mobile:  Llama-3.2-1B (~1.1 GB VRAM) — fits mobile GPU buffer limits
+// Desktop: Phi-3.5-mini (~5.5 GB VRAM) - rich output
+// iOS/tablet: Llama-3.2-1B (~1.1 GB VRAM) - mobile quality/size balance
+// Android Chrome: SmolLM2-360M (~580 MB VRAM) - avoids GPUBuffer mapAsync failures
 const MODEL_DESKTOP = "Phi-3.5-mini-instruct-q4f32_1-MLC";
 const MODEL_MOBILE = "Llama-3.2-1B-Instruct-q4f32_1-MLC";
+const MODEL_ANDROID = "SmolLM2-360M-Instruct-q4f32_1-MLC";
+
+function isAndroid(): boolean {
+  return /Android/i.test(navigator.userAgent);
+}
 
 function isMobile(): boolean {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
@@ -54,11 +60,13 @@ function isMobile(): boolean {
 }
 
 function getModelId(): string {
+  if (isAndroid()) return MODEL_ANDROID;
   return isMobile() ? MODEL_MOBILE : MODEL_DESKTOP;
 }
 
 /** Approximate download size for UI display */
 export function getModelSizeMB(): number {
+  if (isAndroid()) return 580;
   return isMobile() ? 1100 : 4000;
 }
 
@@ -92,10 +100,11 @@ export async function checkGPUCapability(): Promise<{ ok: boolean; reason?: stri
 
     // Device memory check (Chrome exposes navigator.deviceMemory in GB)
     const deviceMemGB = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
-    if (deviceMemGB !== undefined && deviceMemGB < 4) {
+    const minDeviceMemGB = isAndroid() ? 3 : 4;
+    if (deviceMemGB !== undefined && deviceMemGB < minDeviceMemGB) {
       capabilityResult = {
         ok: false,
-        reason: `This device reports ${deviceMemGB} GB RAM — at least 4 GB is needed for the AI model.`,
+        reason: `This device reports ${deviceMemGB} GB RAM - at least ${minDeviceMemGB} GB is needed for the AI model.`,
       };
       return capabilityResult;
     }
@@ -191,9 +200,19 @@ Rules:
 - When mentioning a notable astronomical object, catalog, or phenomenon for the first time, link it to Wikipedia the same way.
 - Do NOT use markdown headers or bullet lists — use flowing prose with HTML links where appropriate.`;
 
+const SYSTEM_PROMPT_COMPACT = `You are a friendly stargazing guide in Heavenward. Write 2 short paragraphs about where to look, what nearby objects are interesting, whether binoculars or a telescope help, and one useful photography tip. Use plain text, no markdown.`;
+
+function getSystemPrompt(): string {
+  return isMobile() ? SYSTEM_PROMPT_COMPACT : SYSTEM_PROMPT;
+}
+
 export function buildPrompt(ctx: SkyContext): string {
+  const nearbyLimit = isMobile() ? 4 : 8;
+  const photoTips = isMobile()
+    ? ctx.photographyTips.slice(0, 2).join(" ")
+    : ctx.photographyTips.join(" ");
   const nearby = ctx.nearby
-    .slice(0, 8)
+    .slice(0, nearbyLimit)
     .map(
       (n) =>
         `- ${n.name} (${n.type}, mag ${n.magnitude?.toFixed(1) ?? "?"}, ${n.separation.toFixed(1)}° away, ${n.direction}, alt ${n.altitude.toFixed(0)}°)`,
@@ -207,7 +226,7 @@ Current position: azimuth ${ctx.target.azimuth.toFixed(0)}° (${ctx.target.compa
 Nearby objects within ~20°:
 ${nearby || "(none found)"}
 
-Photography tips available: ${ctx.photographyTips.join(" ")}
+Photography tips available: ${photoTips}
 
 Generate a rich, concise sky guide for this region of sky. Describe where to look, what's interesting nearby, photography opportunities, and any fascinating facts. Reference the nearby objects naturally.`;
 }
@@ -220,18 +239,19 @@ export async function generateSkyNarrative(
   if (!engine) throw new Error("LLM not loaded");
 
   const messages: ChatMessage[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: getSystemPrompt() },
     { role: "user", content: buildPrompt(ctx) },
   ];
 
-  const maxRetries = 2;
+  const maxRetries = isMobile() ? 1 : 2;
+  const maxTokens = isAndroid() ? 180 : isMobile() ? 260 : 512;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       let full = "";
       const stream = await engine.chat.completions.create({
         messages,
-        max_tokens: 512,
+        max_tokens: maxTokens,
         temperature: 0.7,
         stream: true,
       });
@@ -257,6 +277,9 @@ export async function generateSkyNarrative(
         }
         await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
         continue;
+      }
+      if (/mapAsync|unmapped|mapping/i.test(msg)) {
+        throw new Error("This device's WebGPU runtime could not keep the AI model's GPU buffers mapped. Try closing other apps/tabs, or use a desktop browser for AI commentary.");
       }
       throw err;
     }
