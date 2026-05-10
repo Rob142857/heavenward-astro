@@ -22,6 +22,8 @@ import {
   getLLMError,
   loadLLM,
   generateSkyNarrative,
+  getModelSizeMB,
+  checkGPUCapability,
 } from "../services/llm.js";
 import { navigate } from "./router.js";
 
@@ -714,14 +716,10 @@ function appendLLMSection(
   const section = document.createElement("div");
   section.className = "detail-section llm-section";
 
-  const status = getLLMStatus();
-  const btnLabel = status === "ready"
-    ? "Load AI Commentary on This Location"
-    : "Load AI Commentary on This Location (~4 GB model)";
-
   section.innerHTML = `
     <h3 class="detail-section-title">AI Sky Guide</h3>
-    <button class="btn btn-outline btn-block llm-activate-btn">${btnLabel}</button>
+    <p class="llm-capability-check detail-prose" style="color:#aaa">Checking device compatibility…</p>
+    <button class="btn btn-outline btn-block llm-activate-btn" style="display:none"></button>
     <div class="llm-progress" style="display:none">
       <div class="llm-progress-bar"><div class="llm-progress-fill"></div></div>
       <p class="llm-progress-text detail-prose"></p>
@@ -730,13 +728,32 @@ function appendLLMSection(
   `;
   container.appendChild(section);
 
+  const capMsg = section.querySelector(".llm-capability-check") as HTMLElement;
   const btn = section.querySelector(".llm-activate-btn") as HTMLButtonElement;
   const progress = section.querySelector(".llm-progress") as HTMLElement;
   const fill = section.querySelector(".llm-progress-fill") as HTMLElement;
   const progressText = section.querySelector(".llm-progress-text") as HTMLElement;
   const narrative = section.querySelector(".llm-narrative") as HTMLElement;
 
-  btn.addEventListener("click", () => {
+  // Run GPU check before showing button
+  checkGPUCapability().then((cap) => {
+    capMsg.style.display = "none";
+    if (!cap.ok) {
+      narrative.style.display = "block";
+      narrative.textContent = cap.reason ?? "This device cannot run the AI model.";
+      return;
+    }
+
+    // Device is capable — show the load button
+    const status = getLLMStatus();
+    const sizeMB = getModelSizeMB();
+    const sizeLabel = sizeMB >= 1000 ? `~${(sizeMB / 1000).toFixed(1)} GB` : `~${sizeMB} MB`;
+    btn.textContent = status === "ready"
+      ? "Load AI Commentary on This Location"
+      : `Load AI Commentary on This Location (${sizeLabel} model)`;
+    btn.style.display = "";
+
+    btn.addEventListener("click", () => {
     btn.style.display = "none";
     const abort = freshAbort();
 
@@ -788,6 +805,7 @@ function appendLLMSection(
         });
       });
     }
+    });
   });
 }
 

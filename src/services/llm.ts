@@ -43,19 +43,79 @@ let engine: LLMEngine | null = null;
 let loading = false;
 let loadError: string | null = null;
 
-// Same model everywhere — modern phones should handle it
-const MODEL_ID = "Phi-3.5-mini-instruct-q4f32_1-MLC";
-const MODEL_VRAM_MB = 5500; // approximate VRAM needed
+// Desktop: Phi-3.5-mini (~5.5 GB VRAM) — rich output
+// Mobile:  Llama-3.2-1B (~1.1 GB VRAM) — fits mobile GPU buffer limits
+const MODEL_DESKTOP = "Phi-3.5-mini-instruct-q4f32_1-MLC";
+const MODEL_MOBILE = "Llama-3.2-1B-Instruct-q4f32_1-MLC";
+
+function isMobile(): boolean {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+}
+
+function getModelId(): string {
+  return isMobile() ? MODEL_MOBILE : MODEL_DESKTOP;
+}
 
 /** Approximate download size for UI display */
 export function getModelSizeMB(): number {
-  return 4000;
+  return isMobile() ? 1100 : 4000;
 }
 
 // ── Capability check ──────────────────────────────────────────────
 
 export function isWebGPUAvailable(): boolean {
   return "gpu" in navigator;
+}
+
+let capabilityResult: { ok: boolean; reason?: string } | null = null;
+
+/**
+ * Probe GPU hardware before showing the load button.
+ * Caches result — safe to call multiple times.
+ */
+export async function checkGPUCapability(): Promise<{ ok: boolean; reason?: string }> {
+  if (capabilityResult) return capabilityResult;
+
+  if (!isWebGPUAvailable()) {
+    capabilityResult = { ok: false, reason: "WebGPU is not supported in this browser." };
+    return capabilityResult;
+  }
+
+  try {
+    const gpu = (navigator as unknown as { gpu: { requestAdapter: (opts?: Record<string, unknown>) => Promise<GPUAdapter | null> } }).gpu;
+    const adapter = await gpu.requestAdapter();
+    if (!adapter) {
+      capabilityResult = { ok: false, reason: "No WebGPU adapter found — your GPU may not be supported." };
+      return capabilityResult;
+    }
+
+    // Device memory check (Chrome exposes navigator.deviceMemory in GB)
+    const deviceMemGB = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
+    if (deviceMemGB !== undefined && deviceMemGB < 4) {
+      capabilityResult = {
+        ok: false,
+        reason: `This device reports ${deviceMemGB} GB RAM — at least 4 GB is needed for the AI model.`,
+      };
+      return capabilityResult;
+    }
+
+    // GPU buffer size check — KV cache needs large buffers
+    const maxBuffer = adapter.limits?.maxStorageBufferBindingSize ?? 0;
+    const minRequired = 256 * 1024 * 1024; // 256 MB
+    if (maxBuffer > 0 && maxBuffer < minRequired) {
+      capabilityResult = {
+        ok: false,
+        reason: "This device's GPU doesn't support large enough buffers for the AI model.",
+      };
+      return capabilityResult;
+    }
+
+    capabilityResult = { ok: true };
+  } catch {
+    capabilityResult = { ok: false, reason: "Could not check GPU capability." };
+  }
+  return capabilityResult;
 }
 
 export function getLLMStatus(): "unavailable" | "not-loaded" | "loading" | "ready" | "error" {
@@ -86,30 +146,6 @@ export async function loadLLM(
   loadError = null;
 
   try {
-    // Verify WebGPU adapter is actually obtainable
-    const gpu = (navigator as unknown as { gpu: { requestAdapter: (opts?: Record<string, unknown>) => Promise<GPUAdapter | null> } }).gpu;
-    const adapter = await gpu.requestAdapter();
-    if (!adapter) {
-      throw new Error("No WebGPU adapter available — GPU may not be supported");
-    }
-
-    // Check device memory as a rough capability gate
-    const deviceMemGB = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
-    if (deviceMemGB !== undefined && deviceMemGB < 4) {
-      throw new Error(
-        `This device reports ${deviceMemGB} GB RAM — the AI model needs at least 6 GB. Your device may not be able to run it.`,
-      );
-    }
-
-    // Check max buffer size — must support large GPU buffers for KV cache
-    const maxBuffer = adapter.limits?.maxStorageBufferBindingSize ?? 0;
-    const minRequired = 256 * 1024 * 1024; // 256 MB minimum buffer
-    if (maxBuffer > 0 && maxBuffer < minRequired) {
-      throw new Error(
-        "This device's GPU doesn't support large enough buffers for the AI model. A more powerful device is needed.",
-      );
-    }
-
     // Dynamic ESM import from CDN — Vite passes through, TS declaration below
     const webllm = await import(
       // @ts-ignore — remote CDN module, typed manually
@@ -122,7 +158,7 @@ export async function loadLLM(
     eng.setInitProgressCallback((p: { text: string; progress: number }) => {
       onProgress?.(p.text, p.progress);
     });
-    await eng.reload(MODEL_ID);
+    await eng.reload(getModelId());
     engine = eng;
 
     loading = false;
@@ -217,7 +253,7 @@ export async function generateSkyNarrative(
       if (isRetryable && attempt < maxRetries) {
         // Model state lost or GPUBuffer race — reload model then retry
         if (/model not loaded|reload\(model\)/i.test(msg) && engine) {
-          try { await engine.reload(MODEL_ID); } catch { /* best effort */ }
+          try { await engine.reload(getModelId()); } catch { /* best effort */ }
         }
         await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
         continue;
