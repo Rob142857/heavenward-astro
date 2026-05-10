@@ -23,6 +23,7 @@ import {
   loadLLM,
   generateSkyNarrative,
   getModelSizeMB,
+  getModelLabel,
   checkGPUCapability,
 } from "../services/llm.js";
 import { navigate } from "./router.js";
@@ -748,9 +749,10 @@ function appendLLMSection(
     const status = getLLMStatus();
     const sizeMB = getModelSizeMB();
     const sizeLabel = sizeMB >= 1000 ? `~${(sizeMB / 1000).toFixed(1)} GB` : `~${sizeMB} MB`;
+    const modelLabel = getModelLabel();
     btn.textContent = status === "ready"
       ? "Load AI Commentary on This Location"
-      : `Load AI Commentary on This Location (${sizeLabel} model)`;
+      : `Load AI Commentary on This Location (${modelLabel}, ${sizeLabel})`;
     btn.style.display = "";
 
     btn.addEventListener("click", () => {
