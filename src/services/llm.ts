@@ -29,6 +29,7 @@ interface LLMEngine {
 type CreateMLCEngine = (
   model: string,
   opts: { initProgressCallback: (p: { text: string; progress: number }) => void },
+  chatOpts?: { context_window_size?: number },
 ) => Promise<LLMEngine>;
 
 // ── State ──────────────────────────────────────────────────────────
@@ -102,11 +103,14 @@ export async function loadLLM(
       /* @vite-ignore */ "https://esm.run/@mlc-ai/web-llm"
     ) as { CreateMLCEngine: CreateMLCEngine };
 
+    // On mobile, shrink KV cache to avoid GPUBuffer mapAsync race on Android Chrome
+    const chatOpts = isMobile() ? { context_window_size: 1024 } : undefined;
+
     engine = await webllm.CreateMLCEngine(getModelId(), {
       initProgressCallback: (p: { text: string; progress: number }) => {
         onProgress?.(p.text, p.progress);
       },
-    });
+    }, chatOpts);
 
     loading = false;
     return true;
@@ -179,24 +183,39 @@ export async function generateSkyNarrative(
     { role: "user", content: buildPrompt(ctx) },
   ];
 
-  let full = "";
   const maxTokens = isMobile() ? 300 : 512;
+  const maxRetries = isMobile() ? 2 : 0;
 
-  const stream = await engine.chat.completions.create({
-    messages,
-    max_tokens: maxTokens,
-    temperature: 0.7,
-    stream: true,
-  });
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      let full = "";
+      const stream = await engine.chat.completions.create({
+        messages,
+        max_tokens: maxTokens,
+        temperature: 0.7,
+        stream: true,
+      });
 
-  for await (const chunk of stream) {
-    if (signal?.aborted) break;
-    const delta = chunk.choices[0]?.delta?.content;
-    if (delta) {
-      full += delta;
-      onChunk(full);
+      for await (const chunk of stream) {
+        if (signal?.aborted) break;
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) {
+          full += delta;
+          onChunk(full);
+        }
+      }
+      return full;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isMapAsync = /mapAsync|unmapped|mapping/i.test(msg);
+      if (isMapAsync && attempt < maxRetries) {
+        // GPUBuffer race — wait briefly then retry
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+        continue;
+      }
+      throw err;
     }
   }
-
-  return full;
+  // Unreachable but satisfies TS
+  throw new Error("Generation failed after retries");
 }
