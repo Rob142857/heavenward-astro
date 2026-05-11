@@ -1,6 +1,10 @@
-# ☆ Heavenward
+<p align="center">
+  <img src="public/icons/icon-192.png" alt="Heavenward" width="96" height="96">
+</p>
 
-**Is tonight worth a warm jacket and a cup of tea?**
+<h1 align="center">Heavenward</h1>
+
+<p align="center"><strong>Is tonight worth a warm jacket and a cup of tea?</strong></p>
 
 Heavenward answers the question every stargazer asks at dusk: _what's up there right now that's worth heading outside for?_ It checks your location, works out what's visible tonight, and tells you plainly — planets, the Moon, galaxies, nebulae, meteor showers, eclipses, conjunctions — all computed live in your browser with sub-arcsecond precision. No star-chart puzzles. No date pickers. Just open it and see.
 
