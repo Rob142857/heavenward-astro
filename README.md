@@ -7,7 +7,7 @@
 <p align="center"><strong>Is tonight worth a warm jacket and a cup of tea?</strong></p>
 
 <p align="center">
-  <a href="https://sky.incitat.io"><strong>sky.incitat.io</strong></a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/Rob142857/heavenward-astro"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
+  <a href="https://sky.incitat.io"><strong>sky.incitat.io</strong></a>
 </p>
 
 Heavenward answers the question every stargazer asks at dusk: _what's up there right now that's worth heading outside for?_ It checks your location, works out what's visible tonight, and tells you plainly — planets, the Moon, galaxies, nebulae, meteor showers, eclipses, conjunctions — all computed live in your browser with sub-arcsecond precision. No star-chart puzzles. No date pickers. Just open it and see.
@@ -101,6 +101,12 @@ Heavenward is built on the work of generous open-source contributors and public 
 ## Privacy
 
 Your GPS location is used only for calculations and **never leaves your device**. All computation runs client-side. The optional AI model also runs entirely in your browser via WebGPU — no cloud, no tracking.
+
+## Deploy your own
+
+<p align="center">
+  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/Rob142857/heavenward-astro"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
+</p>
 
 ## License
 

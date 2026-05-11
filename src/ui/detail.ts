@@ -1,4 +1,4 @@
-import type { AppContext, CelestialEvent } from "../types.js";
+import type { AppContext, CelestialEvent, SortBy } from "../types.js";
 import {
   getPlanetEvents,
   getMoonEvent,
@@ -15,6 +15,7 @@ import { METEOR_SHOWERS } from "../catalog/meteors.js";
 import type { MeteorShower } from "../catalog/meteors.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { renderFinderChart } from "../chart/finder.js";
+import type { FieldStar } from "../chart/finder.js";
 import { buildSkyContext } from "../engine/nearby.js";
 import type { SkyContext, NearbyObject } from "../engine/nearby.js";
 import {
@@ -28,6 +29,8 @@ import {
   checkGPUCapability,
 } from "../services/llm.js";
 import { navigate } from "./router.js";
+import { SORT_OPTIONS } from "./filterOptions.js";
+import { savePrefs } from "../services/prefs.js";
 
 // ── Breadcrumb trail for nearby-object navigation ─────────────────
 
@@ -361,15 +364,39 @@ function renderStarDetailFull(
 function appendFinderAndSkyView(container: HTMLElement, event: CelestialEvent): void {
   if (event.ra === null || event.dec === null) return;
 
+  const targetRA = event.ra;
+  const targetDec = event.dec;
+  const fov = 5; // degrees, matches finder.ts
+
   // Finder chart
   const chartDiv = document.createElement("div");
   chartDiv.className = "chart-container";
   const canvas = document.createElement("canvas");
-  canvas.width = 400;
-  canvas.height = 400;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = 400 * dpr;
+  canvas.height = 400 * dpr;
   chartDiv.appendChild(canvas);
   container.appendChild(chartDiv);
-  renderFinderChart(canvas, event.ra, event.dec, event.name);
+
+  // Load field stars then render chart
+  loadStarCatalog().then((stars) => {
+    const cosDec = Math.cos((targetDec * Math.PI) / 180);
+    const halfFovRA = fov / (15 * Math.max(cosDec, 0.01));
+    const halfFovDec = fov / 2;
+    const nearby: FieldStar[] = [];
+    for (const s of stars) {
+      if (
+        Math.abs(s.ra - targetRA) < halfFovRA &&
+        Math.abs(s.dec - targetDec) < halfFovDec &&
+        s.magnitude <= 6.5
+      ) {
+        nearby.push({ ra: s.ra, dec: s.dec, magnitude: s.magnitude, name: s.name });
+      }
+    }
+    renderFinderChart(canvas, targetRA, targetDec, event.name, nearby);
+  }).catch(() => {
+    renderFinderChart(canvas, targetRA, targetDec, event.name);
+  });
 
   // Image section: try Wikimedia Commons → SkyView DSS2 → fallback link
   const imgWrap = document.createElement("div");
@@ -657,28 +684,91 @@ function renderSkyContextContent(
   if (skyCtx.nearby.length) {
     const nearbySection = document.createElement("div");
     nearbySection.className = "detail-section";
-    nearbySection.innerHTML = `<h3 class="detail-section-title">Nearby Objects</h3>`;
+
+    const header = document.createElement("div");
+    header.className = "nearby-header";
+    header.innerHTML = `<h3 class="detail-section-title" style="margin:0;border:none;padding:0">Nearby Objects</h3>`;
+
+    // Sort select
+    const sortWrap = document.createElement("div");
+    sortWrap.className = "ctrl-select-wrap";
+    const sortLabel = document.createElement("span");
+    sortLabel.className = "ctrl-label";
+    sortLabel.textContent = "Sort";
+    sortWrap.appendChild(sortLabel);
+    const sortSel = document.createElement("select");
+    sortSel.className = "ctrl-select";
+    // Add "Nearest" as default for nearby context
+    const nearestOpt = document.createElement("option");
+    nearestOpt.value = "nearest";
+    nearestOpt.textContent = "Nearest";
+    nearestOpt.selected = (ctx.prefs.sortBy ?? "brightest") === "brightest";
+    sortSel.appendChild(nearestOpt);
+    for (const s of SORT_OPTIONS) {
+      const opt = document.createElement("option");
+      opt.value = s.key;
+      opt.textContent = s.label;
+      sortSel.appendChild(opt);
+    }
+    sortWrap.appendChild(sortSel);
+    header.appendChild(sortWrap);
+    nearbySection.appendChild(header);
+
     const grid = document.createElement("div");
     grid.className = "nearby-grid";
 
-    for (const obj of skyCtx.nearby) {
-      const card = document.createElement("div");
-      card.className = "nearby-card";
-      card.addEventListener("click", () => {
-        pushBreadcrumb(event.id, event.name, obj.separation);
-        navigate(`#/detail/${obj.id}`, { breadcrumb: [...breadcrumbTrail] });
-      });
-      card.innerHTML = `
-        <div class="nearby-card-header">
-          <span class="nearby-name">${obj.name}</span>
-          <span class="nearby-sep">${obj.separation.toFixed(1)}°</span>
-        </div>
-        <div class="nearby-type">${obj.type}${obj.magnitude !== null ? ` · mag ${obj.magnitude.toFixed(1)}` : ''}</div>
-        <div class="nearby-dir">${obj.direction}${obj.constellation ? ` · ${obj.constellation}` : ''}</div>
-      `;
-      grid.appendChild(card);
-    }
+    let sorted = [...skyCtx.nearby];
+    const renderGrid = () => {
+      grid.innerHTML = "";
+      for (const obj of sorted) {
+        const card = document.createElement("div");
+        card.className = "nearby-card";
+        card.addEventListener("click", () => {
+          pushBreadcrumb(event.id, event.name, obj.separation);
+          navigate(`#/detail/${obj.id}`, { breadcrumb: [...breadcrumbTrail] });
+        });
+        card.innerHTML = `
+          <div class="nearby-card-header">
+            <span class="nearby-name">${obj.name}</span>
+            <span class="nearby-sep">${obj.separation.toFixed(1)}°</span>
+          </div>
+          <div class="nearby-type">${obj.type}${obj.magnitude !== null ? ` · mag ${obj.magnitude.toFixed(1)}` : ''}</div>
+          <div class="nearby-dir">${obj.direction}${obj.constellation ? ` · ${obj.constellation}` : ''}</div>
+        `;
+        grid.appendChild(card);
+      }
+    };
 
+    sortSel.addEventListener("change", () => {
+      const val = sortSel.value as SortBy | "nearest";
+      sorted = [...skyCtx.nearby];
+      switch (val) {
+        case "nearest":
+          sorted.sort((a, b) => a.separation - b.separation);
+          break;
+        case "brightest":
+          sorted.sort((a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99));
+          break;
+        case "highest":
+          sorted.sort((a, b) => b.altitude - a.altitude);
+          break;
+        case "lowest":
+          sorted.sort((a, b) => a.altitude - b.altitude);
+          break;
+        case "smallest":
+          sorted.sort((a, b) => a.separation - b.separation);
+          break;
+        case "a-z":
+          sorted.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case "z-a":
+          sorted.sort((a, b) => b.name.localeCompare(a.name));
+          break;
+      }
+      renderGrid();
+    });
+
+    renderGrid();
     nearbySection.appendChild(grid);
     wrapper.appendChild(nearbySection);
   }

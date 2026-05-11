@@ -48,4 +48,6 @@ export const SORT_OPTIONS: { key: SortBy; label: string }[] = [
   { key: "highest", label: "Highest" },
   { key: "lowest", label: "Lowest" },
   { key: "smallest", label: "Smallest" },
+  { key: "a-z", label: "A → Z" },
+  { key: "z-a", label: "Z → A" },
 ];

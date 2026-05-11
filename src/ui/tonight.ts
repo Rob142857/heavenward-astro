@@ -202,6 +202,10 @@ function getSortFn(
       return (a, b) => (a.altitude ?? -90) - (b.altitude ?? -90);
     case "smallest":
       return (a, b) => (a.angularSize ?? 9999) - (b.angularSize ?? 9999);
+    case "a-z":
+      return (a, b) => a.name.localeCompare(b.name);
+    case "z-a":
+      return (a, b) => b.name.localeCompare(a.name);
   }
 }
 

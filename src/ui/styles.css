@@ -971,6 +971,9 @@ body {
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--bg-hover);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .object-img {
   width: 100%;
@@ -1008,10 +1011,16 @@ body {
 }
 .chart-container {
   width: 100%;
+  max-width: 400px;
   aspect-ratio: 1;
   border-radius: var(--radius);
-  margin-top: 16px;
+  margin: 16px auto 0;
   overflow: hidden;
+}
+.chart-container canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* ── Skeleton loading ────────────────────────────────── */
@@ -1146,6 +1155,13 @@ body {
   transform: scale(0.98);
 }
 
+.nearby-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
 .nearby-card-header {
   display: flex;
   justify-content: space-between;
