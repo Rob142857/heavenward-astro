@@ -128,7 +128,8 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
 
   const eqNote = document.createElement("p");
   eqNote.className = "source-note";
-  eqNote.textContent = "Filters objects by what's visible with your gear. Also shown on the Tonight page.";
+  eqNote.textContent =
+    "Filters objects by what's visible with your gear. Also shown on the Tonight page.";
   container.appendChild(eqNote);
 
   const eqPills = document.createElement("div");
@@ -151,7 +152,8 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
   }
   container.appendChild(eqPills);
 
-  const activeEq = EQUIPMENT_OPTIONS.find((e) => e.key === currentEq) ?? EQUIPMENT_OPTIONS[0];
+  const activeEq =
+    EQUIPMENT_OPTIONS.find((e) => e.key === currentEq) ?? EQUIPMENT_OPTIONS[0];
   const eqDesc = document.createElement("p");
   eqDesc.className = "source-note";
   eqDesc.style.marginTop = "0";
@@ -165,10 +167,13 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
 
   const catNote = document.createElement("p");
   catNote.className = "source-note";
-  catNote.textContent = "These switches use the same saved filters as the Tonight page, so changes here apply everywhere.";
+  catNote.textContent =
+    "These switches use the same saved filters as the Tonight page, so changes here apply everywhere.";
   container.appendChild(catNote);
 
-  const enabledCategories = new Set(prefs.enabledCategories ?? CATEGORY_OPTIONS.map((category) => category.key));
+  const enabledCategories = new Set(
+    prefs.enabledCategories ?? CATEGORY_OPTIONS.map((category) => category.key),
+  );
   for (const category of CATEGORY_OPTIONS) {
     const row = document.createElement("div");
     row.className = "toggle-row";
@@ -182,15 +187,17 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
     const input = row.querySelector("input")!;
     input.addEventListener("change", () => {
       const current = loadPrefs();
-      const currentCategories = new Set(current.enabledCategories ?? CATEGORY_OPTIONS.map((item) => item.key));
+      const currentCategories = new Set(
+        current.enabledCategories ?? CATEGORY_OPTIONS.map((item) => item.key),
+      );
       if (input.checked) {
         currentCategories.add(category.key);
       } else {
         currentCategories.delete(category.key);
       }
-      current.enabledCategories = CATEGORY_OPTIONS
-        .map((item) => item.key)
-        .filter((key) => currentCategories.has(key));
+      current.enabledCategories = CATEGORY_OPTIONS.map(
+        (item) => item.key,
+      ).filter((key) => currentCategories.has(key));
       savePrefs(current);
       ctx.prefs = current;
     });

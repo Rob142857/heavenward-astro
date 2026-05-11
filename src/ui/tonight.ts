@@ -1,4 +1,9 @@
-import type { AppContext, CelestialEvent, Equipment, TwilightTimes } from "../types.js";
+import type {
+  AppContext,
+  CelestialEvent,
+  Equipment,
+  TwilightTimes,
+} from "../types.js";
 import {
   getTwilightTimes,
   getPlanetEvents,
@@ -14,7 +19,12 @@ import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
 import { trackEvent } from "../services/analytics.js";
 import { savePrefs } from "../services/prefs.js";
-import { CATEGORY_OPTIONS, EQUIPMENT_LIMITS, EQUIPMENT_OPTIONS, SORT_OPTIONS } from "./filterOptions.js";
+import {
+  CATEGORY_OPTIONS,
+  EQUIPMENT_LIMITS,
+  EQUIPMENT_OPTIONS,
+  SORT_OPTIONS,
+} from "./filterOptions.js";
 import type { SortBy } from "../types.js";
 
 const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
@@ -25,13 +35,23 @@ let daylightOverride = false;
 /* ── Category filters ────────────────────────────────── */
 const DSO_GALAXY_TYPES = new Set(["galaxy", "galaxy-pair", "galaxy-group"]);
 const DSO_NEBULA_TYPES = new Set([
-  "nebula", "planetary-nebula", "emission-nebula", "reflection-nebula",
-  "dark-nebula", "supernova-remnant", "hii-region",
+  "nebula",
+  "planetary-nebula",
+  "emission-nebula",
+  "reflection-nebula",
+  "dark-nebula",
+  "supernova-remnant",
+  "hii-region",
 ]);
-const DSO_CLUSTER_TYPES = new Set(["cluster", "globular-cluster", "open-cluster"]);
+const DSO_CLUSTER_TYPES = new Set([
+  "cluster",
+  "globular-cluster",
+  "open-cluster",
+]);
 
 function eventCategory(ev: CelestialEvent): string {
-  if (ev.type === "planet" || ev.type === "moon" || ev.type === "sun") return "solar-system";
+  if (ev.type === "planet" || ev.type === "moon" || ev.type === "sun")
+    return "solar-system";
   if (ev.type === "eclipse" || ev.type === "conjunction") return "solar-system";
   if (ev.type === "meteor-shower") return "milky-way";
   if (ev.type === "comet" || ev.type === "asteroid") return "solar-system";
@@ -78,7 +98,8 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
 
     // Apply equipment mag filter + category filter
     const equipLimit = EQUIPMENT_LIMITS[ctx.prefs.equipment ?? "naked-eye"];
-    const cats = ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
+    const cats =
+      ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
     const filtered = events.filter(
       (e) =>
         (e.magnitude === null || e.magnitude <= equipLimit) &&
@@ -88,13 +109,9 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
     const sortBy = ctx.prefs.sortBy ?? "brightest";
     const sortFn = getSortFn(sortBy);
 
-    const visible = filtered
-      .filter((e) => (e.altitude ?? -1) > 0)
-      .sort(sortFn);
+    const visible = filtered.filter((e) => (e.altitude ?? -1) > 0).sort(sortFn);
 
-    const below = filtered
-      .filter((e) => (e.altitude ?? -1) <= 0)
-      .sort(sortFn);
+    const below = filtered.filter((e) => (e.altitude ?? -1) <= 0).sort(sortFn);
 
     // Controls bar (equipment + limit)
     renderControls(container, ctx, filtered.length, events.length, () => {
@@ -157,7 +174,8 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
       belowSection.textContent = `Below Horizon (${below.length})`;
       container.appendChild(belowSection);
 
-      const belowLimit = limit > 0 ? Math.max(0, limit - visible.length) : below.length;
+      const belowLimit =
+        limit > 0 ? Math.max(0, limit - visible.length) : below.length;
       const belowSlice = belowLimit > 0 ? below.slice(0, belowLimit) : [];
       if (belowSlice.length > 0) {
         renderEventCards(container, belowSlice, visibleRendered);
@@ -172,7 +190,9 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
 }
 
 /* ── Sort comparators ────────────────────────────────── */
-function getSortFn(sortBy: SortBy): (a: CelestialEvent, b: CelestialEvent) => number {
+function getSortFn(
+  sortBy: SortBy,
+): (a: CelestialEvent, b: CelestialEvent) => number {
   switch (sortBy) {
     case "brightest":
       return (a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99);
@@ -218,14 +238,16 @@ function renderControls(
   divider.className = "ctrl-divider";
   pillRow.appendChild(divider);
 
-  const cats = ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
+  const cats =
+    ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
   for (const cat of CATEGORY_OPTIONS) {
     const pill = document.createElement("button");
     pill.className = `ctrl-pill cat-pill${cats.includes(cat.key) ? " active" : ""}`;
     pill.setAttribute("title", cat.label);
     pill.innerHTML = `<span class="eq-icon">${cat.icon}</span><span class="eq-text">${cat.label}</span>`;
     pill.addEventListener("click", () => {
-      const cur = ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
+      const cur =
+        ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
       if (cur.includes(cat.key)) {
         ctx.prefs.enabledCategories = cur.filter((k) => k !== cat.key);
       } else {
@@ -291,9 +313,10 @@ function renderControls(
 
   const countBadge = document.createElement("span");
   countBadge.className = "ctrl-count";
-  countBadge.textContent = filteredCount < totalCount
-    ? `${filteredCount}/${totalCount}`
-    : `${totalCount}`;
+  countBadge.textContent =
+    filteredCount < totalCount
+      ? `${filteredCount}/${totalCount}`
+      : `${totalCount}`;
   limitWrap.appendChild(countBadge);
 
   metaRow.appendChild(limitWrap);
@@ -344,8 +367,18 @@ async function collectAllEvents(
     const day = now.getDate();
     const active = METEOR_SHOWERS.filter((s) => isShowerActive(s, month, day));
     const meteorEvents = active.map((s): CelestialEvent => {
-      const hor = getAltAzForRaDec(s.radiantRA, s.radiantDec, ctx.location, now);
-      const rs = getRiseSetForRaDec(s.radiantRA, s.radiantDec, ctx.location, now);
+      const hor = getAltAzForRaDec(
+        s.radiantRA,
+        s.radiantDec,
+        ctx.location,
+        now,
+      );
+      const rs = getRiseSetForRaDec(
+        s.radiantRA,
+        s.radiantDec,
+        ctx.location,
+        now,
+      );
       return {
         id: `meteor-${s.id}`,
         name: s.name,
@@ -419,7 +452,7 @@ async function collectAllEvents(
               name: s.name,
               type: "dso",
               source: "catalog",
-              brief: `${s.spectralType} · Mag ${s.magnitude.toFixed(2)} in ${s.constellation}${s.isDouble ? ' · Double' : ''}${s.isVariable ? ' · Variable' : ''}`,
+              brief: `${s.spectralType} · Mag ${s.magnitude.toFixed(2)} in ${s.constellation}${s.isDouble ? " · Double" : ""}${s.isVariable ? " · Variable" : ""}`,
               rise: rs.rise,
               set: rs.set,
               transit: rs.transit,
@@ -450,7 +483,6 @@ async function collectAllEvents(
 
   return events;
 }
-
 
 function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {
   const bar = document.createElement("div");

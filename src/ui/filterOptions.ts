@@ -3,10 +3,16 @@ import type { Equipment, SortBy } from "../types.js";
 export const EQUIPMENT_LIMITS: Record<Equipment, number> = {
   "naked-eye": 6.0,
   "personal-telescope": 13.0,
-  "observatory": 99,
+  observatory: 99,
 };
 
-export const EQUIPMENT_OPTIONS: { key: Equipment; label: string; icon: string; mag: number; desc: string }[] = [
+export const EQUIPMENT_OPTIONS: {
+  key: Equipment;
+  label: string;
+  icon: string;
+  mag: number;
+  desc: string;
+}[] = [
   {
     key: "naked-eye",
     label: "Naked Eye",
@@ -30,11 +36,12 @@ export const EQUIPMENT_OPTIONS: { key: Equipment; label: string; icon: string; m
   },
 ];
 
-export const CATEGORY_OPTIONS: { key: string; label: string; icon: string }[] = [
-  { key: "solar-system", label: "Solar System", icon: "🪐" },
-  { key: "milky-way", label: "Milky Way", icon: "⭐" },
-  { key: "beyond", label: "Beyond", icon: "🌌" },
-];
+export const CATEGORY_OPTIONS: { key: string; label: string; icon: string }[] =
+  [
+    { key: "solar-system", label: "Solar System", icon: "🪐" },
+    { key: "milky-way", label: "Milky Way", icon: "⭐" },
+    { key: "beyond", label: "Beyond", icon: "🌌" },
+  ];
 
 export const SORT_OPTIONS: { key: SortBy; label: string }[] = [
   { key: "brightest", label: "Brightest" },

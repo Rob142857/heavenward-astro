@@ -2,7 +2,7 @@
 
 **Is tonight worth a warm jacket and a cup of tea?**
 
-Heavenward answers the question every stargazer asks at dusk: *what's up there right now that's worth heading outside for?* It checks your location, works out what's visible tonight, and tells you plainly — planets, the Moon, galaxies, nebulae, meteor showers, eclipses, conjunctions — all computed live in your browser with sub-arcsecond precision. No star-chart puzzles. No date pickers. Just open it and see.
+Heavenward answers the question every stargazer asks at dusk: _what's up there right now that's worth heading outside for?_ It checks your location, works out what's visible tonight, and tells you plainly — planets, the Moon, galaxies, nebulae, meteor showers, eclipses, conjunctions — all computed live in your browser with sub-arcsecond precision. No star-chart puzzles. No date pickers. Just open it and see.
 
 **Live:** [heavenward.pages.dev](https://heavenward.pages.dev)
 
@@ -31,14 +31,14 @@ Heavenward answers the question every stargazer asks at dusk: *what's up there r
 
 ## Stack
 
-| Layer     | Technology |
-| --------- | ---------- |
-| Frontend  | TypeScript 6 (strict ESM) · vanilla DOM · Vite 8 · vite-plugin-pwa |
+| Layer     | Technology                                                                                                                          |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend  | TypeScript 6 (strict ESM) · vanilla DOM · Vite 8 · vite-plugin-pwa                                                                  |
 | Astronomy | [astronomy-engine](https://github.com/cosinekitty/astronomy) by [Don Cross](https://github.com/cosinekitty) — client-side ephemeris |
-| AI        | [WebLLM](https://github.com/mlc-ai/web-llm) by [MLC AI](https://mlc.ai/) — on-device inference via WebGPU |
-| API       | [Hono](https://hono.dev) on Cloudflare Pages Functions |
-| Auth      | Google & Microsoft OAuth 2.0 PKCE |
-| Storage   | Cloudflare D1 (users, API keys) · KV (preferences) |
+| AI        | [WebLLM](https://github.com/mlc-ai/web-llm) by [MLC AI](https://mlc.ai/) — on-device inference via WebGPU                           |
+| API       | [Hono](https://hono.dev) on Cloudflare Pages Functions                                                                              |
+| Auth      | Google & Microsoft OAuth 2.0 PKCE                                                                                                   |
+| Storage   | Cloudflare D1 (users, API keys) · KV (preferences)                                                                                  |
 
 ## Project layout
 

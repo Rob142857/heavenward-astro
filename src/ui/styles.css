@@ -459,7 +459,9 @@ body {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.tw-sep { color: var(--text-dim); }
+.tw-sep {
+  color: var(--text-dim);
+}
 .twilight-toggle {
   background: none;
   border: none;
@@ -471,11 +473,16 @@ body {
   min-width: 28px;
   min-height: 28px;
 }
-.twilight-toggle:hover { color: var(--text); background: var(--bg-hover); }
+.twilight-toggle:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
 .twilight-details {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, margin 0.3s ease;
+  transition:
+    max-height 0.3s ease,
+    margin 0.3s ease;
   margin-top: 0;
 }
 .twilight-bar.expanded .twilight-details {
@@ -529,7 +536,10 @@ body {
   transition: all 0.2s ease;
   min-height: 32px;
 }
-.ctrl-pill:hover { border-color: var(--gold); color: var(--text); }
+.ctrl-pill:hover {
+  border-color: var(--gold);
+  color: var(--text);
+}
 .ctrl-pill.active {
   background: var(--gold);
   color: var(--bg);
@@ -542,7 +552,9 @@ body {
   min-height: 28px;
   font-size: 0.68rem;
 }
-.ctrl-pill.cat-pill.active { opacity: 1; }
+.ctrl-pill.cat-pill.active {
+  opacity: 1;
+}
 .ctrl-divider {
   width: 1px;
   height: 18px;
@@ -550,10 +562,16 @@ body {
   margin: 0 3px;
   flex-shrink: 0;
 }
-.eq-icon { font-size: 0.85rem; }
-.eq-text { display: none; }
+.eq-icon {
+  font-size: 0.85rem;
+}
+.eq-text {
+  display: none;
+}
 @media (min-width: 480px) {
-  .eq-text { display: inline; }
+  .eq-text {
+    display: inline;
+  }
 }
 .ctrl-meta-row {
   display: flex;
@@ -583,7 +601,9 @@ body {
   font-size: 0.72rem;
   cursor: pointer;
 }
-.ctrl-select:focus { outline: 1px solid var(--gold); }
+.ctrl-select:focus {
+  outline: 1px solid var(--gold);
+}
 .ctrl-count {
   font-size: 0.65rem;
   color: var(--text-dim);
@@ -629,7 +649,11 @@ body {
   margin: 24px 0;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(255, 183, 77, 0.06), rgba(255, 235, 59, 0.04));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 183, 77, 0.06),
+    rgba(255, 235, 59, 0.04)
+  );
 }
 .daylight-icon {
   font-size: 2.8rem;
@@ -656,7 +680,9 @@ body {
   font-size: 0.88rem;
   cursor: pointer;
   min-height: 44px;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 .daylight-peek:hover {
   background: rgba(255, 183, 77, 0.2);
@@ -687,7 +713,10 @@ body {
 .source-tooltip {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease,
+    margin 0.3s ease;
   opacity: 0;
   margin-top: 0;
 }
@@ -813,7 +842,9 @@ body {
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 4px;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   white-space: nowrap;
 }
 .bc-link:hover {
@@ -1052,7 +1083,11 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(79, 195, 247, 0.06));
+  background: linear-gradient(
+    135deg,
+    rgba(212, 175, 55, 0.08),
+    rgba(79, 195, 247, 0.06)
+  );
   border: 1px solid rgba(212, 175, 55, 0.2);
   border-radius: var(--radius);
   padding: 14px 16px;

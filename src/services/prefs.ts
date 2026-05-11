@@ -44,7 +44,9 @@ function normalizeEquipment(equipment: unknown): UserPrefs["equipment"] {
 
 function normalizeCategories(enabledCategories: unknown): string[] {
   const categories = Array.isArray(enabledCategories)
-    ? enabledCategories.filter((value): value is string => typeof value === "string")
+    ? enabledCategories.filter(
+        (value): value is string => typeof value === "string",
+      )
     : [];
 
   if (categories.length === 0) {
