@@ -6,9 +6,11 @@
 
 <p align="center"><strong>Is tonight worth a warm jacket and a cup of tea?</strong></p>
 
-Heavenward answers the question every stargazer asks at dusk: _what's up there right now that's worth heading outside for?_ It checks your location, works out what's visible tonight, and tells you plainly — planets, the Moon, galaxies, nebulae, meteor showers, eclipses, conjunctions — all computed live in your browser with sub-arcsecond precision. No star-chart puzzles. No date pickers. Just open it and see.
+<p align="center">
+  <a href="https://sky.incitat.io"><strong>sky.incitat.io</strong></a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/Rob142857/heavenward-astro"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"></a>
+</p>
 
-**Live:** [heavenward.pages.dev](https://heavenward.pages.dev)
+Heavenward answers the question every stargazer asks at dusk: _what's up there right now that's worth heading outside for?_ It checks your location, works out what's visible tonight, and tells you plainly — planets, the Moon, galaxies, nebulae, meteor showers, eclipses, conjunctions — all computed live in your browser with sub-arcsecond precision. No star-chart puzzles. No date pickers. Just open it and see.
 
 ---
 

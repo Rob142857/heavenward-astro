@@ -23,7 +23,7 @@ export function renderAbout(container: HTMLElement, ctx: AppContext): void {
         and see what the sky has in store.
       </p>
       <p class="about-prose" style="margin-top:12px;opacity:0.85;font-size:0.95em;">
-        Free and <a href="https://github.com/Rob142857/astroturf" target="_blank" rel="noopener" class="wiki-link">open source</a>.
+        Free and <a href="https://github.com/Rob142857/heavenward-astro" target="_blank" rel="noopener" class="wiki-link">open source</a>.
       </p>
     </div>
 
@@ -169,7 +169,7 @@ export function renderAbout(container: HTMLElement, ctx: AppContext): void {
         Heavenward is open source under the
         <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener" class="wiki-link">Apache 2.0 License</a>.
         The source code is available on
-        <a href="https://github.com/Rob142857/astroturf" target="_blank" rel="noopener" class="wiki-link">GitHub</a>.
+        <a href="https://github.com/Rob142857/heavenward-astro" target="_blank" rel="noopener" class="wiki-link">GitHub</a>.
         Contributions, bug reports, and feature ideas are welcome.
       </p>
     </div>
