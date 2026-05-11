@@ -60,7 +60,8 @@ export interface UserProfile {
   provider: "google" | "microsoft";
 }
 
-export type Equipment = "naked-eye" | "binoculars" | "telescope" | "deep-scope";
+export type Equipment = "naked-eye" | "personal-telescope" | "observatory";
+export type SortBy = "brightest" | "highest" | "lowest" | "smallest";
 
 export interface UserPrefs {
   enabledSources: string[];
@@ -69,6 +70,7 @@ export interface UserPrefs {
   defaultLocation: GeoLocation | null;
   equipment: Equipment;
   displayLimit: number;
+  sortBy: SortBy;
 }
 
 export interface ApiKey {

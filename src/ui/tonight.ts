@@ -14,21 +14,8 @@ import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
 import { trackEvent } from "../services/analytics.js";
 import { savePrefs } from "../services/prefs.js";
-
-/* ── Equipment magnitude limits ─────────────────────── */
-const EQUIPMENT_LIMITS: Record<Equipment, number> = {
-  "naked-eye": 6.0,
-  "binoculars": 10.0,
-  "telescope": 13.0,
-  "deep-scope": 99,
-};
-
-const EQUIPMENT_LABELS: { key: Equipment; label: string; icon: string }[] = [
-  { key: "naked-eye", label: "Naked Eye", icon: "👁" },
-  { key: "binoculars", label: "Binoculars", icon: "🔭" },
-  { key: "telescope", label: "Telescope", icon: "🔬" },
-  { key: "deep-scope", label: "Deep Scope", icon: "🛰" },
-];
+import { CATEGORY_OPTIONS, EQUIPMENT_LIMITS, EQUIPMENT_OPTIONS, SORT_OPTIONS } from "./filterOptions.js";
+import type { SortBy } from "../types.js";
 
 const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
 
@@ -36,16 +23,6 @@ const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
 let daylightOverride = false;
 
 /* ── Category filters ────────────────────────────────── */
-const CATEGORIES: { key: string; label: string; icon: string }[] = [
-  { key: "solar-system", label: "Solar System", icon: "🪐" },
-  { key: "stars", label: "Stars", icon: "⭐" },
-  { key: "galaxies", label: "Galaxies", icon: "🌌" },
-  { key: "nebulae", label: "Nebulae", icon: "💫" },
-  { key: "clusters", label: "Clusters", icon: "✨" },
-  { key: "double-stars", label: "Doubles", icon: "⚡" },
-  { key: "meteors", label: "Meteors", icon: "☄️" },
-];
-
 const DSO_GALAXY_TYPES = new Set(["galaxy", "galaxy-pair", "galaxy-group"]);
 const DSO_NEBULA_TYPES = new Set([
   "nebula", "planetary-nebula", "emission-nebula", "reflection-nebula",
@@ -56,20 +33,20 @@ const DSO_CLUSTER_TYPES = new Set(["cluster", "globular-cluster", "open-cluster"
 function eventCategory(ev: CelestialEvent): string {
   if (ev.type === "planet" || ev.type === "moon" || ev.type === "sun") return "solar-system";
   if (ev.type === "eclipse" || ev.type === "conjunction") return "solar-system";
-  if (ev.type === "meteor-shower") return "meteors";
+  if (ev.type === "meteor-shower") return "milky-way";
   if (ev.type === "comet" || ev.type === "asteroid") return "solar-system";
   if (ev.type === "dso") {
     const ct = ev.extra.catalogType as string | undefined;
     // Stars from the star catalog have spectralType but no catalogType
     if (ev.extra.spectralType) {
-      return ev.extra.isDouble ? "double-stars" : "stars";
+      return "milky-way";
     }
     if (ct) {
-      if (DSO_GALAXY_TYPES.has(ct)) return "galaxies";
-      if (DSO_NEBULA_TYPES.has(ct)) return "nebulae";
-      if (DSO_CLUSTER_TYPES.has(ct)) return "clusters";
+      if (DSO_GALAXY_TYPES.has(ct)) return "beyond";
+      if (DSO_NEBULA_TYPES.has(ct)) return "milky-way";
+      if (DSO_CLUSTER_TYPES.has(ct)) return "milky-way";
     }
-    return "galaxies"; // Unclassified DSOs default to galaxies
+    return "beyond"; // Unclassified DSOs default to beyond the Milky Way
   }
   return "solar-system";
 }
@@ -101,20 +78,23 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
 
     // Apply equipment mag filter + category filter
     const equipLimit = EQUIPMENT_LIMITS[ctx.prefs.equipment ?? "naked-eye"];
-    const cats = ctx.prefs.enabledCategories ?? CATEGORIES.map((c) => c.key);
+    const cats = ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
     const filtered = events.filter(
       (e) =>
         (e.magnitude === null || e.magnitude <= equipLimit) &&
         cats.includes(eventCategory(e)),
     );
 
+    const sortBy = ctx.prefs.sortBy ?? "brightest";
+    const sortFn = getSortFn(sortBy);
+
     const visible = filtered
       .filter((e) => (e.altitude ?? -1) > 0)
-      .sort((a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99));
+      .sort(sortFn);
 
     const below = filtered
       .filter((e) => (e.altitude ?? -1) <= 0)
-      .sort((a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99));
+      .sort(sortFn);
 
     // Controls bar (equipment + limit)
     renderControls(container, ctx, filtered.length, events.length, () => {
@@ -191,7 +171,21 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
   });
 }
 
-/* ── Controls bar: equipment filter + display limit ── */
+/* ── Sort comparators ────────────────────────────────── */
+function getSortFn(sortBy: SortBy): (a: CelestialEvent, b: CelestialEvent) => number {
+  switch (sortBy) {
+    case "brightest":
+      return (a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99);
+    case "highest":
+      return (a, b) => (b.altitude ?? -90) - (a.altitude ?? -90);
+    case "lowest":
+      return (a, b) => (a.altitude ?? -90) - (b.altitude ?? -90);
+    case "smallest":
+      return (a, b) => (a.angularSize ?? 9999) - (b.angularSize ?? 9999);
+  }
+}
+
+/* ── Controls bar: equipment + categories + sort + limit ── */
 function renderControls(
   container: HTMLElement,
   ctx: AppContext,
@@ -202,12 +196,13 @@ function renderControls(
   const bar = document.createElement("div");
   bar.className = "tonight-controls";
 
-  // Equipment pills
-  const eqWrap = document.createElement("div");
-  eqWrap.className = "eq-pills";
-  for (const eq of EQUIPMENT_LABELS) {
+  // Row 1: equipment + category pills
+  const pillRow = document.createElement("div");
+  pillRow.className = "ctrl-pill-row";
+
+  for (const eq of EQUIPMENT_OPTIONS) {
     const pill = document.createElement("button");
-    pill.className = `eq-pill${(ctx.prefs.equipment ?? "naked-eye") === eq.key ? " active" : ""}`;
+    pill.className = `ctrl-pill eq-pill${(ctx.prefs.equipment ?? "naked-eye") === eq.key ? " active" : ""}`;
     pill.setAttribute("title", eq.label);
     pill.innerHTML = `<span class="eq-icon">${eq.icon}</span><span class="eq-text">${eq.label}</span>`;
     pill.addEventListener("click", () => {
@@ -216,19 +211,70 @@ function renderControls(
       savePrefs(ctx.prefs);
       onChange();
     });
-    eqWrap.appendChild(pill);
+    pillRow.appendChild(pill);
   }
-  bar.appendChild(eqWrap);
 
-  // Limit selector
+  const divider = document.createElement("span");
+  divider.className = "ctrl-divider";
+  pillRow.appendChild(divider);
+
+  const cats = ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
+  for (const cat of CATEGORY_OPTIONS) {
+    const pill = document.createElement("button");
+    pill.className = `ctrl-pill cat-pill${cats.includes(cat.key) ? " active" : ""}`;
+    pill.setAttribute("title", cat.label);
+    pill.innerHTML = `<span class="eq-icon">${cat.icon}</span><span class="eq-text">${cat.label}</span>`;
+    pill.addEventListener("click", () => {
+      const cur = ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
+      if (cur.includes(cat.key)) {
+        ctx.prefs.enabledCategories = cur.filter((k) => k !== cat.key);
+      } else {
+        ctx.prefs.enabledCategories = [...cur, cat.key];
+      }
+      savePrefs(ctx.prefs);
+      onChange();
+    });
+    pillRow.appendChild(pill);
+  }
+  bar.appendChild(pillRow);
+
+  // Row 2: sort + show-limit + count
+  const metaRow = document.createElement("div");
+  metaRow.className = "ctrl-meta-row";
+
+  // Sort select
+  const sortWrap = document.createElement("div");
+  sortWrap.className = "ctrl-select-wrap";
+  const sortLabel = document.createElement("span");
+  sortLabel.className = "ctrl-label";
+  sortLabel.textContent = "Sort";
+  sortWrap.appendChild(sortLabel);
+  const sortSel = document.createElement("select");
+  sortSel.className = "ctrl-select";
+  for (const s of SORT_OPTIONS) {
+    const opt = document.createElement("option");
+    opt.value = s.key;
+    opt.textContent = s.label;
+    if ((ctx.prefs.sortBy ?? "brightest") === s.key) opt.selected = true;
+    sortSel.appendChild(opt);
+  }
+  sortSel.addEventListener("change", () => {
+    ctx.prefs.sortBy = sortSel.value as SortBy;
+    savePrefs(ctx.prefs);
+    onChange();
+  });
+  sortWrap.appendChild(sortSel);
+  metaRow.appendChild(sortWrap);
+
+  // Limit select
   const limitWrap = document.createElement("div");
-  limitWrap.className = "limit-select-wrap";
+  limitWrap.className = "ctrl-select-wrap";
   const limitLabel = document.createElement("span");
-  limitLabel.className = "limit-label";
+  limitLabel.className = "ctrl-label";
   limitLabel.textContent = "Show";
   limitWrap.appendChild(limitLabel);
   const sel = document.createElement("select");
-  sel.className = "limit-select";
+  sel.className = "ctrl-select";
   for (const n of LIMIT_OPTIONS) {
     const opt = document.createElement("option");
     opt.value = String(n);
@@ -244,44 +290,15 @@ function renderControls(
   limitWrap.appendChild(sel);
 
   const countBadge = document.createElement("span");
-  countBadge.className = "filter-count";
+  countBadge.className = "ctrl-count";
   countBadge.textContent = filteredCount < totalCount
     ? `${filteredCount}/${totalCount}`
     : `${totalCount}`;
   limitWrap.appendChild(countBadge);
 
-  bar.appendChild(limitWrap);
+  metaRow.appendChild(limitWrap);
+  bar.appendChild(metaRow);
   container.appendChild(bar);
-
-  // Category filter pills (second row)
-  const catBar = document.createElement("div");
-  catBar.className = "tonight-controls cat-row";
-  const cats = ctx.prefs.enabledCategories ?? CATEGORIES.map((c) => c.key);
-  const catNote = document.createElement("span");
-  catNote.className = "cat-note";
-  catNote.textContent = "Filters";
-  catBar.appendChild(catNote);
-  const catPills = document.createElement("div");
-  catPills.className = "eq-pills cat-pills";
-  for (const cat of CATEGORIES) {
-    const pill = document.createElement("button");
-    pill.className = `eq-pill cat-pill${cats.includes(cat.key) ? " active" : ""}`;
-    pill.setAttribute("title", cat.label);
-    pill.innerHTML = `<span class="eq-icon">${cat.icon}</span><span class="eq-text">${cat.label}</span>`;
-    pill.addEventListener("click", () => {
-      const cur = ctx.prefs.enabledCategories ?? CATEGORIES.map((c) => c.key);
-      if (cur.includes(cat.key)) {
-        ctx.prefs.enabledCategories = cur.filter((k) => k !== cat.key);
-      } else {
-        ctx.prefs.enabledCategories = [...cur, cat.key];
-      }
-      savePrefs(ctx.prefs);
-      onChange();
-    });
-    catPills.appendChild(pill);
-  }
-  catBar.appendChild(catPills);
-  container.appendChild(catBar);
 }
 
 /* ── "Show more" button ──────────────────────────────── */

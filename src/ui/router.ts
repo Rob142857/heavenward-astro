@@ -18,6 +18,12 @@ let doRoute: (() => void) | null = null;
 
 export function navigate(hash: string, state?: unknown): void {
   const url = hash.startsWith("#") ? hash : `#${hash}`;
+  const currentHash = window.location.hash || "#/";
+  // Avoid pushing duplicate entries for the same route
+  if (currentHash === url && !state) {
+    doRoute?.();
+    return;
+  }
   history.pushState(state ?? null, "", url);
   doRoute?.();
 }

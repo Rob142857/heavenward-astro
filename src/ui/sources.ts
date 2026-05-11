@@ -1,6 +1,7 @@
 import type { AppContext, Equipment } from "../types.js";
 import { loadPrefs, savePrefs } from "../services/prefs.js";
 import { renderHeader, renderNav } from "./layout.js";
+import { CATEGORY_OPTIONS, EQUIPMENT_OPTIONS } from "./filterOptions.js";
 
 const SOURCES = [
   {
@@ -130,18 +131,11 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
   eqNote.textContent = "Filters objects by what's visible with your gear. Also shown on the Tonight page.";
   container.appendChild(eqNote);
 
-  const EQUIPMENT_DEFS: { key: Equipment; label: string; icon: string; mag: number; desc: string }[] = [
-    { key: "naked-eye", label: "Naked Eye", icon: "👁", mag: 6.0, desc: "Objects visible without any optical aid — bright planets, the Moon, named stars, and a handful of the brightest deep-sky showpieces like the Pleiades and Andromeda Galaxy." },
-    { key: "binoculars", label: "Binoculars", icon: "🔭", mag: 10.0, desc: "A good pair of 7×50 or 10×50 binoculars opens up hundreds of star clusters, bright nebulae, and nearby galaxies down to about magnitude 10." },
-    { key: "telescope", label: "Telescope", icon: "🔬", mag: 13.0, desc: "A 4–8 inch telescope reveals spiral arms in galaxies, planetary nebula detail, globular cluster resolution, and faint comets down to about magnitude 13." },
-    { key: "deep-scope", label: "Deep Scope", icon: "🛰", mag: 99, desc: "Large aperture or long-exposure imaging — show everything in the catalog regardless of magnitude. No brightness filter applied." },
-  ];
-
   const eqPills = document.createElement("div");
   eqPills.className = "eq-pills";
   eqPills.style.marginBottom = "12px";
   const currentEq = prefs.equipment ?? "naked-eye";
-  for (const eq of EQUIPMENT_DEFS) {
+  for (const eq of EQUIPMENT_OPTIONS) {
     const pill = document.createElement("button");
     pill.className = `eq-pill${currentEq === eq.key ? " active" : ""}`;
     pill.textContent = `${eq.icon} ${eq.label}`;
@@ -157,10 +151,49 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
   }
   container.appendChild(eqPills);
 
-  const activeEq = EQUIPMENT_DEFS.find((e) => e.key === currentEq) ?? EQUIPMENT_DEFS[0];
+  const activeEq = EQUIPMENT_OPTIONS.find((e) => e.key === currentEq) ?? EQUIPMENT_OPTIONS[0];
   const eqDesc = document.createElement("p");
   eqDesc.className = "source-note";
   eqDesc.style.marginTop = "0";
   eqDesc.innerHTML = `<strong>${activeEq.icon} ${activeEq.label}</strong> — ${activeEq.desc} Magnitude limit: <strong>${activeEq.mag === 99 ? "none" : activeEq.mag.toFixed(1)}</strong>`;
   container.appendChild(eqDesc);
+
+  const catSection = document.createElement("h3");
+  catSection.className = "section-title";
+  catSection.textContent = "Category Filters";
+  container.appendChild(catSection);
+
+  const catNote = document.createElement("p");
+  catNote.className = "source-note";
+  catNote.textContent = "These switches use the same saved filters as the Tonight page, so changes here apply everywhere.";
+  container.appendChild(catNote);
+
+  const enabledCategories = new Set(prefs.enabledCategories ?? CATEGORY_OPTIONS.map((category) => category.key));
+  for (const category of CATEGORY_OPTIONS) {
+    const row = document.createElement("div");
+    row.className = "toggle-row";
+    row.innerHTML = `
+      <span class="toggle-label">${category.icon} ${category.label}</span>
+      <label class="toggle">
+        <input type="checkbox" ${enabledCategories.has(category.key) ? "checked" : ""}>
+        <span class="slider"></span>
+      </label>
+    `;
+    const input = row.querySelector("input")!;
+    input.addEventListener("change", () => {
+      const current = loadPrefs();
+      const currentCategories = new Set(current.enabledCategories ?? CATEGORY_OPTIONS.map((item) => item.key));
+      if (input.checked) {
+        currentCategories.add(category.key);
+      } else {
+        currentCategories.delete(category.key);
+      }
+      current.enabledCategories = CATEGORY_OPTIONS
+        .map((item) => item.key)
+        .filter((key) => currentCategories.has(key));
+      savePrefs(current);
+      ctx.prefs = current;
+    });
+    container.appendChild(row);
+  }
 }

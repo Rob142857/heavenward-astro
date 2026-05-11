@@ -89,11 +89,21 @@ export function renderHeader(container: HTMLElement, ctx: AppContext): void {
 }
 
 export function renderNav(active: string): void {
-  let nav = document.querySelector(".nav");
+  let nav = document.querySelector(".nav") as HTMLElement | null;
   if (!nav) {
     nav = document.createElement("nav");
     nav.className = "nav";
     document.body.appendChild(nav);
+
+    // Single delegated click handler — all nav links route through navigate()
+    nav.addEventListener("click", (e) => {
+      const link = (e.target as HTMLElement).closest("a");
+      if (!link) return;
+      const href = link.getAttribute("href");
+      if (!href) return;
+      e.preventDefault();
+      navigate(href);
+    });
   }
   nav.innerHTML = NAV_ITEMS.map(
     (item) =>

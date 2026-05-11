@@ -1,39 +1,44 @@
 # ☆ Heavenward
 
-**Dusk-till-dawn astronomical event report — everything visible tonight, one tap away.**
+**Is tonight worth a warm jacket and a cup of tea?**
 
-Heavenward is a mobile-first PWA that computes what's in your sky right now: planets, the Moon, deep-sky objects, meteor showers, eclipses, and conjunctions — all calculated client-side with sub-arcsecond precision.
+Heavenward answers the question every stargazer asks at dusk: *what's up there right now that's worth heading outside for?* It checks your location, works out what's visible tonight, and tells you plainly — planets, the Moon, galaxies, nebulae, meteor showers, eclipses, conjunctions — all computed live in your browser with sub-arcsecond precision. No star-chart puzzles. No date pickers. Just open it and see.
 
 **Live:** [heavenward.pages.dev](https://heavenward.pages.dev)
 
 ---
 
-## Features
+## What you'll see
 
-- **Tonight view** — sorted by visibility and brightness, with altitude/azimuth at a glance
-- **Twilight bar** — sunset, civil/nautical/astronomical dusk & dawn, dark-sky hours
-- **Planets** — Mercury through Neptune: rise/set/transit, magnitude, illumination, constellation
-- **Moon** — phase, libration, distance, illumination percentage, next quarters
-- **Deep-sky objects** — Messier and NGC catalog with magnitude filtering for your equipment
-- **Meteor showers** — active showers with ZHR, radiant position, and parent body
-- **Eclipses & conjunctions** — upcoming lunar/solar eclipses and planetary events
-- **Finder chart** — canvas-rendered star chart with crosshair and FOV indicator
-- **SkyView integration** — DSS2 survey images for every cataloged object
+- **Tonight view** — everything above (and below) your horizon, sorted by brightness, altitude, or angular size
+- **Twilight bar** — sunset → civil/nautical/astronomical dusk → dark sky hours → dawn → sunrise, collapsible
+- **Planets** — Mercury through Neptune with rise/set/transit, magnitude, phase, distance, constellation
+- **Moon** — illumination, phase, libration, distance, next quarters
+- **Deep-sky objects** — hundreds of galaxies, nebulae, and clusters from the Messier, Caldwell, and NGC/IC catalogs, with surface brightness, imaging notes, and morphology
+- **Stars** — named and navigational stars with spectral type, colour index, double/variable flags, and exoplanet data
+- **Meteor showers** — active showers with ZHR, speed, radiant position, and parent body
+- **Eclipses & conjunctions** — upcoming events with geometry and timing
+- **Finder chart** — canvas-rendered star field with crosshair, FOV indicator, and magnitude labels
+- **Sky images** — Wikimedia Commons astrophotography with attribution, falling back to NASA SkyView DSS2 survey plates
+- **AI sky guide** — optional on-device LLM (via WebLLM + WebGPU) generates conversational guides to any region of the sky — observing tips, fascinating facts, Wikipedia links, photography advice. Runs entirely in your browser. No data leaves your device.
+- **Equipment filters** — Naked Eye / Personal Telescope / Observatory presets with magnitude limiting
+- **Category filters** — Solar System · Milky Way · Beyond, toggled independently
+- **Sort** — Brightest, Highest, Lowest, Smallest
 - **GPS location** — auto-detect or enter coordinates manually
-- **Source toggles** — enable/disable data sources, set magnitude limits
-- **Offline-capable** — service worker + precaching via Workbox
-- **Dark theme** — true-dark UI designed for night-time use without ruining dark adaptation
+- **Source toggles** — enable/disable individual data sources
+- **Offline-capable** — service worker + Workbox precaching; works without a connection after first load
+- **Dark theme** — true-dark UI (#0a0e1a) designed for night-time use without ruining your dark adaptation
 
 ## Stack
 
-| Layer     | Technology                                                                           |
-| --------- | ------------------------------------------------------------------------------------ |
-| Frontend  | TypeScript 6 (strict ESM) · vanilla DOM · Vite 8                                     |
-| Astronomy | [astronomy-engine](https://github.com/cosinekitty/astronomy) — client-side ephemeris |
-| API       | [Hono](https://hono.dev) on Cloudflare Pages Functions                               |
-| Auth      | Google & Microsoft OAuth 2.0 PKCE                                                    |
-| Storage   | Cloudflare D1 (users, API keys) · KV (preferences)                                   |
-| PWA       | vite-plugin-pwa · Workbox precaching                                                 |
+| Layer     | Technology |
+| --------- | ---------- |
+| Frontend  | TypeScript 6 (strict ESM) · vanilla DOM · Vite 8 · vite-plugin-pwa |
+| Astronomy | [astronomy-engine](https://github.com/cosinekitty/astronomy) by [Don Cross](https://github.com/cosinekitty) — client-side ephemeris |
+| AI        | [WebLLM](https://github.com/mlc-ai/web-llm) by [MLC AI](https://mlc.ai/) — on-device inference via WebGPU |
+| API       | [Hono](https://hono.dev) on Cloudflare Pages Functions |
+| Auth      | Google & Microsoft OAuth 2.0 PKCE |
+| Storage   | Cloudflare D1 (users, API keys) · KV (preferences) |
 
 ## Project layout
 
@@ -42,9 +47,9 @@ src/
   types.ts          Shared interfaces (CelestialEvent, GeoLocation, etc.)
   main.ts           Entry: GPS → router → initial render
   engine/           astronomy-engine wrappers (pure functions)
-  catalog/          Static JSON: DSO, stars, meteor showers
-  services/         Geolocation, localStorage, API client
-  ui/               DOM views, hash router, styles
+  catalog/          Static JSON + types: DSO, stars, meteor showers
+  services/         Geolocation, localStorage, API client, LLM, analytics
+  ui/               DOM views, hash router, styles.css
   chart/            Canvas finder chart
 functions/
   api/              Hono API (user prefs, API key CRUD)
@@ -69,11 +74,27 @@ npm run dev          # Vite dev server on localhost:5173
 | `npm run preview` | Local preview via Wrangler         |
 | `npm run deploy`  | Build + deploy to Cloudflare Pages |
 
-## Architecture
+## How it works
 
-All astronomy computation runs **client-side** — no ephemeris on the server. The Workers API handles authentication, user preferences, and API key management only.
+All astronomy computation runs **client-side** — the server never sees your coordinates or computes any ephemeris. The Cloudflare Workers API handles authentication, user preferences, and API key management only.
 
-Every astronomical object maps to a universal `CelestialEvent` shape with an `extra: Record<string, unknown>` field for extensible metadata.
+Every astronomical object maps to a universal `CelestialEvent` shape with an `extra: Record<string, unknown>` field for source-specific metadata. Engine functions are pure: `(GeoLocation, Date) → typed result`. No classes unless stateful. No `any`.
+
+## Data sources & acknowledgements
+
+Heavenward is built on the work of generous open-source contributors and public scientific datasets:
+
+- **[astronomy-engine](https://github.com/cosinekitty/astronomy)** — Don Cross's dependency-free ephemeris library powers all planetary positions, rise/set times, lunar phases, eclipses, and conjunctions
+- **[WebLLM](https://github.com/mlc-ai/web-llm)** — MLC AI's runtime for local LLM inference via WebGPU
+- **DSO catalog** — drawn from the Messier, Caldwell, and select NGC/IC objects; physical data from the NGC/IC Project and CDS VizieR
+- **Bright Star Catalogue** — Yale BSC with IAU star names, spectral classifications, and exoplanet cross-references
+- **IAU Meteor Data Center & IMO** — shower activity windows, ZHR rates, velocities, and radiant coordinates
+- **[NASA SkyView](https://skyview.gsfc.nasa.gov/)** — DSS2 survey images for finder chart views
+- **[Wikimedia Commons](https://commons.wikimedia.org/)** — astrophotography under Creative Commons licenses
+
+## Privacy
+
+Your GPS location is used only for calculations and **never leaves your device**. All computation runs client-side. The optional AI model also runs entirely in your browser via WebGPU — no cloud, no tracking.
 
 ## License
 

@@ -11,19 +11,24 @@ export function renderAbout(container: HTMLElement, ctx: AppContext): void {
   content.innerHTML = `
     <div class="about-hero">
       <h2 class="about-title">Heavenward</h2>
-      <p class="about-tagline">Everything visible tonight — one tap away</p>
+      <p class="about-tagline">Is tonight worth a warm jacket and a cup of tea?</p>
     </div>
 
     <div class="about-section">
       <p class="about-prose">
-        Heavenward is a free, open-source astronomy companion that tells you exactly what's
-        in <em>your</em> sky, right now, from wherever you're standing. No scrolling through
-        star charts or fiddling with date pickers — just open the app and see what's up tonight.
+        Heavenward answers a simple question: what's above you right now that's worth
+        setting up the telescope, dragging out the banana chair, and staying up a little
+        past bedtime for? It checks your location, works out what's visible tonight, and
+        tells you plainly — no star-chart puzzles, no date pickers, no fuss. Just open it
+        and see what the sky has in store.
+      </p>
+      <p class="about-prose" style="margin-top:12px;opacity:0.85;font-size:0.95em;">
+        Free and <a href="https://github.com/Rob142857/astroturf" target="_blank" rel="noopener" class="wiki-link">open source</a>.
       </p>
     </div>
 
     <div class="about-section">
-      <h3 class="about-heading">What You Get</h3>
+      <h3 class="about-heading">Tonight's Sky, at a Glance</h3>
       <div class="about-features">
         <div class="about-feature">
           <div class="about-feature-icon">🌙</div>
