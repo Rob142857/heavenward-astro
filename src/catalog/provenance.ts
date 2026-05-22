@@ -104,9 +104,9 @@ export const CATALOG_PROVENANCE: CatalogProvenance[] = [
     kind: "runtime",
     enabledSource: true,
     summary:
-      "Named and navigational stars are imported from HYG v4.2, filtered for bright stars, and enriched with selected human-readable notes for major sky landmarks.",
+      "Named and navigational stars are imported from HYG v4.2 — which merges Hipparcos and Tycho-2 astrometry with Gaia DR2 parallaxes — filtered to magnitude 6.0 and below, and enriched with curated notes for major landmarks.",
     maintainer:
-      "AstroNexus, ESA Hipparcos/Tycho teams, Yale Bright Star Catalogue maintainers, and catalog compilers",
+      "AstroNexus, ESA Hipparcos/Tycho teams, ESA Gaia DPAC, Yale Bright Star Catalogue maintainers, and IAU WGSN",
     primaryUrl: "https://codeberg.org/astronexus/hyg",
     license:
       "CC-BY-SA 4.0 for HYG distribution; upstream catalogs retain their own notices",
@@ -173,9 +173,9 @@ export const CATALOG_PROVENANCE: CatalogProvenance[] = [
     kind: "runtime",
     enabledSource: true,
     summary:
-      "Galaxies, nebulae, and clusters are imported from OpenNGC, filtered for observable magnitudes, normalized into Heavenward's typed DSO shape, and enriched for showpiece objects.",
+      "Galaxies, nebulae, and clusters are imported from OpenNGC — covering the full NGC and IC catalogues with Messier and Caldwell cross-identifications — filtered to magnitude 14.0 and brighter, normalized into Heavenward's typed shape, and enriched for showpiece objects.",
     maintainer:
-      "OpenNGC contributors, NGC/IC researchers, CDS, SIMBAD, NED, and public catalog maintainers",
+      "OpenNGC contributors, Dreyer/Sulentic NGC and IC compilers, Charles Messier, Patrick Moore, CDS, SIMBAD, NED, and public catalog maintainers",
     primaryUrl: "https://github.com/mattiaverga/OpenNGC",
     license:
       "CC-BY-SA 4.0 for OpenNGC distribution; upstream catalogs retain their own notices",
@@ -476,30 +476,287 @@ export const CATALOG_PROVENANCE: CatalogProvenance[] = [
   },
   {
     key: "variable-stars",
-    label: "Variable Star Expansion",
+    label: "Variable Stars",
+    icon: "variable",
+    status: "active",
+    kind: "supporting",
+    enabledSource: false,
+    summary:
+      "Variability classifications and period notes shown on star detail pages draw on the General Catalogue of Variable Stars and the AAVSO Variable Star Index — the same references Stellarium relies on.",
+    maintainer:
+      "Sternberg Astronomical Institute (GCVS), AAVSO, and the worldwide variable-star observing community",
+    primaryUrl: "http://www.sai.msu.su/gcvs/gcvs/",
+    license:
+      "Scientific citation and acknowledgement required for GCVS and VSX",
+    output: "Surfaced on star detail pages via the `isVariable` / `variableType` / `variablePeriod` fields",
+    importJob: null,
+    upstreams: [
+      {
+        name: "General Catalogue of Variable Stars (GCVS)",
+        url: "http://www.sai.msu.su/gcvs/gcvs/",
+        maintainer: "Sternberg Astronomical Institute and GCVS authors",
+        license: "Scientific citation and acknowledgement required",
+        role: "Type, range, period, and designation reference for variable stars.",
+      },
+      {
+        name: "AAVSO Variable Star Index (VSX)",
+        url: "https://www.aavso.org/vsx/",
+        maintainer: "American Association of Variable Star Observers",
+        license: "AAVSO acknowledgement requested",
+        role: "Curated, continuously-updated variable-star designations and classifications.",
+      },
+    ],
+    gratitude:
+      "Thank you to the variable-star observers whose patient nightly counts reveal stars changing over hours, years, and lifetimes.",
+  },
+  {
+    key: "iau-star-names",
+    label: "IAU Star Names",
+    icon: "star",
+    status: "active",
+    kind: "supporting",
+    enabledSource: false,
+    summary:
+      "Proper star names on labels and detail pages follow the IAU Working Group on Star Names — the authoritative public list of approved star names that Stellarium and most modern atlases share.",
+    maintainer: "International Astronomical Union — Working Group on Star Names",
+    primaryUrl: "https://www.iau.org/public/themes/naming_stars/",
+    license: "IAU public reference material",
+    output: "Applied during the bright-star refresh so star records carry approved proper names",
+    importJob: null,
+    upstreams: [
+      {
+        name: "IAU Catalog of Star Names (IAU-CSN)",
+        url: "https://www.iau.org/public/themes/naming_stars/",
+        maintainer: "IAU WGSN",
+        license: "IAU public reference material",
+        role: "Authoritative list of approved proper names with originating culture and citation.",
+      },
+    ],
+    gratitude:
+      "Thank you to the IAU naming committee for keeping a shared, public vocabulary of star names across languages and centuries.",
+  },
+  {
+    key: "double-stars",
+    label: "Double & Multiple Stars",
+    icon: "star",
+    status: "active",
+    kind: "supporting",
+    enabledSource: false,
+    summary:
+      "Double-star and visual-binary flags on star detail pages follow the Washington Double Star Catalog maintained at the US Naval Observatory — the same reference Stellarium uses for its WDS layer.",
+    maintainer: "US Naval Observatory and the WDS observing community",
+    primaryUrl: "http://www.astro.gsu.edu/wds/",
+    license: "Public scientific catalog; USNO acknowledgement requested",
+    output: "Surfaced on star detail pages via the `isDouble` / `doubleCompanion` fields",
+    importJob: null,
+    upstreams: [
+      {
+        name: "Washington Double Star Catalog (WDS)",
+        url: "http://www.astro.gsu.edu/wds/",
+        maintainer: "US Naval Observatory, Brian D. Mason et al.",
+        license: "Public scientific catalog with citation requested",
+        role: "Pair separations, position angles, magnitudes, and identifiers for visual binaries and multiples.",
+      },
+    ],
+    gratitude:
+      "Thank you to the double-star observers and the USNO compilers who turned centuries of split-eyepiece measurements into a single living catalog.",
+  },
+  {
+    key: "exoplanets",
+    label: "Exoplanet Host Stars",
+    icon: "star",
+    status: "active",
+    kind: "supporting",
+    enabledSource: false,
+    summary:
+      "Exoplanet host-star markers and counts come from the NASA Exoplanet Archive — the same source Stellarium's exoplanet plugin draws on — keeping discoveries current as new worlds are confirmed.",
+    maintainer: "NASA Exoplanet Science Institute at IPAC",
+    primaryUrl: "https://exoplanetarchive.ipac.caltech.edu/",
+    license: "NASA public scientific data; citation requested",
+    output: "Surfaced on star detail pages via the `hasExoplanets` / `exoplanetCount` fields",
+    importJob: null,
+    upstreams: [
+      {
+        name: "NASA Exoplanet Archive",
+        url: "https://exoplanetarchive.ipac.caltech.edu/",
+        maintainer: "NASA Exoplanet Science Institute / IPAC / Caltech",
+        license: "NASA public data; standard citation requested",
+        role: "Authoritative catalog of confirmed exoplanets, host-star cross-identifications, and discovery context.",
+      },
+    ],
+    gratitude:
+      "Thank you to the planet-hunting teams and archive curators turning the night sky into a list of other worlds.",
+  },
+  {
+    key: "constellations",
+    label: "Constellations & Sky Boundaries",
+    icon: "catalog",
+    status: "active",
+    kind: "supporting",
+    enabledSource: false,
+    summary:
+      "Each star carries its IAU constellation as defined by the 1928 Delporte boundaries — the same official partition of the sky that Stellarium uses for its modern Western sky culture.",
+    maintainer: "International Astronomical Union and Eugène Delporte (historical)",
+    primaryUrl: "https://www.iau.org/public/themes/constellations/",
+    license: "Public scientific reference; IAU attribution",
+    output: "Constellation field applied per star and per DSO record during refresh",
+    importJob: null,
+    upstreams: [
+      {
+        name: "IAU constellations and 1928 boundaries",
+        url: "https://www.iau.org/public/themes/constellations/",
+        maintainer: "International Astronomical Union",
+        license: "Public scientific reference",
+        role: "Authoritative list of the 88 constellations and their sky boundaries.",
+      },
+      {
+        name: "HYG constellation lines",
+        url: "https://codeberg.org/astronexus/hyg",
+        maintainer: "AstroNexus / HYG project",
+        license: "CC-BY-SA 4.0",
+        role: "Convenient redistribution of constellation line vertices for the modern Western set.",
+      },
+    ],
+    gratitude:
+      "Thank you to the cultures, mythographers, and 20th-century cartographers who agreed on a shared map of the sky we can all point at.",
+  },
+  {
+    key: "mpc-comets",
+    label: "Comets & Bright Asteroids",
+    icon: "meteor",
+    status: "planned",
+    kind: "expansion",
+    enabledSource: false,
+    summary:
+      "Planned importer for Minor Planet Center orbital elements covering currently observable comets and bright asteroids — the same upstream Stellarium's solar-system editor draws on.",
+    maintainer:
+      "IAU Minor Planet Center at the Center for Astrophysics, Harvard & Smithsonian",
+    primaryUrl: "https://www.minorplanetcenter.net/",
+    license: "MPC public scientific data; citation requested",
+    output: "Planned: src/catalog/mpc-*.json with refresh-driven orbital elements",
+    importJob: null,
+    upstreams: [
+      {
+        name: "MPC Comet and Asteroid orbits",
+        url: "https://www.minorplanetcenter.net/data",
+        maintainer: "IAU Minor Planet Center",
+        license: "MPC public scientific data",
+        role: "Authoritative orbital elements for active comets and numbered minor planets.",
+      },
+    ],
+    gratitude:
+      "Thank you to the MPC and to amateur and professional minor-body observers worldwide for keeping the small-bodies catalog alive.",
+  },
+  {
+    key: "celestrak-satellites",
+    label: "Satellites & ISS Passes",
+    icon: "catalog",
+    status: "planned",
+    kind: "expansion",
+    enabledSource: false,
+    summary:
+      "Planned importer for NORAD two-line element sets via CelesTrak so the ISS and notable satellites can be predicted client-side — Stellarium's satellite plugin uses the same source.",
+    maintainer: "CelesTrak (Dr. T.S. Kelso) with US Space Force public TLE feeds",
+    primaryUrl: "https://celestrak.org/",
+    license: "Publicly redistributable TLEs; CelesTrak attribution requested",
+    output: "Planned: live-refreshed TLEs propagated client-side via an SGP4 implementation",
+    importJob: null,
+    upstreams: [
+      {
+        name: "CelesTrak NORAD element sets",
+        url: "https://celestrak.org/NORAD/elements/",
+        maintainer: "Dr. T.S. Kelso / CelesTrak",
+        license: "Public TLE redistribution with attribution",
+        role: "Two-line element sets for ISS, Starlink, scientific satellites, and visual brights.",
+      },
+    ],
+    gratitude:
+      "Thank you to the satellite-tracking community for keeping a clean, public record of what's overhead at any minute.",
+  },
+  {
+    key: "bright-nebulae",
+    label: "Sharpless, LBN & LDN Nebulae",
+    icon: "dso",
+    status: "planned",
+    kind: "expansion",
+    enabledSource: false,
+    summary:
+      "Planned importer for the Sharpless HII catalog plus Lynds bright and dark nebula lists — the deeper nebular layer Stellarium exposes through its extended DSO bundles, accessible directly via CDS VizieR.",
+    maintainer: "Stewart Sharpless, Beverly Lynds, and CDS VizieR mirror maintainers",
+    primaryUrl: "https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=VII/20",
+    license: "Per-catalog notices via VizieR; CDS acknowledgement requested",
+    output: "Planned: dso.json supplements with `sh2-` / `lbn-` / `ldn-` identifiers",
+    importJob: null,
+    upstreams: [
+      {
+        name: "Sharpless catalog (Sh2)",
+        url: "https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=VII/20",
+        maintainer: "Stewart Sharpless / CDS VizieR",
+        license: "Public scientific catalog via CDS",
+        role: "HII region catalog covering visible emission nebulae.",
+      },
+      {
+        name: "Lynds Bright (LBN) and Dark (LDN) nebulae",
+        url: "https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=VII/9",
+        maintainer: "Beverly Lynds / CDS VizieR",
+        license: "Public scientific catalog via CDS",
+        role: "Bright and dark molecular cloud catalogs.",
+      },
+    ],
+    gratitude:
+      "Thank you to the plate scanners and survey astronomers who let us name the diffuse glow between the stars.",
+  },
+  {
+    key: "atnf-pulsars",
+    label: "Pulsars",
     icon: "variable",
     status: "planned",
     kind: "expansion",
     enabledSource: false,
     summary:
-      "Planned importer for variable-star classifications, periods, and ranges using GCVS and compatible public datasets.",
-    maintainer: "GCVS maintainers and variable-star observing community",
-    primaryUrl: "http://www.sai.msu.su/gcvs/gcvs/",
-    license:
-      "Scientific citation and acknowledgement required; verify redistribution terms",
-    output: "Planned: variable-star metadata sidecar for star detail pages",
+      "Planned importer for the ATNF Pulsar Catalogue — Stellarium's pulsar plugin upstream — for a faint but fascinating layer of rotation-period and dispersion-measure markers.",
+    maintainer: "Australia Telescope National Facility, CSIRO",
+    primaryUrl: "https://www.atnf.csiro.au/research/pulsar/psrcat/",
+    license: "Scientific citation and acknowledgement required",
+    output: "Planned: src/catalog/pulsars.json for detail-page enrichment",
     importJob: null,
     upstreams: [
       {
-        name: "General Catalogue of Variable Stars",
-        url: "http://www.sai.msu.su/gcvs/gcvs/",
-        maintainer: "Sternberg Astronomical Institute and GCVS authors",
-        license: "Scientific citation and acknowledgement required",
-        role: "Variable-star type, range, period, and designation data.",
+        name: "ATNF Pulsar Catalogue (PSRCAT)",
+        url: "https://www.atnf.csiro.au/research/pulsar/psrcat/",
+        maintainer: "R.N. Manchester et al., CSIRO ATNF",
+        license: "Citation required",
+        role: "Pulsar positions, periods, dispersion measures, and observational notes.",
       },
     ],
     gratitude:
-      "Thank you to variable-star observers whose repeated measurements reveal stars changing over nights, years, and lifetimes.",
+      "Thank you to the radio astronomers timing neutron stars night after night and sharing the results.",
+  },
+  {
+    key: "usgs-nomenclature",
+    label: "Planetary Surface Names",
+    icon: "planet",
+    status: "planned",
+    kind: "expansion",
+    enabledSource: false,
+    summary:
+      "Planned importer for the USGS Gazetteer of Planetary Nomenclature — Stellarium's surface-feature layer upstream — so lunar and planetary detail pages can name craters, maria, and montes.",
+    maintainer: "US Geological Survey Astrogeology Science Center and the IAU WGPSN",
+    primaryUrl: "https://planetarynames.wr.usgs.gov/",
+    license: "USGS public data; IAU WGPSN attribution requested",
+    output: "Planned: per-body nomenclature sidecars for Moon, Mars, and large moons",
+    importJob: null,
+    upstreams: [
+      {
+        name: "USGS Gazetteer of Planetary Nomenclature",
+        url: "https://planetarynames.wr.usgs.gov/",
+        maintainer: "USGS Astrogeology / IAU WGPSN",
+        license: "Public USGS data",
+        role: "Authoritative names, coordinates, and feature classifications across the Solar System.",
+      },
+    ],
+    gratitude:
+      "Thank you to the planetary cartographers who give every crater, ridge, and sea a name we can speak.",
   },
 ];
 

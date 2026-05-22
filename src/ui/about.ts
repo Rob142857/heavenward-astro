@@ -163,6 +163,7 @@ function sourceIcon(key: string): string {
   switch (key) {
     case "planets":
     case "conjunctions":
+    case "usgs-nomenclature":
       return "🪐";
     case "moon":
     case "eclipses":
@@ -170,12 +171,21 @@ function sourceIcon(key: string): string {
     case "stars":
     case "gaia-dr3":
     case "variable-stars":
+    case "iau-star-names":
+    case "double-stars":
+    case "exoplanets":
+    case "atnf-pulsars":
       return "⭐";
     case "dso":
     case "simbad-vizier-ned":
+    case "bright-nebulae":
+    case "constellations":
       return "🌌";
     case "meteors":
+    case "mpc-comets":
       return "☄️";
+    case "celestrak-satellites":
+      return "🛰️";
     case "images":
       return "🔭";
     case "webllm":

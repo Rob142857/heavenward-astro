@@ -118,15 +118,46 @@ Catalogs that ship with the app are checked in as JSON or TypeScript so the runt
 
 ## Data sources & acknowledgements
 
-Heavenward is built on the work of generous open-source contributors and public scientific datasets:
+Heavenward draws on the same public, open-science datasets that power [Stellarium](https://stellarium.org) and most modern sky atlases, going **direct to the upstream maintainers** rather than re-bundling intermediate distributions. Every astronomical computation runs client-side.
 
-- **[astronomy-engine](https://github.com/cosinekitty/astronomy)** — Don Cross's dependency-free ephemeris library powers all planetary positions, rise/set times, lunar phases, eclipses, and conjunctions
-- **[WebLLM](https://github.com/mlc-ai/web-llm)** — MLC AI's runtime for local LLM inference via WebGPU
-- **DSO catalog** — drawn from the Messier, Caldwell, and select NGC/IC objects; physical data from the NGC/IC Project and CDS VizieR
-- **Bright Star Catalogue** — Yale BSC with IAU star names, spectral classifications, and exoplanet cross-references
-- **IAU Meteor Data Center & IMO** — shower activity windows, ZHR rates, velocities, and radiant coordinates
-- **[NASA SkyView](https://skyview.gsfc.nasa.gov/)** — DSS2 survey images for finder chart views
-- **[Wikimedia Commons](https://commons.wikimedia.org/)** — astrophotography under Creative Commons licenses
+### Solar system
+
+- **[astronomy-engine](https://github.com/cosinekitty/astronomy)** by Don Cross — MIT-licensed, dependency-free ephemeris powering all planetary positions, lunar phase/libration, rise/set/transit, eclipses, and conjunctions; cross-checked against [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) and NOVAS
+- **[Minor Planet Center](https://www.minorplanetcenter.net/)** (planned) — IAU MPC orbital elements for active comets and bright asteroids; the same upstream Stellarium's solar-system editor uses
+- **[CelesTrak](https://celestrak.org/)** (planned) — Dr. T.S. Kelso's NORAD TLE feeds for ISS and notable satellites; Stellarium's satellite plugin upstream
+- **[USGS Gazetteer of Planetary Nomenclature](https://planetarynames.wr.usgs.gov/)** (planned) — authoritative crater, mare, and feature names for the Moon, Mars, and large moons
+
+### Stars
+
+- **[HYG v4.2](https://codeberg.org/astronexus/hyg)** by AstroNexus (CC-BY-SA 4.0) — merged Hipparcos + Tycho-2 astrometry with Gaia DR2 parallaxes, providing positions, magnitudes, spectral types, and distances for all stars to mag 6.0
+- **[Hipparcos & Tycho Catalogues](https://www.cosmos.esa.int/web/hipparcos/catalogues)** — ESA's foundational astrometric mission underlying most bright-star data
+- **[Yale Bright Star Catalogue](https://heasarc.gsfc.nasa.gov/W3Browse/star-catalog/bsc5p.html)** — historic HR identifiers, magnitudes, spectral classes
+- **[IAU Catalog of Star Names (IAU-CSN)](https://www.iau.org/public/themes/naming_stars/)** — Working Group on Star Names list of approved proper names
+- **[Washington Double Star Catalog](http://www.astro.gsu.edu/wds/)** — USNO/Brian Mason; the upstream for our `isDouble` / `doubleCompanion` flags
+- **[General Catalogue of Variable Stars (GCVS)](http://www.sai.msu.su/gcvs/gcvs/)** and **[AAVSO VSX](https://www.aavso.org/vsx/)** — variability classifications and periods on star detail pages
+- **[NASA Exoplanet Archive](https://exoplanetarchive.ipac.caltech.edu/)** — confirmed exoplanet counts and host-star cross-identifications
+- **[Gaia DR3](https://www.cosmos.esa.int/web/gaia/dr3)** (planned) — ESA's high-precision parallaxes and photometry for a deeper future star layer
+
+### Deep-sky objects
+
+- **[OpenNGC](https://github.com/mattiaverga/OpenNGC)** (CC-BY-SA 4.0) — the full NGC and IC catalogues with Messier and Caldwell cross-identifications; positions, sizes, surface brightness, morphology
+- **[SIMBAD](https://simbad.cds.unistra.fr/)** and **[CDS VizieR](https://vizier.cds.unistra.fr/)** — identifier resolution, object types, cross-references behind many DSO records
+- **[NASA/IPAC Extragalactic Database](https://ned.ipac.caltech.edu/)** — galaxy distances and extragalactic context
+- **Sharpless, LBN, LDN** (planned) — Stewart Sharpless's HII region catalog and Beverly Lynds's bright and dark nebula lists, accessible directly via CDS VizieR
+- **[ATNF Pulsar Catalogue](https://www.atnf.csiro.au/research/pulsar/psrcat/)** (planned) — CSIRO ATNF's pulsar timing reference, the same upstream Stellarium's pulsar plugin uses
+
+### Sky structure
+
+- **IAU constellations** with the 1928 Delporte boundaries — official partition of the sky used by Stellarium's modern Western sky culture
+
+### Imagery & commentary
+
+- **[NASA SkyView](https://skyview.gsfc.nasa.gov/)** — DSS2 Red survey plate fallback images on detail pages
+- **[Wikimedia Commons](https://commons.wikimedia.org/)** — selected astrophotography under per-image Creative Commons / public-domain notices
+- **Meteor showers** — IMO meteor shower calendar and IAU Meteor Data Center
+- **[WebLLM](https://github.com/mlc-ai/web-llm)** by MLC AI (Apache 2.0) — runtime for the optional on-device sky guide via WebGPU
+
+See [`src/catalog/provenance.ts`](src/catalog/provenance.ts) for the canonical machine-readable list, per-source license notes, and refresh-job metadata.
 
 ## Privacy
 
