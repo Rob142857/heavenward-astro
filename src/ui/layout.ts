@@ -70,6 +70,11 @@ const NAV_ITEMS = [
     icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l2.5 7.5h7.9l-6.4 4.6 2.4 7.5-6.4-4.7-6.4 4.7 2.4-7.5L2 8.5h7.9z"/></svg>`,
   },
   {
+    hash: "#/search",
+    label: "Search",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>`,
+  },
+  {
     hash: "#/sources",
     label: "Settings",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>`,

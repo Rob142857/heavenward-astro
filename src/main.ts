@@ -15,6 +15,7 @@ import { renderLocation } from "./ui/location.js";
 import { renderAccount, tryLoadUser } from "./ui/account.js";
 import { renderAbout } from "./ui/about.js";
 import { renderObservations } from "./ui/observations.js";
+import { renderSearch } from "./ui/search.js";
 import { initAnalytics } from "./services/analytics.js";
 import { initPWA } from "./services/pwa.js";
 
@@ -66,6 +67,7 @@ async function boot(): Promise<void> {
   route("/sources", () => renderSources(app, ctx));
   route("/location", () => renderLocation(app, ctx));
   route("/account", () => renderAccount(app, ctx));
+  route("/search", () => renderSearch(app, ctx));
   route("/about", () => renderAbout(app, ctx));
   route("/about/sources", () => renderAbout(app, ctx, "sources"));
   route("/observations", () => {

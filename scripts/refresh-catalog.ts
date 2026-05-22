@@ -620,20 +620,61 @@ function guessSeason(constellation: string): string {
 // ── DSO type normalization ─────────────────────────────────────────
 
 function normalizeDSOType(raw: string): string {
+  // OpenNGC uses compact codes documented at
+  // https://github.com/mattiaverga/OpenNGC. Match those exactly first, then
+  // fall back to fuzzy contains-checks for any other catalog source.
   const t = raw.toLowerCase().trim();
+
+  // Exact OpenNGC codes (the dominant case for our pipeline).
+  switch (t) {
+    case "g":
+      return "galaxy";
+    case "gpair":
+      return "galaxy-pair";
+    case "gtrpl":
+      return "galaxy-pair"; // 3 \u2192 still a pair-ish small group for our UI
+    case "ggroup":
+      return "galaxy-group";
+    case "gcl":
+      return "globular-cluster";
+    case "ocl":
+      return "open-cluster";
+    case "cl+n":
+      return "open-cluster"; // cluster + nebula: bias towards cluster
+    case "pn":
+      return "planetary-nebula";
+    case "snr":
+      return "supernova-remnant";
+    case "emn":
+      return "emission-nebula";
+    case "rfn":
+      return "reflection-nebula";
+    case "hii":
+      return "hii-region";
+    case "neb":
+      return "nebula";
+    case "*ass":
+      return "open-cluster"; // stellar association \u2014 closest user-facing match
+    case "**":
+    case "*":
+    case "nova":
+      return "nebula"; // not really a DSO; classify minimally
+  }
+
+  // Fuzzy fallback for anything else.
   if (t.includes("galaxy") && t.includes("pair")) return "galaxy-pair";
   if (t.includes("galaxy") && t.includes("group")) return "galaxy-group";
-  if (t.includes("galaxy") || t === "g") return "galaxy";
-  if (t.includes("glob") || t === "gc") return "globular-cluster";
-  if (t.includes("open") || t === "oc") return "open-cluster";
-  if (t.includes("planetary") || t === "pn") return "planetary-nebula";
-  if (t.includes("supernova") || t === "snr") return "supernova-remnant";
-  if (t.includes("emission") || t === "en") return "emission-nebula";
-  if (t.includes("reflection") || t === "rn") return "reflection-nebula";
-  if (t.includes("dark") || t === "dn") return "dark-nebula";
-  if (t.includes("hii") || t === "hii") return "hii-region";
-  if (t.includes("neb") || t === "nb") return "nebula";
-  if (t.includes("cluster") || t === "cl") return "cluster";
+  if (t.includes("galaxy")) return "galaxy";
+  if (t.includes("glob")) return "globular-cluster";
+  if (t.includes("open")) return "open-cluster";
+  if (t.includes("planetary")) return "planetary-nebula";
+  if (t.includes("supernova")) return "supernova-remnant";
+  if (t.includes("emission")) return "emission-nebula";
+  if (t.includes("reflection")) return "reflection-nebula";
+  if (t.includes("dark")) return "dark-nebula";
+  if (t.includes("hii")) return "hii-region";
+  if (t.includes("neb")) return "nebula";
+  if (t.includes("cluster")) return "open-cluster";
   return "nebula";
 }
 
@@ -723,6 +764,11 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
 
     const constellation = row["Const"] ?? "";
     const typeRaw = row["Type"] ?? "";
+    // OpenNGC publishes duplicate cross-references and "nonexistent" placeholders
+    // (e.g. NGC entries later proven to be fictitious). Skip both \u2014 they are
+    // not observable targets.
+    const typeLower = typeRaw.toLowerCase().trim();
+    if (typeLower === "dup" || typeLower === "nonex") continue;
     const type = normalizeDSOType(typeRaw);
 
     const messierRaw = row["M"] ?? "";

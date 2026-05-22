@@ -2315,3 +2315,125 @@ body {
   line-height: 1.6;
   padding: 6px 0 12px;
 }
+
+/* ── Search page ───────────────────────────────────────────────── */
+.search-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px 96px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.search-hint {
+  margin: 0;
+  color: var(--text-muted, #9aa3b8);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.search-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  min-height: 48px;
+  transition: border-color 120ms ease;
+}
+.search-field:focus-within {
+  border-color: var(--accent, #4fc3f7);
+}
+.search-input {
+  flex: 1 1 160px;
+  min-width: 120px;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--text, #e0e6f0);
+  font-size: 1rem;
+  padding: 6px 4px;
+}
+.search-input::placeholder {
+  color: rgba(224, 230, 240, 0.4);
+}
+.search-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  background: rgba(79, 195, 247, 0.15);
+  border: 1px solid rgba(79, 195, 247, 0.35);
+  color: var(--accent, #4fc3f7);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+.search-token .chip-icon {
+  font-size: 0.95rem;
+}
+.search-token-x {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text, #e0e6f0);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0;
+}
+.search-token-x:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.search-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.search-chip-suggest {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  min-height: 36px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text, #e0e6f0);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.search-chip-suggest:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.search-chip-suggest.active {
+  background: rgba(79, 195, 247, 0.15);
+  border-color: rgba(79, 195, 247, 0.45);
+  color: var(--accent, #4fc3f7);
+}
+.search-chip-suggest .chip-icon {
+  font-size: 0.95rem;
+}
+.search-meta {
+  margin: 4px 2px 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, #9aa3b8);
+}
+.search-empty {
+  margin: 24px 2px;
+  font-size: 0.9rem;
+  color: var(--text-muted, #9aa3b8);
+  text-align: center;
+  line-height: 1.5;
+}
+.search-results .card-grid {
+  margin-top: 6px;
+}
