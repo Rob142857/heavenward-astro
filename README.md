@@ -80,12 +80,41 @@ npm run dev          # Vite dev server on localhost:5173
 | `npm run preview`        | Local preview via Wrangler                           |
 | `npm run deploy`         | Build + deploy to Cloudflare Pages production branch |
 | `npm run deploy:preview` | Build + deploy a non-production preview branch       |
+| `npm run catalog:plan`   | Print catalog import plan (sources, outputs, validation) without downloading |
+| `npm run refresh`        | Run catalog importers (pass `-- --stars` or `-- --dso` to scope) |
 
 ## How it works
 
 All astronomy computation runs **client-side** — the server never sees your coordinates or computes any ephemeris. The Cloudflare Workers API handles authentication, user preferences, and API key management only.
 
 Every astronomical object maps to a universal `CelestialEvent` shape with an `extra: Record<string, unknown>` field for source-specific metadata. Engine functions are pure: `(GeoLocation, Date) → typed result`. No classes unless stateful. No `any`.
+
+The Tonight view lazily computes rise/set times per (object, day) on demand for displayed cards only, keeping the initial render fast even with thousands of catalog entries.
+
+## Catalog refresh pipeline
+
+Catalogs that ship with the app are checked in as JSON or TypeScript so the runtime stays offline-friendly. Use `npm run catalog:plan` to inspect source URLs, transform steps, output files, and validation rules without downloading anything.
+
+### Bright stars (scripted)
+
+- **Source** — HYG v4.2, filtered to bright stars, enriched with human-readable notes for major landmarks
+- **Output** — `src/catalog/stars.json`
+- **Command** — `npm run refresh -- --stars`
+- **Validation** — reject rows without numeric RA/Dec/visual magnitude; dedupe by proper-name slug or HR identifier; round to stable precision for reproducible diffs
+
+### Deep-sky objects (scripted)
+
+- **Source** — OpenNGC, filtered for observable magnitudes, normalized into Heavenward's typed DSO shape, enriched for showpiece objects
+- **Output** — `src/catalog/dso.json`
+- **Command** — `npm run refresh -- --dso`
+- **Validation** — reject rows without coordinates or visual/blue magnitude; dedupe by normalized Messier or catalog identifier; round to stable precision
+
+### Meteor showers (manual)
+
+- **Source** — curated TypeScript table cross-checked against IMO annual guidance
+- **Output** — `src/catalog/meteors.ts`
+- **Command** — manual review today; a `npm run refresh -- --meteors` parser is planned
+- **Validation** — keep coordinates in RA hours and Dec degrees to match engine helpers
 
 ## Data sources & acknowledgements
 

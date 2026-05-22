@@ -1,8 +1,6 @@
 import type { AppContext } from "../types.js";
 import {
   acknowledgementSources,
-  catalogImportJobs,
-  expansionCatalogSources,
   type CatalogProvenance,
 } from "../catalog/provenance.js";
 import { renderHeader, renderNav, SEBA_SVG } from "./layout.js";
@@ -129,111 +127,32 @@ export function renderAbout(
 }
 
 function renderDataAcknowledgements(): string {
-  const activeCards = acknowledgementSources()
+  const cards = acknowledgementSources()
     .map(renderAcknowledgementCard)
-    .join("");
-  const plannedCards = expansionCatalogSources()
-    .map(renderPlannedCard)
     .join("");
 
   return `
     <div class="about-section" id="about-sources">
-      <h3 class="about-heading">Data Sources &amp; Acknowledgements</h3>
+      <h3 class="about-heading">With Thanks</h3>
       <p class="about-prose">
-        Heavenward stands on open science, public catalogs, careful software, and many patient observers.
-        All astronomy computation runs client-side. We are grateful to the maintainers who preserve these
-        datasets and especially to the observers whose nights under the sky make the records possible.
-      </p>
-      <p class="about-prose">
-        The source switches in Settings are just viewing preferences: they choose which active runtime
-        sources appear in Tonight. This page is the canonical source record, including attribution,
-        license notes, and how imported catalogs are transformed before they ship in the app.
+        Heavenward stands on open science, public catalogs, careful software, and many patient
+        observers. None of this would exist without the people who keep these datasets alive and
+        the astronomers whose nights under the sky make the records possible.
       </p>
       <div class="about-features about-provenance" style="margin-top:16px">
-        ${activeCards}
+        ${cards}
       </div>
-      ${renderImportPipeline()}
-    </div>
-
-    <div class="about-section">
-      <h3 class="about-heading">Catalog Expansion Plan</h3>
-      <p class="about-prose">
-        The next catalog work is designed as reproducible importers with explicit licenses, transforms,
-        validation checks, and attribution before anything is bundled into the app.
-      </p>
-      <div class="about-features about-provenance about-provenance-planned" style="margin-top:16px">
-        ${plannedCards}
-      </div>
-    </div>
-  `;
-}
-
-function renderImportPipeline(): string {
-  const jobCards = catalogImportJobs().map((job) => {
-    const source = acknowledgementSources().find(
-      (item) => item.key === job.key,
-    );
-    return `
-      <div class="provenance-card">
-        <div class="provenance-card-head">
-          <strong>${source?.label ?? job.key}</strong>
-          <span>${modeLabel(job.mode)}</span>
-        </div>
-        <p>${source?.summary ?? "Catalog source registered in the import plan."}</p>
-        <dl>
-          <div><dt>Output</dt><dd>${job.outputFile}</dd></div>
-          <div><dt>Command</dt><dd>${job.command}</dd></div>
-          <div><dt>Validation</dt><dd>${job.validation.join(" ")}</dd></div>
-        </dl>
-      </div>
-    `;
-  });
-
-  return `
-    <div class="about-source-pipeline">
-      <h4 class="about-subheading">Import And Review Pipeline</h4>
-      <p class="about-prose">
-        Run <code>npm run catalog:plan</code> to inspect the current source URLs, transform steps,
-        output files, and validation rules without downloading data. Scripted imports write a refresh
-        report when catalogs are regenerated; manual sources remain listed so review work is explicit.
-      </p>
-      <div class="provenance-grid">${jobCards.join("")}</div>
     </div>
   `;
 }
 
 function renderAcknowledgementCard(source: CatalogProvenance): string {
-  const links = source.upstreams
-    .slice(0, 3)
-    .map(
-      (upstream) =>
-        `<a href="${upstream.url}" target="_blank" rel="noopener" class="wiki-link">${upstream.name}</a>`,
-    )
-    .join(" · ");
-
   return `
     <div class="about-feature">
       <div class="about-feature-icon">${sourceIcon(source.key)}</div>
       <div>
         <strong><a href="${source.primaryUrl}" target="_blank" rel="noopener" class="wiki-link">${source.label}</a></strong>
         <p>${source.summary}</p>
-        <p><span class="about-credit-label">Maintainers:</span> ${source.maintainer}</p>
-        <p><span class="about-credit-label">License:</span> ${source.license}</p>
-        <p><span class="about-credit-label">Sources:</span> ${links}</p>
-        <p class="about-gratitude">${source.gratitude}</p>
-      </div>
-    </div>
-  `;
-}
-
-function renderPlannedCard(source: CatalogProvenance): string {
-  return `
-    <div class="about-feature">
-      <div class="about-feature-icon">${sourceIcon(source.key)}</div>
-      <div>
-        <strong><a href="${source.primaryUrl}" target="_blank" rel="noopener" class="wiki-link">${source.label}</a></strong>
-        <p>${source.summary}</p>
-        <p><span class="about-credit-label">Before bundling:</span> ${source.license}</p>
         <p class="about-gratitude">${source.gratitude}</p>
       </div>
     </div>
@@ -263,16 +182,5 @@ function sourceIcon(key: string): string {
       return "🤖";
     default:
       return "•";
-  }
-}
-
-function modeLabel(mode: "scripted" | "manual" | "planned"): string {
-  switch (mode) {
-    case "scripted":
-      return "Scripted";
-    case "manual":
-      return "Manual";
-    case "planned":
-      return "Planned";
   }
 }
