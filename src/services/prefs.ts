@@ -20,6 +20,7 @@ const DEFAULT_PREFS: UserPrefs = {
   displayLimit: 50,
   enabledCategories: [...CATEGORY_KEYS],
   sortBy: "brightest",
+  directionFilter: "all",
 };
 
 function normalizeEquipment(equipment: unknown): UserPrefs["equipment"] {
@@ -81,6 +82,35 @@ function normalizeCategories(enabledCategories: unknown): string[] {
   return normalized.size > 0 ? [...normalized] : [...CATEGORY_KEYS];
 }
 
+function normalizeSort(sortBy: unknown): UserPrefs["sortBy"] {
+  if (
+    sortBy === "brightest" ||
+    sortBy === "closest" ||
+    sortBy === "farthest" ||
+    sortBy === "direction"
+  ) {
+    return sortBy;
+  }
+
+  return "brightest";
+}
+
+function normalizeDirectionFilter(
+  directionFilter: unknown,
+): UserPrefs["directionFilter"] {
+  if (
+    directionFilter === "all" ||
+    directionFilter === "north" ||
+    directionFilter === "east" ||
+    directionFilter === "south" ||
+    directionFilter === "west"
+  ) {
+    return directionFilter;
+  }
+
+  return "all";
+}
+
 export function loadPrefs(): UserPrefs {
   try {
     const raw = localStorage.getItem(PREFS_KEY);
@@ -97,6 +127,8 @@ export function loadPrefs(): UserPrefs {
         ...prefs,
         equipment: normalizeEquipment(prefs.equipment),
         enabledCategories: normalizeCategories(prefs.enabledCategories),
+        sortBy: normalizeSort(prefs.sortBy),
+        directionFilter: normalizeDirectionFilter(prefs.directionFilter),
       };
     }
     return { ...DEFAULT_PREFS };

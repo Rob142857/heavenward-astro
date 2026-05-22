@@ -55,7 +55,7 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
 
   const title = document.createElement("h3");
   title.className = "section-title";
-  title.textContent = "Data Sources";
+  title.textContent = "Settings";
   container.appendChild(title);
 
   const prefs = loadPrefs();

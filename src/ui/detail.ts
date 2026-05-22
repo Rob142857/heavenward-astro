@@ -875,25 +875,22 @@ function renderSkyContextContent(
       sorted = [...skyCtx.nearby];
       switch (val) {
         case "nearest":
+        case "closest":
           sorted.sort((a, b) => a.separation - b.separation);
           break;
         case "brightest":
           sorted.sort((a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99));
           break;
-        case "highest":
-          sorted.sort((a, b) => b.altitude - a.altitude);
+        case "farthest":
+          sorted.sort((a, b) => b.separation - a.separation);
           break;
-        case "lowest":
-          sorted.sort((a, b) => a.altitude - b.altitude);
-          break;
-        case "smallest":
-          sorted.sort((a, b) => a.separation - b.separation);
-          break;
-        case "a-z":
-          sorted.sort((a, b) => a.name.localeCompare(b.name));
-          break;
-        case "z-a":
-          sorted.sort((a, b) => b.name.localeCompare(a.name));
+        case "direction":
+          sorted.sort(
+            (a, b) =>
+              a.azimuth - b.azimuth ||
+              b.altitude - a.altitude ||
+              a.name.localeCompare(b.name),
+          );
           break;
       }
       renderGrid();

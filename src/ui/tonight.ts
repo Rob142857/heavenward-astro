@@ -21,11 +21,12 @@ import { trackEvent } from "../services/analytics.js";
 import { savePrefs } from "../services/prefs.js";
 import {
   CATEGORY_OPTIONS,
+  DIRECTION_OPTIONS,
   EQUIPMENT_LIMITS,
   EQUIPMENT_OPTIONS,
   SORT_OPTIONS,
 } from "./filterOptions.js";
-import type { SortBy } from "../types.js";
+import type { DirectionFilter, SortBy } from "../types.js";
 
 const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
 
@@ -105,16 +106,24 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
         (e.magnitude === null || e.magnitude <= equipLimit) &&
         cats.includes(eventCategory(e)),
     );
+    const directionFilter = ctx.prefs.directionFilter ?? "all";
+    const directional = filtered.filter((event) =>
+      isInDirection(event, directionFilter),
+    );
 
     const sortBy = ctx.prefs.sortBy ?? "brightest";
-    const sortFn = getSortFn(sortBy);
+    const sortFn = getSortFn(sortBy, directionFilter);
 
-    const visible = filtered.filter((e) => (e.altitude ?? -1) > 0).sort(sortFn);
+    const visible = directional
+      .filter((e) => (e.altitude ?? -1) > 0)
+      .sort(sortFn);
 
-    const below = filtered.filter((e) => (e.altitude ?? -1) <= 0).sort(sortFn);
+    const below = directional
+      .filter((e) => (e.altitude ?? -1) <= 0)
+      .sort(sortFn);
 
     // Controls bar (equipment + limit)
-    renderControls(container, ctx, filtered.length, events.length, () => {
+    renderControls(container, ctx, directional.length, events.length, () => {
       // Re-render on filter change
       renderTonight(container, ctx);
     });
@@ -192,20 +201,131 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
 /* ── Sort comparators ────────────────────────────────── */
 function getSortFn(
   sortBy: SortBy,
+  directionFilter: DirectionFilter,
 ): (a: CelestialEvent, b: CelestialEvent) => number {
   switch (sortBy) {
     case "brightest":
-      return (a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99);
-    case "highest":
-      return (a, b) => (b.altitude ?? -90) - (a.altitude ?? -90);
-    case "lowest":
-      return (a, b) => (a.altitude ?? -90) - (b.altitude ?? -90);
-    case "smallest":
-      return (a, b) => (a.angularSize ?? 9999) - (b.angularSize ?? 9999);
-    case "a-z":
-      return (a, b) => a.name.localeCompare(b.name);
-    case "z-a":
-      return (a, b) => b.name.localeCompare(a.name);
+      return compareBrightest;
+    case "closest":
+      return compareClosest;
+    case "farthest":
+      return compareFarthest;
+    case "direction":
+      return (a, b) => compareDirection(a, b, directionFilter);
+  }
+}
+
+const AU_PER_LIGHT_YEAR = 63241.077;
+
+function compareBrightest(a: CelestialEvent, b: CelestialEvent): number {
+  return (a.magnitude ?? 99) - (b.magnitude ?? 99) || compareNames(a, b);
+}
+
+function compareClosest(a: CelestialEvent, b: CelestialEvent): number {
+  const aDistance = getDistanceLY(a);
+  const bDistance = getDistanceLY(b);
+  if (aDistance === null && bDistance === null) return compareBrightest(a, b);
+  if (aDistance === null) return 1;
+  if (bDistance === null) return -1;
+  return aDistance - bDistance || compareBrightest(a, b);
+}
+
+function compareFarthest(a: CelestialEvent, b: CelestialEvent): number {
+  const aDistance = getDistanceLY(a);
+  const bDistance = getDistanceLY(b);
+  if (aDistance === null && bDistance === null) return compareBrightest(a, b);
+  if (aDistance === null) return 1;
+  if (bDistance === null) return -1;
+  return bDistance - aDistance || compareBrightest(a, b);
+}
+
+function compareDirection(
+  a: CelestialEvent,
+  b: CelestialEvent,
+  directionFilter: DirectionFilter,
+): number {
+  if (directionFilter !== "all") {
+    const center = directionCenter(directionFilter);
+    return (
+      azimuthDistance(a.azimuth, center) - azimuthDistance(b.azimuth, center) ||
+      (b.altitude ?? -90) - (a.altitude ?? -90) ||
+      compareNames(a, b)
+    );
+  }
+
+  return (
+    normalizeAzimuth(a.azimuth) - normalizeAzimuth(b.azimuth) ||
+    (b.altitude ?? -90) - (a.altitude ?? -90) ||
+    compareNames(a, b)
+  );
+}
+
+function compareNames(a: CelestialEvent, b: CelestialEvent): number {
+  return a.name.localeCompare(b.name);
+}
+
+function getDistanceLY(event: CelestialEvent): number | null {
+  const extraDistanceLY = event.extra.distanceLY;
+  if (typeof extraDistanceLY === "number" && Number.isFinite(extraDistanceLY)) {
+    return extraDistanceLY;
+  }
+
+  const extraDistancePC = event.extra.distancePC;
+  if (typeof extraDistancePC === "number" && Number.isFinite(extraDistancePC)) {
+    return extraDistancePC * 3.26156;
+  }
+
+  if (event.distanceAU !== null && Number.isFinite(event.distanceAU)) {
+    return event.distanceAU / AU_PER_LIGHT_YEAR;
+  }
+
+  return null;
+}
+
+function isInDirection(
+  event: CelestialEvent,
+  directionFilter: DirectionFilter,
+): boolean {
+  if (directionFilter === "all") return true;
+  const azimuth = normalizeAzimuth(event.azimuth);
+  if (azimuth >= 360) return false;
+
+  switch (directionFilter) {
+    case "north":
+      return azimuth >= 315 || azimuth < 45;
+    case "east":
+      return azimuth >= 45 && azimuth < 135;
+    case "south":
+      return azimuth >= 135 && azimuth < 225;
+    case "west":
+      return azimuth >= 225 && azimuth < 315;
+  }
+}
+
+function normalizeAzimuth(azimuth: number | null): number {
+  if (azimuth === null || !Number.isFinite(azimuth)) return 999;
+  return ((azimuth % 360) + 360) % 360;
+}
+
+function azimuthDistance(azimuth: number | null, center: number): number {
+  const normalized = normalizeAzimuth(azimuth);
+  if (normalized >= 360) return 999;
+  const difference = Math.abs(normalized - center);
+  return Math.min(difference, 360 - difference);
+}
+
+function directionCenter(
+  directionFilter: Exclude<DirectionFilter, "all">,
+): number {
+  switch (directionFilter) {
+    case "north":
+      return 0;
+    case "east":
+      return 90;
+    case "south":
+      return 180;
+    case "west":
+      return 270;
   }
 }
 
@@ -291,6 +411,33 @@ function renderControls(
   });
   sortWrap.appendChild(sortSel);
   metaRow.appendChild(sortWrap);
+
+  // Direction filter
+  const directionWrap = document.createElement("div");
+  directionWrap.className = "ctrl-select-wrap ctrl-direction-wrap";
+  const directionLabel = document.createElement("span");
+  directionLabel.className = "ctrl-label";
+  directionLabel.textContent = "Direction";
+  directionWrap.appendChild(directionLabel);
+  const directionPills = document.createElement("div");
+  directionPills.className = "direction-pills";
+  const activeDirection = ctx.prefs.directionFilter ?? "all";
+  for (const direction of DIRECTION_OPTIONS) {
+    const pill = document.createElement("button");
+    pill.className = `direction-pill${activeDirection === direction.key ? " active" : ""}`;
+    pill.type = "button";
+    pill.textContent = direction.shortLabel;
+    pill.title = direction.label;
+    pill.setAttribute("aria-label", direction.label);
+    pill.addEventListener("click", () => {
+      ctx.prefs.directionFilter = direction.key;
+      savePrefs(ctx.prefs);
+      onChange();
+    });
+    directionPills.appendChild(pill);
+  }
+  directionWrap.appendChild(directionPills);
+  metaRow.appendChild(directionWrap);
 
   // Limit select
   const limitWrap = document.createElement("div");
@@ -436,7 +583,12 @@ async function collectAllEvents(
               dec: d.dec,
               angularSize: d.size,
               distanceAU: null,
-              extra: { catalogType: d.type, size: d.size },
+              extra: {
+                catalogType: d.type,
+                size: d.size,
+                distanceLY: d.distanceLY,
+                distancePC: d.distancePC,
+              },
             };
           }),
       ),
@@ -473,6 +625,8 @@ async function collectAllEvents(
                 spectralType: s.spectralType,
                 isDouble: s.isDouble,
                 isVariable: s.isVariable,
+                distanceLY: s.distanceLY,
+                distancePC: s.distancePC,
               },
             };
           }),

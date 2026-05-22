@@ -32,7 +32,8 @@ export function startRouter(): void {
   history.scrollRestoration = "manual";
 
   doRoute = () => {
-    const hash = window.location.hash.slice(1) || "/";
+    const hash =
+      window.location.hash.slice(1) || cleanPathname(window.location.pathname);
     for (const r of routes) {
       const match = hash.match(r.pattern);
       if (match) {
@@ -53,4 +54,9 @@ export function startRouter(): void {
   window.addEventListener("popstate", doRoute);
   window.addEventListener("hashchange", doRoute);
   doRoute();
+}
+
+function cleanPathname(pathname: string): string {
+  if (!pathname || pathname === "/") return "/";
+  return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
 }

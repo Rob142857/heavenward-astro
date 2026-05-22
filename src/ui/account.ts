@@ -61,7 +61,7 @@ function renderLoggedOut(container: HTMLElement, _ctx: AppContext): void {
   const note = document.createElement("p");
   note.style.cssText =
     "font-size:0.75rem;color:var(--text-dim);margin-top:16px;text-align:center;";
-  note.textContent = "Sign in to sync preferences and manage API keys.";
+  note.textContent = "Sign in to sync preferences between devices.";
   container.appendChild(note);
 }
 

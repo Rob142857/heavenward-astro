@@ -61,13 +61,8 @@ export interface UserProfile {
 }
 
 export type Equipment = "naked-eye" | "personal-telescope" | "observatory";
-export type SortBy =
-  | "brightest"
-  | "highest"
-  | "lowest"
-  | "smallest"
-  | "a-z"
-  | "z-a";
+export type SortBy = "brightest" | "closest" | "farthest" | "direction";
+export type DirectionFilter = "all" | "north" | "east" | "south" | "west";
 
 export interface UserPrefs {
   enabledSources: string[];
@@ -77,6 +72,7 @@ export interface UserPrefs {
   equipment: Equipment;
   displayLimit: number;
   sortBy: SortBy;
+  directionFilter: DirectionFilter;
 }
 
 export interface ApiKey {

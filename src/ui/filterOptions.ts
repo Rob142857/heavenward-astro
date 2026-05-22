@@ -1,4 +1,4 @@
-import type { Equipment, SortBy } from "../types.js";
+import type { DirectionFilter, Equipment, SortBy } from "../types.js";
 
 export const EQUIPMENT_LIMITS: Record<Equipment, number> = {
   "naked-eye": 6.0,
@@ -23,7 +23,7 @@ export const EQUIPMENT_OPTIONS: {
   {
     key: "personal-telescope",
     label: "Personal Telescope",
-    icon: "🔬",
+    icon: "🔭",
     mag: 13.0,
     desc: "A home telescope opens up galaxies, planetary nebula detail, resolved globular clusters, and fainter comets well beyond naked-eye range.",
   },
@@ -45,9 +45,19 @@ export const CATEGORY_OPTIONS: { key: string; label: string; icon: string }[] =
 
 export const SORT_OPTIONS: { key: SortBy; label: string }[] = [
   { key: "brightest", label: "Brightest" },
-  { key: "highest", label: "Highest" },
-  { key: "lowest", label: "Lowest" },
-  { key: "smallest", label: "Smallest" },
-  { key: "a-z", label: "A → Z" },
-  { key: "z-a", label: "Z → A" },
+  { key: "closest", label: "Closest" },
+  { key: "farthest", label: "Farthest" },
+  { key: "direction", label: "Direction" },
+];
+
+export const DIRECTION_OPTIONS: {
+  key: DirectionFilter;
+  label: string;
+  shortLabel: string;
+}[] = [
+  { key: "all", label: "All directions", shortLabel: "All" },
+  { key: "north", label: "North", shortLabel: "N" },
+  { key: "east", label: "East", shortLabel: "E" },
+  { key: "south", label: "South", shortLabel: "S" },
+  { key: "west", label: "West", shortLabel: "W" },
 ];
