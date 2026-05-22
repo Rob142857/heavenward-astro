@@ -1,4 +1,4 @@
-import type { DirectionFilter, Equipment, SortBy } from "../types.js";
+import type { Equipment, SortBy } from "../types.js";
 
 export const EQUIPMENT_LIMITS: Record<Equipment, number> = {
   "naked-eye": 6.0,
@@ -51,11 +51,10 @@ export const SORT_OPTIONS: { key: SortBy; label: string }[] = [
 ];
 
 export const DIRECTION_OPTIONS: {
-  key: DirectionFilter;
+  key: "north" | "east" | "south" | "west";
   label: string;
   shortLabel: string;
 }[] = [
-  { key: "all", label: "All directions", shortLabel: "All" },
   { key: "north", label: "North", shortLabel: "N" },
   { key: "east", label: "East", shortLabel: "E" },
   { key: "south", label: "South", shortLabel: "S" },

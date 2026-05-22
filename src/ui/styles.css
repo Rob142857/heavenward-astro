@@ -877,11 +877,7 @@ body {
   opacity: 1;
 }
 .ctrl-divider {
-  width: 1px;
-  height: 18px;
-  background: var(--border);
-  margin: 0 3px;
-  flex-shrink: 0;
+  display: none; /* visual separation comes from cat-pill dimming */
 }
 .eq-icon {
   font-size: 0.85rem;
@@ -897,7 +893,7 @@ body {
 .ctrl-meta-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .ctrl-select-wrap {
@@ -919,9 +915,10 @@ body {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 3px 6px;
+  padding: 4px 8px;
   font-size: 0.72rem;
   cursor: pointer;
+  min-height: 30px;
 }
 .ctrl-select:focus {
   outline: 1px solid var(--gold);
@@ -932,33 +929,37 @@ body {
 }
 
 .direction-pills {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
+  gap: 3px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
 }
 
 .direction-pill {
-  min-width: 34px;
-  min-height: 32px;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  min-width: 30px;
+  min-height: 26px;
+  padding: 3px 8px;
+  border: none;
+  border-radius: 6px;
   background: transparent;
   color: var(--text-dim);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
+  letter-spacing: 0.04em;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .direction-pill:hover {
-  border-color: var(--gold-dark);
   color: var(--text);
+  background: var(--bg-hover);
 }
 
 .direction-pill.active {
   background: var(--gold);
-  border-color: var(--gold);
   color: var(--bg);
 }
 

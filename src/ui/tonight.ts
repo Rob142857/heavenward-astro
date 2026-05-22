@@ -106,7 +106,7 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
         (e.magnitude === null || e.magnitude <= equipLimit) &&
         cats.includes(eventCategory(e)),
     );
-    const directionFilter = ctx.prefs.directionFilter ?? "all";
+    const directionFilter = ctx.prefs.directionFilter ?? [];
     const directional = filtered.filter((event) =>
       isInDirection(event, directionFilter),
     );
@@ -142,15 +142,12 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
       banner.innerHTML = `
         <div class="daylight-icon">☀️</div>
         <p class="daylight-msg">
-          The Sun is ${sunAlt.toFixed(0)}° above the horizon right now.
-          Unless you have a radio telescope, atmospheric light is making
-          the sky's treasures invisible!
+          The Sun is ${sunAlt.toFixed(0)}° above the horizon — daylight is hiding everything else.
         </p>
         <p class="daylight-sub">
-          ${visible.length} object${visible.length !== 1 ? "s" : ""} above the horizon,
-          hidden behind the Sun's rays.
+          ${visible.length} object${visible.length !== 1 ? "s" : ""} up there, lost in the glare.
         </p>
-        <button class="daylight-peek">Peek behind the sunlight</button>
+        <button class="daylight-peek">Peek anyway</button>
       `;
       banner.querySelector(".daylight-peek")!.addEventListener("click", () => {
         daylightOverride = true;
@@ -264,8 +261,10 @@ function compareDirection(
   b: CelestialEvent,
   directionFilter: DirectionFilter,
 ): number {
-  if (directionFilter !== "all") {
-    const center = directionCenter(directionFilter);
+  // With one or more cardinals selected (but not all four), sort by distance
+  // to the centroid of the selected union arc — nearest first.
+  if (directionFilter.length > 0 && directionFilter.length < 4) {
+    const center = directionCentroid(directionFilter);
     return (
       azimuthDistance(a.azimuth, center) - azimuthDistance(b.azimuth, center) ||
       (b.altitude ?? -90) - (a.altitude ?? -90) ||
@@ -306,20 +305,28 @@ function isInDirection(
   event: CelestialEvent,
   directionFilter: DirectionFilter,
 ): boolean {
-  if (directionFilter === "all") return true;
+  // Empty filter ≡ all four cardinals ≡ no restriction.
+  if (directionFilter.length === 0) return true;
   const azimuth = normalizeAzimuth(event.azimuth);
   if (azimuth >= 360) return false;
 
-  switch (directionFilter) {
-    case "north":
-      return azimuth >= 315 || azimuth < 45;
-    case "east":
-      return azimuth >= 45 && azimuth < 135;
-    case "south":
-      return azimuth >= 135 && azimuth < 225;
-    case "west":
-      return azimuth >= 225 && azimuth < 315;
+  for (const cardinal of directionFilter) {
+    switch (cardinal) {
+      case "north":
+        if (azimuth >= 315 || azimuth < 45) return true;
+        break;
+      case "east":
+        if (azimuth >= 45 && azimuth < 135) return true;
+        break;
+      case "south":
+        if (azimuth >= 135 && azimuth < 225) return true;
+        break;
+      case "west":
+        if (azimuth >= 225 && azimuth < 315) return true;
+        break;
+    }
   }
+  return false;
 }
 
 function normalizeAzimuth(azimuth: number | null): number {
@@ -334,19 +341,25 @@ function azimuthDistance(azimuth: number | null, center: number): number {
   return Math.min(difference, 360 - difference);
 }
 
-function directionCenter(
-  directionFilter: Exclude<DirectionFilter, "all">,
-): number {
-  switch (directionFilter) {
-    case "north":
-      return 0;
-    case "east":
-      return 90;
-    case "south":
-      return 180;
-    case "west":
-      return 270;
+function directionCentroid(directionFilter: DirectionFilter): number {
+  // Each cardinal's centre azimuth, summed as 2-D unit vectors so wrap-around
+  // (N ~ 0\u00b0/360\u00b0) is handled correctly. Returns the bearing of the resultant.
+  const centres: Record<"north" | "east" | "south" | "west", number> = {
+    north: 0,
+    east: 90,
+    south: 180,
+    west: 270,
+  };
+  let x = 0;
+  let y = 0;
+  for (const c of directionFilter) {
+    const rad = (centres[c] * Math.PI) / 180;
+    x += Math.sin(rad);
+    y += Math.cos(rad);
   }
+  if (x === 0 && y === 0) return 0;
+  const deg = (Math.atan2(x, y) * 180) / Math.PI;
+  return ((deg % 360) + 360) % 360;
 }
 
 /* ── Controls bar: equipment + categories + sort + limit ── */
@@ -378,10 +391,6 @@ function renderControls(
     pillRow.appendChild(pill);
   }
 
-  const divider = document.createElement("span");
-  divider.className = "ctrl-divider";
-  pillRow.appendChild(divider);
-
   const cats =
     ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
   for (const cat of CATEGORY_OPTIONS) {
@@ -404,19 +413,15 @@ function renderControls(
   }
   bar.appendChild(pillRow);
 
-  // Row 2: sort + show-limit + count
+  // Row 2: sort \u00b7 direction pills \u00b7 limit
   const metaRow = document.createElement("div");
   metaRow.className = "ctrl-meta-row";
 
-  // Sort select
-  const sortWrap = document.createElement("div");
-  sortWrap.className = "ctrl-select-wrap";
-  const sortLabel = document.createElement("span");
-  sortLabel.className = "ctrl-label";
-  sortLabel.textContent = "Sort";
-  sortWrap.appendChild(sortLabel);
+  // Sort select (no label \u2014 selected value speaks for itself)
   const sortSel = document.createElement("select");
   sortSel.className = "ctrl-select";
+  sortSel.setAttribute("aria-label", "Sort by");
+  sortSel.title = "Sort";
   for (const s of SORT_OPTIONS) {
     const opt = document.createElement("option");
     opt.value = s.key;
@@ -429,58 +434,53 @@ function renderControls(
     savePrefs(ctx.prefs);
     onChange();
   });
-  sortWrap.appendChild(sortSel);
-  metaRow.appendChild(sortWrap);
+  metaRow.appendChild(sortSel);
 
-  // Direction filter
-  const directionWrap = document.createElement("div");
-  directionWrap.className = "ctrl-select-wrap ctrl-direction-wrap";
-  const directionLabel = document.createElement("span");
-  directionLabel.className = "ctrl-label";
-  directionLabel.textContent = "Direction";
-  directionWrap.appendChild(directionLabel);
+  // Direction multi-select pills. Empty selection = all (no filter).
   const directionPills = document.createElement("div");
   directionPills.className = "direction-pills";
-  const activeDirection = ctx.prefs.directionFilter ?? "all";
+  directionPills.setAttribute("role", "group");
+  directionPills.setAttribute("aria-label", "Direction filter");
+  const active = new Set(ctx.prefs.directionFilter ?? []);
   for (const direction of DIRECTION_OPTIONS) {
     const pill = document.createElement("button");
-    pill.className = `direction-pill${activeDirection === direction.key ? " active" : ""}`;
+    pill.className = `direction-pill${active.has(direction.key) ? " active" : ""}`;
     pill.type = "button";
     pill.textContent = direction.shortLabel;
-    pill.title = direction.label;
+    pill.title = `${direction.label} quadrant \u2014 tap to combine`;
     pill.setAttribute("aria-label", direction.label);
+    pill.setAttribute("aria-pressed", active.has(direction.key) ? "true" : "false");
     pill.addEventListener("click", () => {
-      ctx.prefs.directionFilter = direction.key;
+      const next = new Set(ctx.prefs.directionFilter ?? []);
+      if (next.has(direction.key)) next.delete(direction.key);
+      else next.add(direction.key);
+      // All four \u2261 none (both mean \"everywhere\") \u2014 normalise to empty.
+      ctx.prefs.directionFilter = next.size === 4 ? [] : Array.from(next);
       savePrefs(ctx.prefs);
       onChange();
     });
     directionPills.appendChild(pill);
   }
-  directionWrap.appendChild(directionPills);
-  metaRow.appendChild(directionWrap);
+  metaRow.appendChild(directionPills);
 
-  // Limit select
-  const limitWrap = document.createElement("div");
-  limitWrap.className = "ctrl-select-wrap";
-  const limitLabel = document.createElement("span");
-  limitLabel.className = "ctrl-label";
-  limitLabel.textContent = "Show";
-  limitWrap.appendChild(limitLabel);
-  const sel = document.createElement("select");
-  sel.className = "ctrl-select";
+  // Show-limit select \u2014 trailing count badge replaces \"Show\" label.
+  const limitSel = document.createElement("select");
+  limitSel.className = "ctrl-select";
+  limitSel.setAttribute("aria-label", "Maximum results");
+  limitSel.title = "Show";
   for (const n of LIMIT_OPTIONS) {
     const opt = document.createElement("option");
     opt.value = String(n);
     opt.textContent = n === 0 ? "All" : String(n);
     if ((ctx.prefs.displayLimit ?? 50) === n) opt.selected = true;
-    sel.appendChild(opt);
+    limitSel.appendChild(opt);
   }
-  sel.addEventListener("change", () => {
-    ctx.prefs.displayLimit = Number(sel.value);
+  limitSel.addEventListener("change", () => {
+    ctx.prefs.displayLimit = Number(limitSel.value);
     savePrefs(ctx.prefs);
     onChange();
   });
-  limitWrap.appendChild(sel);
+  metaRow.appendChild(limitSel);
 
   const countBadge = document.createElement("span");
   countBadge.className = "ctrl-count";
@@ -488,9 +488,9 @@ function renderControls(
     filteredCount < totalCount
       ? `${filteredCount}/${totalCount}`
       : `${totalCount}`;
-  limitWrap.appendChild(countBadge);
+  countBadge.title = `${filteredCount} of ${totalCount} after filters`;
+  metaRow.appendChild(countBadge);
 
-  metaRow.appendChild(limitWrap);
   bar.appendChild(metaRow);
   container.appendChild(bar);
 }

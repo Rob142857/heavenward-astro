@@ -62,7 +62,14 @@ export interface UserProfile {
 
 export type Equipment = "naked-eye" | "personal-telescope" | "observatory";
 export type SortBy = "brightest" | "closest" | "farthest" | "direction";
-export type DirectionFilter = "all" | "north" | "east" | "south" | "west";
+export type Cardinal = "north" | "east" | "south" | "west";
+/**
+ * Multi-select direction filter. Each cardinal represents its 90° quadrant
+ * (N: 315°–45°, E: 45°–135°, S: 135°–225°, W: 225°–315°). The visible
+ * region is the **union** of selected quadrants. Empty array = show all
+ * directions (equivalent to selecting all four).
+ */
+export type DirectionFilter = Cardinal[];
 
 export interface UserPrefs {
   enabledSources: string[];

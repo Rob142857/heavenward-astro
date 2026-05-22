@@ -20,7 +20,7 @@ const DEFAULT_PREFS: UserPrefs = {
   displayLimit: 50,
   enabledCategories: [...CATEGORY_KEYS],
   sortBy: "brightest",
-  directionFilter: "all",
+  directionFilter: [],
 };
 
 function normalizeEquipment(equipment: unknown): UserPrefs["equipment"] {
@@ -98,17 +98,27 @@ function normalizeSort(sortBy: unknown): UserPrefs["sortBy"] {
 function normalizeDirectionFilter(
   directionFilter: unknown,
 ): UserPrefs["directionFilter"] {
-  if (
-    directionFilter === "all" ||
-    directionFilter === "north" ||
-    directionFilter === "east" ||
-    directionFilter === "south" ||
-    directionFilter === "west"
-  ) {
-    return directionFilter;
+  const VALID = ["north", "east", "south", "west"] as const;
+  type C = (typeof VALID)[number];
+  // Legacy single-string values from older clients → convert to array.
+  if (typeof directionFilter === "string") {
+    if ((VALID as readonly string[]).includes(directionFilter)) {
+      return [directionFilter as C];
+    }
+    return []; // "all" or unknown → empty (no filter)
   }
-
-  return "all";
+  if (Array.isArray(directionFilter)) {
+    const set = new Set<C>();
+    for (const v of directionFilter) {
+      if (typeof v === "string" && (VALID as readonly string[]).includes(v)) {
+        set.add(v as C);
+      }
+    }
+    // All four selected ≡ none selected (both mean "everything") — normalise.
+    if (set.size === 4) return [];
+    return Array.from(set);
+  }
+  return [];
 }
 
 export function loadPrefs(): UserPrefs {
