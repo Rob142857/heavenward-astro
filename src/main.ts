@@ -78,3 +78,35 @@ async function boot(): Promise<void> {
 }
 
 boot();
+
+// Dismiss the inline boot splash once the app has mounted its first view.
+// Two animation frames so the first render commits before we fade.
+function dismissBootSplash(): void {
+  const splash = document.getElementById("boot-splash");
+  if (!splash) return;
+  splash.classList.add("hide");
+  window.setTimeout(() => splash.remove(), 400);
+}
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    const app = document.getElementById("app");
+    if (app && app.children.length > 0) {
+      dismissBootSplash();
+    } else {
+      // Fallback: poll briefly until first render lands, then dismiss.
+      const start = performance.now();
+      const tick = (): void => {
+        if (app && app.children.length > 0) {
+          dismissBootSplash();
+          return;
+        }
+        if (performance.now() - start > 8000) {
+          dismissBootSplash();
+          return;
+        }
+        requestAnimationFrame(tick);
+      };
+      tick();
+    }
+  });
+});
