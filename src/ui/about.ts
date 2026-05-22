@@ -135,9 +135,11 @@ function renderDataAcknowledgements(): string {
     <div class="about-section" id="about-sources">
       <h3 class="about-heading">With Thanks</h3>
       <p class="about-prose">
-        Heavenward stands on open science, public catalogs, careful software, and many patient
-        observers. None of this would exist without the people who keep these datasets alive and
-        the astronomers whose nights under the sky make the records possible.
+        We are grateful for our data sources. Heavenward is a robust open-source front end
+        built around the catalogs and feeds that are its soul — reservoirs of reliable, excellent
+        data assembled from many careful human observations of this great universe. Our thanks
+        to the maintainers who keep these datasets alive, and to the astronomers and observers
+        whose patient nights under the sky make the records possible.
       </p>
       <div class="about-features about-provenance" style="margin-top:16px">
         ${cards}
