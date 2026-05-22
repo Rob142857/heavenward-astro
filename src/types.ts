@@ -61,7 +61,13 @@ export interface UserProfile {
 }
 
 export type Equipment = "naked-eye" | "personal-telescope" | "observatory";
-export type SortBy = "brightest" | "highest" | "lowest" | "smallest" | "a-z" | "z-a";
+export type SortBy =
+  | "brightest"
+  | "highest"
+  | "lowest"
+  | "smallest"
+  | "a-z"
+  | "z-a";
 
 export interface UserPrefs {
   enabledSources: string[];

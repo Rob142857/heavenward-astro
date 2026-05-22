@@ -44,8 +44,16 @@ let breadcrumbTrail: BreadcrumbEntry[] = [];
 
 /** Push current object onto trail before navigating to a nearby object.
  *  separationToNext = angular distance from current object to the nearby target. */
-export function pushBreadcrumb(currentId: string, currentName: string, separationToNext: number): void {
-  breadcrumbTrail.push({ id: currentId, name: currentName, separation: separationToNext });
+export function pushBreadcrumb(
+  currentId: string,
+  currentName: string,
+  separationToNext: number,
+): void {
+  breadcrumbTrail.push({
+    id: currentId,
+    name: currentName,
+    separation: separationToNext,
+  });
 }
 
 /** Restore trail from history.state (called by route handler on every detail entry). */
@@ -58,12 +66,15 @@ function renderBreadcrumb(currentName: string): string {
   const parts: string[] = [];
 
   // "Tonight" root — always shown
-  parts.push(`<a href="#/" class="bc-link bc-root" data-bc-action="root">Tonight</a>`);
+  parts.push(
+    `<a href="#/" class="bc-link bc-root" data-bc-action="root">Tonight</a>`,
+  );
 
   // Trail entries with separation arrows between them
   for (let i = 0; i < breadcrumbTrail.length; i++) {
     const entry = breadcrumbTrail[i];
-    const sep = entry.separation !== null ? `${entry.separation.toFixed(1)}°` : "";
+    const sep =
+      entry.separation !== null ? `${entry.separation.toFixed(1)}°` : "";
     parts.push(`<span class="bc-sep">${sep ? ` — ${sep} →` : " →"}</span>`);
     parts.push(`<a class="bc-link" data-bc-index="${i}">${entry.name}</a>`);
   }
@@ -139,8 +150,8 @@ function detailSection(title: string, body: string): string {
 }
 
 function tagList(items: string[]): string {
-  if (!items.length) return '';
-  return `<div class="detail-tags">${items.map(i => `<span class="tag">${i}</span>`).join('')}</div>`;
+  if (!items.length) return "";
+  return `<div class="detail-tags">${items.map((i) => `<span class="tag">${i}</span>`).join("")}</div>`;
 }
 
 function fmtTime(d: Date): string {
@@ -198,62 +209,86 @@ function renderDSODetailFull(
 
   const content = document.createElement("div");
   const displayName = entry.commonName || entry.name;
-  const catalogId = entry.id !== displayName ? entry.id : '';
+  const catalogId = entry.id !== displayName ? entry.id : "";
 
   let html = `
     ${renderBreadcrumb(displayName)}
     <h2 class="detail-title">${displayName}</h2>
-    ${catalogId ? `<div class="detail-catalog-id">${catalogId}</div>` : ''}
+    ${catalogId ? `<div class="detail-catalog-id">${catalogId}</div>` : ""}
     <p class="detail-brief">${entry.description}</p>
   `;
 
   // Position & Visibility
-  html += detailSection('Position & Visibility', `
+  html += detailSection(
+    "Position & Visibility",
+    `
     <div class="detail-grid">
       ${detailItem("Altitude", event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
       ${detailItem("Azimuth", event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
       ${detailItem("Magnitude", entry.magnitude.toFixed(1))}
       ${detailItem("Constellation", wikiLink(entry.constellation + " (constellation)", entry.constellation))}
-      ${entry.surfaceBrightness ? detailItem("Surface Brightness", `${entry.surfaceBrightness.toFixed(1)} mag/arcmin²`) : ''}
-      ${entry.bestSeason ? detailItem("Best Season", entry.bestSeason) : ''}
+      ${entry.surfaceBrightness ? detailItem("Surface Brightness", `${entry.surfaceBrightness.toFixed(1)} mag/arcmin²`) : ""}
+      ${entry.bestSeason ? detailItem("Best Season", entry.bestSeason) : ""}
       ${detailItem("Apparent Size", `${entry.size.toFixed(1)}'`)}
     </div>
-  `);
+  `,
+  );
 
   // Physical Properties
   const physProps: string[] = [];
-  if (entry.type) physProps.push(detailItem("Type", entry.type.replace(/-/g, ' ')));
-  if (entry.morphology) physProps.push(detailItem("Morphology", entry.morphology));
-  if (entry.physicalSize) physProps.push(detailItem("Physical Size", entry.physicalSize));
-  if (entry.distanceLY) physProps.push(detailItem("Distance", `${entry.distanceLY.toLocaleString()} ly`));
-  if (entry.distancePC) physProps.push(detailItem("Distance", `${entry.distancePC.toLocaleString()} pc`));
+  if (entry.type)
+    physProps.push(detailItem("Type", entry.type.replace(/-/g, " ")));
+  if (entry.morphology)
+    physProps.push(detailItem("Morphology", entry.morphology));
+  if (entry.physicalSize)
+    physProps.push(detailItem("Physical Size", entry.physicalSize));
+  if (entry.distanceLY)
+    physProps.push(
+      detailItem("Distance", `${entry.distanceLY.toLocaleString()} ly`),
+    );
+  if (entry.distancePC)
+    physProps.push(
+      detailItem("Distance", `${entry.distancePC.toLocaleString()} pc`),
+    );
   if (physProps.length) {
-    html += detailSection('Physical Properties', `<div class="detail-grid">${physProps.join('')}</div>`);
+    html += detailSection(
+      "Physical Properties",
+      `<div class="detail-grid">${physProps.join("")}</div>`,
+    );
   }
 
   // Notable Features
   if (entry.notableFeatures.length) {
-    html += detailSection('Notable Features', tagList(entry.notableFeatures));
+    html += detailSection("Notable Features", tagList(entry.notableFeatures));
   }
 
   // Sub-Objects
   if (entry.subObjects.length) {
-    html += detailSection('Sub-Objects & Companions', tagList(entry.subObjects));
+    html += detailSection(
+      "Sub-Objects & Companions",
+      tagList(entry.subObjects),
+    );
   }
 
   // Discovery
   if (entry.discoverer || entry.yearDiscovered) {
-    html += detailSection('Discovery', `
+    html += detailSection(
+      "Discovery",
+      `
       <div class="detail-grid">
-        ${entry.discoverer ? detailItem("Discoverer", wikiLink(entry.discoverer)) : ''}
-        ${entry.yearDiscovered ? detailItem("Year", entry.yearDiscovered < 0 ? `${Math.abs(entry.yearDiscovered)} BC` : String(entry.yearDiscovered)) : ''}
+        ${entry.discoverer ? detailItem("Discoverer", wikiLink(entry.discoverer)) : ""}
+        ${entry.yearDiscovered ? detailItem("Year", entry.yearDiscovered < 0 ? `${Math.abs(entry.yearDiscovered)} BC` : String(entry.yearDiscovered)) : ""}
       </div>
-    `);
+    `,
+    );
   }
 
   // Imaging Notes
   if (entry.imagingNotes) {
-    html += detailSection('Imaging Notes', `<p class="detail-prose">${entry.imagingNotes}</p>`);
+    html += detailSection(
+      "Imaging Notes",
+      `<p class="detail-prose">${entry.imagingNotes}</p>`,
+    );
   }
 
   content.innerHTML = html;
@@ -278,18 +313,25 @@ function renderStarDetailFull(
   renderNav("#/");
 
   const content = document.createElement("div");
-  const designation = [entry.bayerDesignation, entry.flamsteedNumber, entry.constellation]
-    .filter(Boolean).join(' ');
+  const designation = [
+    entry.bayerDesignation,
+    entry.flamsteedNumber,
+    entry.constellation,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   let html = `
     ${renderBreadcrumb(entry.name)}
     <h2 class="detail-title">${entry.name}</h2>
-    ${designation ? `<div class="detail-catalog-id">${designation}</div>` : ''}
+    ${designation ? `<div class="detail-catalog-id">${designation}</div>` : ""}
     <p class="detail-brief">${entry.description}</p>
   `;
 
   // Position & Visibility
-  html += detailSection('Position & Visibility', `
+  html += detailSection(
+    "Position & Visibility",
+    `
     <div class="detail-grid">
       ${detailItem("Altitude", event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
       ${detailItem("Azimuth", event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
@@ -298,62 +340,97 @@ function renderStarDetailFull(
       ${detailItem("Constellation", wikiLink(entry.constellation + " (constellation)", entry.constellation))}
       ${detailItem("Spectral Type", entry.spectralType || "—")}
     </div>
-  `);
+  `,
+  );
 
   // Distance & Motion
   const distItems: string[] = [];
-  if (entry.distanceLY) distItems.push(detailItem("Distance", `${entry.distanceLY.toLocaleString()} light-years`));
-  if (entry.distancePC) distItems.push(detailItem("Distance", `${entry.distancePC.toLocaleString()} parsecs`));
-  if (entry.properMotion) distItems.push(detailItem("Proper Motion", entry.properMotion));
+  if (entry.distanceLY)
+    distItems.push(
+      detailItem(
+        "Distance",
+        `${entry.distanceLY.toLocaleString()} light-years`,
+      ),
+    );
+  if (entry.distancePC)
+    distItems.push(
+      detailItem("Distance", `${entry.distancePC.toLocaleString()} parsecs`),
+    );
+  if (entry.properMotion)
+    distItems.push(detailItem("Proper Motion", entry.properMotion));
   if (distItems.length) {
-    html += detailSection('Distance & Motion', `<div class="detail-grid">${distItems.join('')}</div>`);
+    html += detailSection(
+      "Distance & Motion",
+      `<div class="detail-grid">${distItems.join("")}</div>`,
+    );
   }
 
   // Physical Properties
   const physItems: string[] = [];
-  if (entry.luminosity) physItems.push(detailItem("Luminosity", entry.luminosity));
+  if (entry.luminosity)
+    physItems.push(detailItem("Luminosity", entry.luminosity));
   if (entry.mass) physItems.push(detailItem("Mass", entry.mass));
   if (entry.radius) physItems.push(detailItem("Radius", entry.radius));
-  if (entry.temperature) physItems.push(detailItem("Temperature", `${entry.temperature.toLocaleString()} K`));
-  if (entry.colorIndex !== null) physItems.push(detailItem("Color Index (B-V)", entry.colorIndex.toFixed(2)));
+  if (entry.temperature)
+    physItems.push(
+      detailItem("Temperature", `${entry.temperature.toLocaleString()} K`),
+    );
+  if (entry.colorIndex !== null)
+    physItems.push(
+      detailItem("Color Index (B-V)", entry.colorIndex.toFixed(2)),
+    );
   if (entry.age) physItems.push(detailItem("Age", entry.age));
   if (physItems.length) {
-    html += detailSection('Physical Properties', `<div class="detail-grid">${physItems.join('')}</div>`);
+    html += detailSection(
+      "Physical Properties",
+      `<div class="detail-grid">${physItems.join("")}</div>`,
+    );
   }
 
   // Double Star
   if (entry.isDouble && entry.doubleCompanion) {
-    html += detailSection('Double / Multiple Star', `<p class="detail-prose">${entry.doubleCompanion}</p>`);
+    html += detailSection(
+      "Double / Multiple Star",
+      `<p class="detail-prose">${entry.doubleCompanion}</p>`,
+    );
   }
 
   // Variable Star
   if (entry.isVariable) {
     const varItems: string[] = [];
-    if (entry.variableType) varItems.push(detailItem("Type", entry.variableType));
-    if (entry.variablePeriod) varItems.push(detailItem("Period", entry.variablePeriod));
-    html += detailSection('Variable Star', varItems.length
-      ? `<div class="detail-grid">${varItems.join('')}</div>`
-      : `<p class="detail-prose">This star is a known variable.</p>`
+    if (entry.variableType)
+      varItems.push(detailItem("Type", entry.variableType));
+    if (entry.variablePeriod)
+      varItems.push(detailItem("Period", entry.variablePeriod));
+    html += detailSection(
+      "Variable Star",
+      varItems.length
+        ? `<div class="detail-grid">${varItems.join("")}</div>`
+        : `<p class="detail-prose">This star is a known variable.</p>`,
     );
   }
 
   // Exoplanets
   if (entry.hasExoplanets) {
-    html += detailSection('Exoplanets', `
+    html += detailSection(
+      "Exoplanets",
+      `
       <div class="detail-grid">
         ${detailItem("Known Planets", String(entry.exoplanetCount))}
       </div>
-      ${entry.exoplanetNotes ? `<p class="detail-prose">${entry.exoplanetNotes}</p>` : ''}
-    `);
+      ${entry.exoplanetNotes ? `<p class="detail-prose">${entry.exoplanetNotes}</p>` : ""}
+    `,
+    );
   }
 
   // Notable Features
   if (entry.notableFeatures.length) {
-    html += detailSection('Notable Features', tagList(entry.notableFeatures));
+    html += detailSection("Notable Features", tagList(entry.notableFeatures));
   }
 
   content.innerHTML = html;
-  container.appendChild(content);  attachBreadcrumbHandlers(container);
+  container.appendChild(content);
+  attachBreadcrumbHandlers(container);
   appendLLMSection(container, event, ctx);
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
@@ -361,7 +438,10 @@ function renderStarDetailFull(
 
 // ── Shared chart + imagery ─────────────────────────────────────────
 
-function appendFinderAndSkyView(container: HTMLElement, event: CelestialEvent): void {
+function appendFinderAndSkyView(
+  container: HTMLElement,
+  event: CelestialEvent,
+): void {
   if (event.ra === null || event.dec === null) return;
 
   const targetRA = event.ra;
@@ -379,24 +459,31 @@ function appendFinderAndSkyView(container: HTMLElement, event: CelestialEvent): 
   container.appendChild(chartDiv);
 
   // Load field stars then render chart
-  loadStarCatalog().then((stars) => {
-    const cosDec = Math.cos((targetDec * Math.PI) / 180);
-    const halfFovRA = fov / (15 * Math.max(cosDec, 0.01));
-    const halfFovDec = fov / 2;
-    const nearby: FieldStar[] = [];
-    for (const s of stars) {
-      if (
-        Math.abs(s.ra - targetRA) < halfFovRA &&
-        Math.abs(s.dec - targetDec) < halfFovDec &&
-        s.magnitude <= 6.5
-      ) {
-        nearby.push({ ra: s.ra, dec: s.dec, magnitude: s.magnitude, name: s.name });
+  loadStarCatalog()
+    .then((stars) => {
+      const cosDec = Math.cos((targetDec * Math.PI) / 180);
+      const halfFovRA = fov / (15 * Math.max(cosDec, 0.01));
+      const halfFovDec = fov / 2;
+      const nearby: FieldStar[] = [];
+      for (const s of stars) {
+        if (
+          Math.abs(s.ra - targetRA) < halfFovRA &&
+          Math.abs(s.dec - targetDec) < halfFovDec &&
+          s.magnitude <= 6.5
+        ) {
+          nearby.push({
+            ra: s.ra,
+            dec: s.dec,
+            magnitude: s.magnitude,
+            name: s.name,
+          });
+        }
       }
-    }
-    renderFinderChart(canvas, targetRA, targetDec, event.name, nearby);
-  }).catch(() => {
-    renderFinderChart(canvas, targetRA, targetDec, event.name);
-  });
+      renderFinderChart(canvas, targetRA, targetDec, event.name, nearby);
+    })
+    .catch(() => {
+      renderFinderChart(canvas, targetRA, targetDec, event.name);
+    });
 
   // Image section: try Wikimedia Commons → SkyView DSS2 → fallback link
   const imgWrap = document.createElement("div");
@@ -413,7 +500,9 @@ interface WikiImageResult {
   artist: string;
 }
 
-async function searchWikimediaCommons(name: string): Promise<WikiImageResult | null> {
+async function searchWikimediaCommons(
+  name: string,
+): Promise<WikiImageResult | null> {
   // Normalize search terms: "Orion Nebula", "M42", etc.
   const terms = encodeURIComponent(name);
   const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${terms}%20astronomy&gsrlimit=5&prop=imageinfo&iiprop=url|extmetadata|size|mime&iiurlwidth=600&format=json&origin=*`;
@@ -421,19 +510,22 @@ async function searchWikimediaCommons(name: string): Promise<WikiImageResult | n
   try {
     const resp = await fetch(url);
     if (!resp.ok) return null;
-    const data = await resp.json() as {
+    const data = (await resp.json()) as {
       query?: {
-        pages?: Record<string, {
-          imageinfo?: Array<{
-            thumburl?: string;
-            url: string;
-            descriptionurl: string;
-            mime: string;
-            width: number;
-            height: number;
-            extmetadata?: { Artist?: { value: string } };
-          }>;
-        }>;
+        pages?: Record<
+          string,
+          {
+            imageinfo?: Array<{
+              thumburl?: string;
+              url: string;
+              descriptionurl: string;
+              mime: string;
+              width: number;
+              height: number;
+              extmetadata?: { Artist?: { value: string } };
+            }>;
+          }
+        >;
       };
     };
 
@@ -445,7 +537,8 @@ async function searchWikimediaCommons(name: string): Promise<WikiImageResult | n
       const info = page.imageinfo?.[0];
       if (!info) continue;
       // Only allow raster images — skip SVGs, PDFs, videos, audio, etc.
-      if (!info.mime.startsWith("image/") || info.mime === "image/svg+xml") continue;
+      if (!info.mime.startsWith("image/") || info.mime === "image/svg+xml")
+        continue;
       if (info.width < 200 || info.height < 200) continue;
 
       const imgUrl = info.thumburl ?? info.url;
@@ -514,7 +607,11 @@ function fallbackToSkyView(
   img.onerror = () => showNoImage(wrap, event.name, wikiPageUrl);
 }
 
-function showNoImage(wrap: HTMLElement, name: string, wikiPageUrl: string): void {
+function showNoImage(
+  wrap: HTMLElement,
+  name: string,
+  wikiPageUrl: string,
+): void {
   wrap.innerHTML = `
     <div class="image-unavailable">
       <p>No image available at present</p>
@@ -539,7 +636,12 @@ function renderMeteorDetailFull(
   const month = now.getMonth() + 1;
   const day = now.getDate();
   const isPeak = month === shower.peakMonth && day === shower.peakDay;
-  const daysFromPeak = daysBetween(month, day, shower.peakMonth, shower.peakDay);
+  const daysFromPeak = daysBetween(
+    month,
+    day,
+    shower.peakMonth,
+    shower.peakDay,
+  );
 
   const content = document.createElement("div");
 
@@ -553,13 +655,15 @@ function renderMeteorDetailFull(
   const statusTag = isPeak
     ? '<span class="tag tag-peak">Peak Tonight!</span>'
     : daysFromPeak <= 3
-      ? `<span class="tag tag-near-peak">${daysFromPeak} day${daysFromPeak > 1 ? 's' : ''} from peak</span>`
+      ? `<span class="tag tag-near-peak">${daysFromPeak} day${daysFromPeak > 1 ? "s" : ""} from peak</span>`
       : `<span class="tag">Active</span>`;
 
   html += `<div class="detail-tags" style="margin-bottom:16px">${statusTag}</div>`;
 
   // Observing info
-  html += detailSection('Observing Information', `
+  html += detailSection(
+    "Observing Information",
+    `
     <div class="detail-grid">
       ${detailItem("Altitude", event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
       ${detailItem("Direction", event.azimuth !== null ? `${event.azimuth.toFixed(0)}° ${azimuthToCompassShort(event.azimuth)}` : "—")}
@@ -571,36 +675,47 @@ function renderMeteorDetailFull(
       ${event.set ? detailItem("Radiant Set", fmtTime(event.set)) : ""}
       ${event.transit ? detailItem("Radiant Transit", fmtTime(event.transit)) : ""}
     </div>
-  `);
+  `,
+  );
 
   // Activity window
-  html += detailSection('Activity Window', `
+  html += detailSection(
+    "Activity Window",
+    `
     <div class="detail-grid">
       ${detailItem("Start", `${monthName(shower.startMonth)} ${shower.startDay}`)}
       ${detailItem("Peak", `${monthName(shower.peakMonth)} ${shower.peakDay}`)}
       ${detailItem("End", `${monthName(shower.endMonth)} ${shower.endDay}`)}
       ${detailItem("Duration", `${activityDays(shower)} days`)}
     </div>
-  `);
+  `,
+  );
 
   // Observing tips
-  const speedDesc = shower.speed > 60 ? "very fast"
-    : shower.speed > 45 ? "fast"
-    : shower.speed > 30 ? "medium-speed"
-    : "slow";
+  const speedDesc =
+    shower.speed > 60
+      ? "very fast"
+      : shower.speed > 45
+        ? "fast"
+        : shower.speed > 30
+          ? "medium-speed"
+          : "slow";
 
   const tips = [
     `Look away from the radiant point for longer meteor trails.`,
-    `${speedDesc.charAt(0).toUpperCase() + speedDesc.slice(1)} meteors (${shower.speed} km/s) — ${shower.speed > 50 ? 'expect bright streaks' : 'watch for bright fireballs'}.`,
+    `${speedDesc.charAt(0).toUpperCase() + speedDesc.slice(1)} meteors (${shower.speed} km/s) — ${shower.speed > 50 ? "expect bright streaks" : "watch for bright fireballs"}.`,
     `Best viewing after midnight when the radiant is highest.`,
     `Allow 20 minutes for your eyes to fully dark-adapt.`,
     `ZHR ${shower.zhr} is the theoretical maximum under perfect conditions — expect roughly half that in practice.`,
   ];
-  html += detailSection('Observing Tips', `
+  html += detailSection(
+    "Observing Tips",
+    `
     <div class="meteor-tips">
-      ${tips.map(t => `<p class="detail-prose" style="margin-bottom:8px">• ${t}</p>`).join('')}
+      ${tips.map((t) => `<p class="detail-prose" style="margin-bottom:8px">• ${t}</p>`).join("")}
     </div>
-  `);
+  `,
+  );
 
   content.innerHTML = html;
   container.appendChild(content);
@@ -612,7 +727,23 @@ function renderMeteorDetailFull(
 }
 
 function monthName(m: number): string {
-  return ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m] ?? "";
+  return (
+    [
+      "",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ][m] ?? ""
+  );
 }
 
 function daysBetween(m1: number, d1: number, m2: number, d2: number): number {
@@ -732,8 +863,8 @@ function renderSkyContextContent(
             <span class="nearby-name">${obj.name}</span>
             <span class="nearby-sep">${obj.separation.toFixed(1)}°</span>
           </div>
-          <div class="nearby-type">${obj.type}${obj.magnitude !== null ? ` · mag ${obj.magnitude.toFixed(1)}` : ''}</div>
-          <div class="nearby-dir">${obj.direction}${obj.constellation ? ` · ${obj.constellation}` : ''}</div>
+          <div class="nearby-type">${obj.type}${obj.magnitude !== null ? ` · mag ${obj.magnitude.toFixed(1)}` : ""}</div>
+          <div class="nearby-dir">${obj.direction}${obj.constellation ? ` · ${obj.constellation}` : ""}</div>
         `;
         grid.appendChild(card);
       }
@@ -779,7 +910,7 @@ function renderSkyContextContent(
     photoSection.className = "detail-section";
     photoSection.innerHTML = `
       <h3 class="detail-section-title">Photography</h3>
-      ${skyCtx.photographyTips.map(t => `<p class="detail-prose" style="margin-bottom:6px">• ${t}</p>`).join('')}
+      ${skyCtx.photographyTips.map((t) => `<p class="detail-prose" style="margin-bottom:6px">• ${t}</p>`).join("")}
     `;
     wrapper.appendChild(photoSection);
   }
@@ -791,18 +922,23 @@ function sanitizeLLMHtml(raw: string): string {
   // Re-enable only <a> tags with href/target/rel
   return div.innerHTML.replace(
     /&lt;a\s+href=&quot;(https:\/\/en\.wikipedia\.org\/wiki\/[^&]+)&quot;(?:\s+target=&quot;_blank&quot;)?(?:\s+rel=&quot;noopener&quot;)?&gt;([^&]+)&lt;\/a&gt;/g,
-    (_, url, text) => `<a href="${url}" target="_blank" rel="noopener" class="wiki-link">${text}</a>`,
+    (_, url, text) =>
+      `<a href="${url}" target="_blank" rel="noopener" class="wiki-link">${text}</a>`,
   );
 }
 
 function formatLLMDiagnostics(): string {
   const diagnostics = getLLMDiagnostics();
   const parts: string[] = [];
-  if (diagnostics.activeModelId) parts.push(`model ${diagnostics.activeModelId}`);
+  if (diagnostics.activeModelId)
+    parts.push(`model ${diagnostics.activeModelId}`);
   if (diagnostics.maxStorageBufferBindingSize !== null) {
-    parts.push(`GPU buffer ${Math.round(diagnostics.maxStorageBufferBindingSize / 1_048_576)} MB`);
+    parts.push(
+      `GPU buffer ${Math.round(diagnostics.maxStorageBufferBindingSize / 1_048_576)} MB`,
+    );
   }
-  if (diagnostics.deviceMemoryGB !== null) parts.push(`RAM ${diagnostics.deviceMemoryGB} GB`);
+  if (diagnostics.deviceMemoryGB !== null)
+    parts.push(`RAM ${diagnostics.deviceMemoryGB} GB`);
   if (diagnostics.gpuVendor) parts.push(`GPU ${diagnostics.gpuVendor}`);
   return parts.length ? ` (${parts.join("; ")})` : "";
 }
@@ -836,7 +972,9 @@ function appendLLMSection(
   const btn = section.querySelector(".llm-activate-btn") as HTMLButtonElement;
   const progress = section.querySelector(".llm-progress") as HTMLElement;
   const fill = section.querySelector(".llm-progress-fill") as HTMLElement;
-  const progressText = section.querySelector(".llm-progress-text") as HTMLElement;
+  const progressText = section.querySelector(
+    ".llm-progress-text",
+  ) as HTMLElement;
   const narrative = section.querySelector(".llm-narrative") as HTMLElement;
 
   // Run GPU check before showing button
@@ -844,72 +982,83 @@ function appendLLMSection(
     capMsg.style.display = "none";
     if (!cap.ok) {
       narrative.style.display = "block";
-      narrative.textContent = cap.reason ?? "This device cannot run the AI model.";
+      narrative.textContent =
+        cap.reason ?? "This device cannot run the AI model.";
       return;
     }
 
     // Device is capable — show the load button
     const status = getLLMStatus();
     const sizeMB = getModelSizeMB();
-    const sizeLabel = sizeMB >= 1000 ? `~${(sizeMB / 1000).toFixed(1)} GB` : `~${sizeMB} MB`;
+    const sizeLabel =
+      sizeMB >= 1000 ? `~${(sizeMB / 1000).toFixed(1)} GB` : `~${sizeMB} MB`;
     const modelLabel = getModelLabel();
-    btn.textContent = status === "ready"
-      ? "Load AI Commentary on This Location"
-      : `Load AI Commentary on This Location (${modelLabel}, ${sizeLabel})`;
+    btn.textContent =
+      status === "ready"
+        ? "Load AI Commentary on This Location"
+        : `Load AI Commentary on This Location (${modelLabel}, ${sizeLabel})`;
     btn.style.display = "";
 
     btn.addEventListener("click", () => {
-    btn.style.display = "none";
-    const abort = freshAbort();
+      btn.style.display = "none";
+      const abort = freshAbort();
 
-    const runGeneration = (skyCtx: SkyContext) => {
-      if (abort.signal.aborted) return;
-      narrative.style.display = "block";
-      narrative.textContent = "Generating...";
-      generateSkyNarrative(skyCtx, (text) => {
-        if (!abort.signal.aborted) narrative.innerHTML = sanitizeLLMHtml(text);
-      }, abort.signal).then((result) => {
-        if (!abort.signal.aborted && !result) {
-          narrative.textContent = "Model returned an empty response. Try again.";
-        }
-      }).catch((err: unknown) => {
-        if (!abort.signal.aborted) {
-          const msg = err instanceof Error ? err.message : String(err);
-          console.error("[LLM generate]", err);
-          narrative.textContent = `Could not generate description: ${msg}${formatLLMDiagnostics()}`;
-        }
-      });
-    };
+      const runGeneration = (skyCtx: SkyContext) => {
+        if (abort.signal.aborted) return;
+        narrative.style.display = "block";
+        narrative.textContent = "Generating...";
+        generateSkyNarrative(
+          skyCtx,
+          (text) => {
+            if (!abort.signal.aborted)
+              narrative.innerHTML = sanitizeLLMHtml(text);
+          },
+          abort.signal,
+        )
+          .then((result) => {
+            if (!abort.signal.aborted && !result) {
+              narrative.textContent =
+                "Model returned an empty response. Try again.";
+            }
+          })
+          .catch((err: unknown) => {
+            if (!abort.signal.aborted) {
+              const msg = err instanceof Error ? err.message : String(err);
+              console.error("[LLM generate]", err);
+              narrative.textContent = `Could not generate description: ${msg}${formatLLMDiagnostics()}`;
+            }
+          });
+      };
 
-    if (getLLMStatus() === "ready") {
-      // Model already loaded — build context then generate
-      progress.style.display = "block";
-      progressText.textContent = "Building sky context...";
-      fill.style.width = "100%";
-      buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
-        progress.style.display = "none";
-        runGeneration(skyCtx);
-      });
-    } else {
-      // Need to load model first
-      progress.style.display = "block";
-      loadLLM((text, pct) => {
-        if (abort.signal.aborted) return;
-        progressText.textContent = text;
-        fill.style.width = `${(pct * 100).toFixed(0)}%`;
-      }).then((ok) => {
-        if (abort.signal.aborted) return;
-        progress.style.display = "none";
-        if (!ok) {
-          narrative.style.display = "block";
-          narrative.textContent = `${getLLMError() ?? "Could not load AI model. WebGPU may not be supported."}${formatLLMDiagnostics()}`;
-          return;
-        }
+      if (getLLMStatus() === "ready") {
+        // Model already loaded — build context then generate
+        progress.style.display = "block";
+        progressText.textContent = "Building sky context...";
+        fill.style.width = "100%";
         buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
-          if (!abort.signal.aborted) runGeneration(skyCtx);
+          progress.style.display = "none";
+          runGeneration(skyCtx);
         });
-      });
-    }
+      } else {
+        // Need to load model first
+        progress.style.display = "block";
+        loadLLM((text, pct) => {
+          if (abort.signal.aborted) return;
+          progressText.textContent = text;
+          fill.style.width = `${(pct * 100).toFixed(0)}%`;
+        }).then((ok) => {
+          if (abort.signal.aborted) return;
+          progress.style.display = "none";
+          if (!ok) {
+            narrative.style.display = "block";
+            narrative.textContent = `${getLLMError() ?? "Could not load AI model. WebGPU may not be supported."}${formatLLMDiagnostics()}`;
+            return;
+          }
+          buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
+            if (!abort.signal.aborted) runGeneration(skyCtx);
+          });
+        });
+      }
     });
   });
 }
