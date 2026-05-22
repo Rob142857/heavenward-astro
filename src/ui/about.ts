@@ -133,13 +133,12 @@ function renderDataAcknowledgements(): string {
 
   return `
     <div class="about-section" id="about-sources">
-      <h3 class="about-heading">With Thanks</h3>
+      <h3 class="about-heading">The Sources Beneath the Sky</h3>
       <p class="about-prose">
-        We are grateful for our data sources. Heavenward is a robust open-source front end
-        built around the catalogs and feeds that are its soul — reservoirs of reliable, excellent
-        data assembled from many careful human observations of this great universe. Our thanks
-        to the maintainers who keep these datasets alive, and to the astronomers and observers
-        whose patient nights under the sky make the records possible.
+        Everything you see in Heavenward is real observation. Each catalog below is a
+        reservoir of meticulous measurement — orbits refined over centuries, positions taken
+        plate by plate and frame by frame, brightnesses logged on cold nights at the eyepiece
+        and across modern surveys. Heavenward is the front end; these are its substance.
       </p>
       <div class="about-features about-provenance" style="margin-top:16px">
         ${cards}
@@ -155,7 +154,6 @@ function renderAcknowledgementCard(source: CatalogProvenance): string {
       <div>
         <strong><a href="${source.primaryUrl}" target="_blank" rel="noopener" class="wiki-link">${source.label}</a></strong>
         <p>${source.summary}</p>
-        <p class="about-gratitude">${source.gratitude}</p>
       </div>
     </div>
   `;
