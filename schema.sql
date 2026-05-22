@@ -34,3 +34,21 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE INDEX IF NOT EXISTS idx_events_ts ON events(ts);
 CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id);
 CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_id);
+
+-- Saved observing sessions (lightweight diary, ~1 row per evening per user).
+-- Coarse region only — never raw GPS coordinates.
+CREATE TABLE IF NOT EXISTS observations (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  started_at TEXT NOT NULL,
+  ended_at TEXT NOT NULL,
+  region TEXT,
+  lat_coarse REAL,
+  lon_coarse REAL,
+  entry_count INTEGER NOT NULL DEFAULT 0,
+  entries_json TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_observations_user
+  ON observations(user_id, started_at DESC);

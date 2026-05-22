@@ -1065,8 +1065,100 @@ body {
   flex-wrap: wrap;
 }
 .source-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex: 1;
   min-width: 0;
+}
+.source-info-button {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border: 1px solid rgba(79, 195, 247, 0.28);
+  border-radius: 50%;
+  background: rgba(79, 195, 247, 0.08);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.source-info-button:hover,
+.source-info-button:focus-visible {
+  background: rgba(79, 195, 247, 0.16);
+  border-color: var(--accent);
+}
+.source-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 14, 26, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.source-modal {
+  position: relative;
+  width: min(100%, 420px);
+  border: 1px solid rgba(79, 195, 247, 0.18);
+  border-radius: 12px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+.source-modal-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.source-modal h3 {
+  color: var(--text);
+  font-size: 1rem;
+  margin: 0 44px 8px 0;
+}
+.source-modal p {
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+.source-modal dl {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.source-modal dl div {
+  display: grid;
+  gap: 2px;
+}
+.source-modal dt {
+  color: var(--gold-light);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.source-modal dd {
+  color: var(--text);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.source-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 .source-tooltip {
   max-height: 0;
@@ -1688,6 +1780,20 @@ body {
   text-align: center;
   padding: 32px 0 24px;
 }
+.about-wordmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.about-wordmark .seba-logo {
+  width: 46px;
+  height: 46px;
+}
+.about-wordmark .logo-text {
+  font-size: 1.45rem;
+}
 .about-title {
   font-size: 1.8rem;
   font-weight: 700;
@@ -1701,8 +1807,44 @@ body {
   margin: 0;
   font-style: italic;
 }
+.about-quote {
+  margin: 22px auto 4px;
+  padding: 6px 0 0;
+  max-width: 32ch;
+  text-align: center;
+  border: 0;
+  background: none;
+}
+.about-quote blockquote {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--text);
+  font-style: italic;
+  font-size: 1.18rem;
+  line-height: 1.55;
+  letter-spacing: 0.012em;
+}
+.about-quote blockquote p {
+  margin: 0;
+}
+.about-quote blockquote p + p {
+  text-indent: 1.6em;
+}
+.about-quote figcaption {
+  margin-top: 14px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  font-style: normal;
+}
+.about-quote cite {
+  font-style: italic;
+  color: var(--text);
+  opacity: 0.85;
+}
 .about-section {
   margin-bottom: 28px;
+  scroll-margin-top: 16px;
 }
 .about-heading {
   font-size: 1rem;
@@ -1752,6 +1894,16 @@ body {
   color: var(--gold-light);
   font-weight: 600;
 }
+.about-subheading {
+  color: var(--gold-light);
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  margin: 18px 0 8px;
+  text-transform: uppercase;
+}
+.about-source-pipeline {
+  margin-top: 18px;
+}
 .about-gratitude {
   color: var(--text) !important;
   opacity: 0.9;
@@ -1778,9 +1930,12 @@ body {
 }
 .about-version {
   color: var(--text-dim);
-  font-size: 0.75rem;
-  margin-top: 16px;
-  opacity: 0.5;
+  font-size: 0.68rem;
+  font-family: ui-monospace, "Cascadia Mono", Menlo, monospace;
+  letter-spacing: 0.04em;
+  margin-top: 18px;
+  opacity: 0.38;
+  text-align: center;
 }
 
 /* ── Responsive: Tablet ───────────────────────────────── */
@@ -1936,4 +2091,218 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ── Stuff: Observations action ─────────────────────── */
+.stuff-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: 0;
+  color: var(--text);
+  padding: 10px 12px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.stuff-action:hover {
+  background: rgba(79, 195, 247, 0.08);
+}
+.stuff-action svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* ── Observations modal ─────────────────────────────── */
+.obs-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 18, 0.78);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.obs-modal {
+  background: #0f1424;
+  border: 1px solid rgba(79, 195, 247, 0.18);
+  border-radius: 14px;
+  width: min(560px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+.obs-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.obs-modal-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+.obs-close {
+  background: none;
+  border: 0;
+  color: var(--text-dim);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.obs-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+.obs-modal-body {
+  padding: 16px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.obs-empty {
+  color: var(--text-dim);
+  font-style: italic;
+  margin: 8px 0;
+  line-height: 1.6;
+}
+.obs-summary {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.obs-summary strong {
+  color: var(--accent);
+}
+.obs-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+.obs-notes {
+  width: 100%;
+  min-height: 60px;
+  resize: vertical;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.88rem;
+}
+.obs-export {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-family: ui-monospace, "Cascadia Mono", Menlo, monospace;
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+}
+.obs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.obs-actions .btn {
+  flex: 1 1 auto;
+  min-width: 110px;
+}
+.obs-status {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  min-height: 1em;
+}
+.obs-history-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+.obs-history-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Observations history list ──────────────────────── */
+.obs-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.obs-history-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.obs-history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.obs-history-date {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.obs-history-meta {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+.obs-history-del {
+  background: none;
+  border: 0;
+  color: var(--text-dim);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.obs-history-del:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+.obs-history-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 0.85rem;
+}
+.obs-history-more {
+  color: var(--text-dim);
+  font-style: italic;
+}
+.muted-prose {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding: 6px 0 12px;
 }

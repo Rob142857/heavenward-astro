@@ -1,6 +1,9 @@
 import type { GeoLocation, AppContext } from "../types.js";
 import { navigate } from "./router.js";
 import { bindInstallPrompt } from "../services/pwa.js";
+import { openObservationsModal } from "./observations.js";
+
+let currentCtx: AppContext | null = null;
 
 const SHARE_URL = "https://sky.incitat.io/about";
 const SHARE_TITLE = "Heavenward";
@@ -35,7 +38,7 @@ const FACEBOOK_SHARE_URL = `https://www.facebook.com/sharer/sharer.php?u=${encod
 const SMS_SHARE_URL = `sms:?&body=${encodeURIComponent(SHARE_COPY)}`;
 
 /* ── Seba hieroglyph SVG (animated gold shimmer) ──── */
-const SEBA_SVG = `<svg class="seba-logo" viewBox="0 0 100 100" width="38" height="38" aria-hidden="true">
+export const SEBA_SVG = `<svg class="seba-logo" viewBox="0 0 100 100" width="38" height="38" aria-hidden="true">
   <defs>
     <linearGradient id="seba-grad" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#c5a44e">
@@ -84,6 +87,7 @@ const NAV_ITEMS = [
 ];
 
 export function renderHeader(container: HTMLElement, ctx: AppContext): void {
+  currentCtx = ctx;
   const header = document.createElement("header");
   header.className = "header";
 
@@ -179,6 +183,7 @@ function renderStuffMenu(): HTMLElement {
     <div class="stuff-panel-title">Stuff</div>
     <nav class="stuff-list" aria-label="Stuff">
       <a href="#/about" data-stuff-nav>${infoIcon()}<span>About</span></a>
+      <button type="button" data-observations class="stuff-action">${journalIcon()}<span>Observations</span></button>
       <div class="stuff-social">
         <div class="stuff-social-label">${shareIcon()}<span>Be social</span></div>
         <div class="stuff-social-grid">
@@ -237,6 +242,13 @@ function renderStuffMenu(): HTMLElement {
     .querySelector<HTMLButtonElement>("[data-copy-share]")
     ?.addEventListener("click", async () => {
       await copyShare(status, "Share text copied");
+    });
+
+  panel
+    .querySelector<HTMLButtonElement>("[data-observations]")
+    ?.addEventListener("click", () => {
+      menu.removeAttribute("open");
+      if (currentCtx) openObservationsModal(currentCtx);
     });
 
   panel
@@ -324,6 +336,10 @@ function mailIcon(): string {
 
 function supportIcon(): string {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a8 8 0 0 1 16 0"/><path d="M18 19c0 1.1-.9 2-2 2h-3"/><path d="M4 14v3a2 2 0 0 0 2 2h1v-7H6a2 2 0 0 0-2 2Z"/><path d="M20 14v3a2 2 0 0 1-2 2h-1v-7h1a2 2 0 0 1 2 2Z"/></svg>`;
+}
+
+function journalIcon(): string {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2Z"/><path d="M18 2v18"/><path d="M8 7h6"/><path d="M8 11h6"/><path d="M8 15h4"/></svg>`;
 }
 
 function slidersIcon(): string {

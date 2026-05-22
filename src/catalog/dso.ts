@@ -36,10 +36,21 @@ export interface DSOEntry {
 }
 
 let cache: DSOEntry[] | null = null;
+let byId: Map<string, DSOEntry> | null = null;
 
 export async function loadDSOCatalog(): Promise<DSOEntry[]> {
   if (cache) return cache;
   const mod = await import("./dso.json");
   cache = mod.default as DSOEntry[];
   return cache;
+}
+
+/** O(1) lookup by id. Builds the index on first call. */
+export async function getDSOById(id: string): Promise<DSOEntry | undefined> {
+  const catalog = await loadDSOCatalog();
+  if (!byId) {
+    byId = new Map<string, DSOEntry>();
+    for (const d of catalog) byId.set(d.id, d);
+  }
+  return byId.get(id);
 }

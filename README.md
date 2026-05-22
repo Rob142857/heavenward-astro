@@ -73,12 +73,13 @@ npm run dev          # Vite dev server on localhost:5173
 
 ## Commands
 
-| Command           | Description                        |
-| ----------------- | ---------------------------------- |
-| `npm run dev`     | Start Vite dev server              |
-| `npm run build`   | Type-check + production build      |
-| `npm run preview` | Local preview via Wrangler         |
-| `npm run deploy`  | Build + deploy to Cloudflare Pages |
+| Command                  | Description                                          |
+| ------------------------ | ---------------------------------------------------- |
+| `npm run dev`            | Start Vite dev server                                |
+| `npm run build`          | Type-check + production build                        |
+| `npm run preview`        | Local preview via Wrangler                           |
+| `npm run deploy`         | Build + deploy to Cloudflare Pages production branch |
+| `npm run deploy:preview` | Build + deploy a non-production preview branch       |
 
 ## How it works
 

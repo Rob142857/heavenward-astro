@@ -1,10 +1,31 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { resolve } from 'path';
+import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+
+const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8')) as { version: string };
+
+function gitShortSha(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+  } catch {
+    return 'local';
+  }
+}
+
+const APP_VERSION = pkg.version;
+const APP_BUILD = `${gitShortSha()}.${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`;
 
 export default defineConfig({
   root: '.',
   publicDir: 'public',
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+    __APP_BUILD__: JSON.stringify(APP_BUILD),
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

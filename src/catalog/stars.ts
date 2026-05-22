@@ -31,10 +31,21 @@ export interface StarEntry {
 }
 
 let cache: StarEntry[] | null = null;
+let byId: Map<string, StarEntry> | null = null;
 
 export async function loadStarCatalog(): Promise<StarEntry[]> {
   if (cache) return cache;
   const mod = await import("./stars.json");
   cache = mod.default as StarEntry[];
   return cache;
+}
+
+/** O(1) lookup by id. Builds the index on first call. */
+export async function getStarById(id: string): Promise<StarEntry | undefined> {
+  const catalog = await loadStarCatalog();
+  if (!byId) {
+    byId = new Map<string, StarEntry>();
+    for (const s of catalog) byId.set(s.id, s);
+  }
+  return byId.get(id);
 }

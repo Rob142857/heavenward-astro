@@ -4,11 +4,17 @@ import { requestGPS, getSavedLocation } from "./services/geolocation.js";
 import { loadPrefs } from "./services/prefs.js";
 import { route, startRouter } from "./ui/router.js";
 import { renderTonight } from "./ui/tonight.js";
-import { renderDetail, renderDSODetail, renderStarDetail, restoreBreadcrumb } from "./ui/detail.js";
+import {
+  renderDetail,
+  renderDSODetail,
+  renderStarDetail,
+  restoreBreadcrumb,
+} from "./ui/detail.js";
 import { renderSources } from "./ui/sources.js";
 import { renderLocation } from "./ui/location.js";
 import { renderAccount, tryLoadUser } from "./ui/account.js";
 import { renderAbout } from "./ui/about.js";
+import { renderObservations } from "./ui/observations.js";
 import { initAnalytics } from "./services/analytics.js";
 import { initPWA } from "./services/pwa.js";
 
@@ -61,6 +67,10 @@ async function boot(): Promise<void> {
   route("/location", () => renderLocation(app, ctx));
   route("/account", () => renderAccount(app, ctx));
   route("/about", () => renderAbout(app, ctx));
+  route("/about/sources", () => renderAbout(app, ctx, "sources"));
+  route("/observations", () => {
+    void renderObservations(app, ctx);
+  });
 
   startRouter();
 }

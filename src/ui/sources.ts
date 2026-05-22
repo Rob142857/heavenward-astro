@@ -1,6 +1,5 @@
 import type { AppContext, Equipment } from "../types.js";
 import {
-  expansionCatalogSources,
   runtimeCatalogSources,
   type CatalogProvenance,
 } from "../catalog/provenance.js";
@@ -28,7 +27,7 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
   const provenanceNote = document.createElement("p");
   provenanceNote.className = "source-note";
   provenanceNote.textContent =
-    "Each source lists its maintainers, license notes, transform path, and thanks to the observers behind the data.";
+    "Choose what appears in Tonight. Tap the info button for a short source note; full credits live on About.";
   container.appendChild(provenanceNote);
 
   for (const src of runtimeCatalogSources()) {
@@ -37,9 +36,7 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
     row.innerHTML = `
       <div class="source-info">
         <span class="toggle-label">${src.label}</span>
-        <div class="source-tooltip">
-          ${sourceTooltip(src)}
-        </div>
+        <button type="button" class="source-info-button" aria-label="About ${src.label} source">i</button>
       </div>
       <label class="toggle">
         <input type="checkbox" ${prefs.enabledSources.includes(src.key) ? "checked" : ""} data-source="${src.key}">
@@ -47,11 +44,10 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
       </label>
     `;
     const input = row.querySelector("input")!;
-    const info = row.querySelector(".source-info")!;
-    info.addEventListener("click", (e) => {
-      if ((e.target as HTMLElement).tagName === "A") return;
-      row.classList.toggle("expanded");
-    });
+    const infoButton = row.querySelector<HTMLButtonElement>(
+      ".source-info-button",
+    )!;
+    infoButton.addEventListener("click", () => showSourceModal(src));
     input.addEventListener("change", () => {
       const current = loadPrefs();
       if (input.checked) {
@@ -68,8 +64,6 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
     });
     container.appendChild(row);
   }
-
-  renderCatalogPipeline(container);
 
   // Magnitude limit
   const magSection = document.createElement("h3");
@@ -177,89 +171,45 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
   }
 }
 
-function renderCatalogPipeline(container: HTMLElement): void {
-  const section = document.createElement("h3");
-  section.className = "section-title";
-  section.textContent = "Catalog Import Pipeline";
-  container.appendChild(section);
+function showSourceModal(source: CatalogProvenance): void {
+  document.querySelector(".source-modal-backdrop")?.remove();
 
-  const note = document.createElement("p");
-  note.className = "source-note";
-  note.textContent =
-    "Scripted imports are reproducible from npm run refresh. Manual reviews and planned datasets are documented here so licensing and attribution stay visible.";
-  container.appendChild(note);
-
-  const grid = document.createElement("div");
-  grid.className = "provenance-grid";
-  const pipelineSources = [
-    ...runtimeCatalogSources().filter((source) => source.importJob),
-    ...expansionCatalogSources(),
-  ];
-
-  for (const source of pipelineSources) {
-    const card = document.createElement("div");
-    card.className = "provenance-card";
-    card.innerHTML = `
-      <div class="provenance-card-head">
-        <strong>${source.label}</strong>
-        <span>${statusLabel(source.status)}</span>
-      </div>
+  const backdrop = document.createElement("div");
+  backdrop.className = "source-modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="source-modal" role="dialog" aria-modal="true" aria-labelledby="source-modal-title">
+      <button type="button" class="source-modal-close" aria-label="Close source note">&times;</button>
+      <h3 id="source-modal-title">${source.label}</h3>
       <p>${source.summary}</p>
       <dl>
-        <div><dt>Output</dt><dd>${source.output}</dd></div>
-        <div><dt>Mode</dt><dd>${source.importJob ? modeLabel(source.importJob.mode) : "Planned"}</dd></div>
+        <div><dt>Maintained by</dt><dd>${source.maintainer}</dd></div>
         <div><dt>License</dt><dd>${source.license}</dd></div>
-        <div><dt>Command</dt><dd>${source.importJob ? source.importJob.command : "Planned importer"}</dd></div>
       </dl>
-      <a href="${source.primaryUrl}" target="_blank" rel="noopener" class="source-link">Primary source</a>
-    `;
-    grid.appendChild(card);
-  }
-
-  container.appendChild(grid);
-}
-
-function sourceTooltip(source: CatalogProvenance): string {
-  const upstreams = source.upstreams
-    .slice(0, 3)
-    .map(
-      (upstream) =>
-        `<li><a href="${upstream.url}" target="_blank" rel="noopener" class="source-link">${upstream.name}</a> - ${upstream.role}</li>`,
-    )
-    .join("");
-
-  return `
-    <p>${source.summary}</p>
-    <p><strong>Maintained by:</strong> ${source.maintainer}</p>
-    <p><strong>License:</strong> ${source.license}</p>
-    <p><strong>Output:</strong> ${source.output}</p>
-    ${source.importJob ? `<p><strong>Import:</strong> ${source.importJob.command}</p>` : ""}
-    <ul class="source-upstream-list">${upstreams}</ul>
-    <p class="source-thanks">${source.gratitude}</p>
-    <a href="${source.primaryUrl}" target="_blank" rel="noopener" class="source-link">Primary source</a>
+      <div class="source-modal-actions">
+        <a href="#/about/sources" class="source-link">Full source notes</a>
+        <a href="${source.primaryUrl}" target="_blank" rel="noopener" class="source-link">Primary source</a>
+      </div>
+    </div>
   `;
-}
 
-function statusLabel(status: CatalogProvenance["status"]): string {
-  switch (status) {
-    case "active":
-      return "Active";
-    case "planned":
-      return "Planned";
-    case "reference":
-      return "Reference";
-  }
-}
+  const close = () => {
+    document.removeEventListener("keydown", onKeydown);
+    backdrop.remove();
+  };
+  const onKeydown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") close();
+  };
 
-function modeLabel(
-  mode: NonNullable<CatalogProvenance["importJob"]>["mode"],
-): string {
-  switch (mode) {
-    case "scripted":
-      return "Scripted refresh";
-    case "manual":
-      return "Manual review";
-    case "planned":
-      return "Planned importer";
-  }
+  backdrop.addEventListener("click", (event) => {
+    if (event.target === backdrop) close();
+  });
+  backdrop
+    .querySelector<HTMLButtonElement>(".source-modal-close")
+    ?.addEventListener("click", close);
+  backdrop.querySelectorAll<HTMLAnchorElement>("a").forEach((link) => {
+    link.addEventListener("click", close);
+  });
+  document.addEventListener("keydown", onKeydown);
+  document.body.appendChild(backdrop);
+  backdrop.querySelector<HTMLButtonElement>(".source-modal-close")?.focus();
 }

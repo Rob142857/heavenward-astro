@@ -1,13 +1,15 @@
 {
   "name": "heavenward",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "description": "Dusk-till-dawn astronomical event report — everything visible tonight, one tap away",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "wrangler pages dev dist",
-    "deploy": "npm run build && wrangler pages deploy dist",
+    "deploy": "npm run deploy:production",
+    "deploy:production": "npm run build && wrangler pages deploy dist --branch production",
+    "deploy:preview": "npm run build && wrangler pages deploy dist --branch preview",
     "typecheck": "tsc --noEmit",
     "refresh": "node --experimental-strip-types scripts/refresh-catalog.ts",
     "catalog:plan": "node --experimental-strip-types scripts/refresh-catalog.ts --plan"

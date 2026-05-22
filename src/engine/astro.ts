@@ -114,6 +114,7 @@ export function getPlanetEvents(
       angularSize: null,
       distanceAU: illum.geo_dist,
       extra: {
+        sourceKey: "planets",
         phaseAngle: illum.phase_angle,
         helioDistAU: illum.helio_dist,
         elongation: Astronomy.AngleFromSun(body, date),
@@ -160,6 +161,7 @@ export function getMoonEvent(loc: GeoLocation, date: Date): CelestialEvent {
     angularSize: lib.diam_deg * 60, // to arcminutes
     distanceAU: illum.geo_dist,
     extra: {
+      sourceKey: "moon",
       phaseAngle: phase,
       phaseName,
       librationLat: lib.elat,
@@ -369,23 +371,49 @@ function refineAltCrossing(
 // ── Direction helpers ──────────────────────────────────────────────
 
 const COMPASS_16 = [
-  "north", "north-northeast", "northeast", "east-northeast",
-  "east", "east-southeast", "southeast", "south-southeast",
-  "south", "south-southwest", "southwest", "west-southwest",
-  "west", "west-northwest", "northwest", "north-northwest",
+  "north",
+  "north-northeast",
+  "northeast",
+  "east-northeast",
+  "east",
+  "east-southeast",
+  "southeast",
+  "south-southeast",
+  "south",
+  "south-southwest",
+  "southwest",
+  "west-southwest",
+  "west",
+  "west-northwest",
+  "northwest",
+  "north-northwest",
 ] as const;
 
 export function azimuthToCompass(az: number): string {
-  const i = Math.round(((az % 360) + 360) % 360 / 22.5) % 16;
+  const i = Math.round((((az % 360) + 360) % 360) / 22.5) % 16;
   return COMPASS_16[i];
 }
 
 export function azimuthToCompassShort(az: number): string {
   const shorts = [
-    "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-    "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW",
+    "N",
+    "NNE",
+    "NE",
+    "ENE",
+    "E",
+    "ESE",
+    "SE",
+    "SSE",
+    "S",
+    "SSW",
+    "SW",
+    "WSW",
+    "W",
+    "WNW",
+    "NW",
+    "NNW",
   ];
-  const i = Math.round(((az % 360) + 360) % 360 / 22.5) % 16;
+  const i = Math.round((((az % 360) + 360) % 360) / 22.5) % 16;
   return shorts[i];
 }
 

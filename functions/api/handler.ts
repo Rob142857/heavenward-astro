@@ -118,6 +118,147 @@ api.get("/keys", async (c) => {
   return c.json({ ok: true, data: result.results });
 });
 
+// ── Observations (saved evening sessions) ──────────────────────
+
+interface ObservationEntryPayload {
+  id: string;
+  name: string;
+  type: string;
+  brief?: string;
+  firstViewedAt: string;
+  lastViewedAt: string;
+  views: number;
+}
+
+interface ObservationPayload {
+  id?: string;
+  startedAt: string;
+  endedAt: string;
+  region?: string | null;
+  latCoarse?: number | null;
+  lonCoarse?: number | null;
+  entries: ObservationEntryPayload[];
+}
+
+function sanitizeEntries(raw: unknown): ObservationEntryPayload[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: ObservationEntryPayload[] = [];
+  for (const item of raw) {
+    if (typeof item !== "object" || item === null) continue;
+    const e = item as Record<string, unknown>;
+    if (typeof e.id !== "string" || typeof e.name !== "string") continue;
+    out.push({
+      id: e.id.slice(0, 128),
+      name: e.name.slice(0, 200),
+      type: typeof e.type === "string" ? e.type.slice(0, 32) : "unknown",
+      brief: typeof e.brief === "string" ? e.brief.slice(0, 400) : undefined,
+      firstViewedAt: typeof e.firstViewedAt === "string" ? e.firstViewedAt : "",
+      lastViewedAt: typeof e.lastViewedAt === "string" ? e.lastViewedAt : "",
+      views: typeof e.views === "number" ? Math.min(e.views, 1000) : 1,
+    });
+    if (out.length >= 500) break; // hard cap per session
+  }
+  return out;
+}
+
+api.post("/observations", async (c) => {
+  const user = c.get("user");
+  const body = (await c.req.json()) as unknown;
+  if (typeof body !== "object" || body === null) {
+    return c.json({ ok: false, error: "Invalid body" }, 400);
+  }
+  const b = body as Record<string, unknown>;
+  const entries = sanitizeEntries(b.entries);
+  if (!entries) {
+    return c.json({ ok: false, error: "Missing entries" }, 400);
+  }
+  const startedAt = typeof b.startedAt === "string" ? b.startedAt : null;
+  const endedAt = typeof b.endedAt === "string" ? b.endedAt : null;
+  if (!startedAt || !endedAt) {
+    return c.json({ ok: false, error: "Missing timestamps" }, 400);
+  }
+
+  const id =
+    typeof b.id === "string" && b.id.length <= 64 ? b.id : crypto.randomUUID();
+  const region = typeof b.region === "string" ? b.region.slice(0, 120) : null;
+  const latCoarse =
+    typeof b.latCoarse === "number" ? Math.round(b.latCoarse * 10) / 10 : null;
+  const lonCoarse =
+    typeof b.lonCoarse === "number" ? Math.round(b.lonCoarse * 10) / 10 : null;
+
+  await c.env.DB.prepare(
+    `INSERT INTO observations
+       (id, user_id, started_at, ended_at, region, lat_coarse, lon_coarse,
+        entry_count, entries_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       ended_at = excluded.ended_at,
+       region = excluded.region,
+       lat_coarse = excluded.lat_coarse,
+       lon_coarse = excluded.lon_coarse,
+       entry_count = excluded.entry_count,
+       entries_json = excluded.entries_json`,
+  )
+    .bind(
+      id,
+      user.sub,
+      startedAt,
+      endedAt,
+      region,
+      latCoarse,
+      lonCoarse,
+      entries.length,
+      JSON.stringify(entries),
+    )
+    .run();
+
+  return c.json({ ok: true, data: { id } }, 201);
+});
+
+api.get("/observations", async (c) => {
+  const user = c.get("user");
+  const result = await c.env.DB.prepare(
+    `SELECT id, started_at, ended_at, region, entry_count, entries_json
+       FROM observations
+      WHERE user_id = ?
+      ORDER BY started_at DESC
+      LIMIT 100`,
+  )
+    .bind(user.sub)
+    .all();
+
+  const data = (result.results ?? []).map((row) => {
+    const r = row as Record<string, unknown>;
+    let entries: ObservationEntryPayload[] = [];
+    try {
+      entries = JSON.parse(String(r.entries_json ?? "[]"));
+    } catch {
+      entries = [];
+    }
+    return {
+      id: String(r.id),
+      startedAt: String(r.started_at),
+      endedAt: String(r.ended_at),
+      region: r.region === null ? null : String(r.region),
+      entryCount: Number(r.entry_count ?? entries.length),
+      entries,
+    };
+  });
+
+  return c.json({ ok: true, data });
+});
+
+api.delete("/observations/:id", async (c) => {
+  const user = c.get("user");
+  const id = c.req.param("id");
+  await c.env.DB.prepare(
+    "DELETE FROM observations WHERE id = ? AND user_id = ?",
+  )
+    .bind(id, user.sub)
+    .run();
+  return c.json({ ok: true });
+});
+
 // ── Helpers ─────────────────────────────────────────────
 
 function generateKey(length: number): string {

@@ -7,12 +7,13 @@ import {
   azimuthToCompassShort,
   altitudeDescription,
 } from "../engine/astro.js";
-import { loadDSOCatalog } from "../catalog/dso.js";
+import { loadDSOCatalog, getDSOById } from "../catalog/dso.js";
 import type { DSOEntry } from "../catalog/dso.js";
-import { loadStarCatalog } from "../catalog/stars.js";
+import { loadStarCatalog, getStarById } from "../catalog/stars.js";
 import type { StarEntry } from "../catalog/stars.js";
 import { METEOR_SHOWERS } from "../catalog/meteors.js";
 import type { MeteorShower } from "../catalog/meteors.js";
+import { getCatalogProvenance } from "../catalog/provenance.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { renderFinderChart } from "../chart/finder.js";
 import type { FieldStar } from "../chart/finder.js";
@@ -31,6 +32,7 @@ import {
 import { navigate } from "./router.js";
 import { SORT_OPTIONS } from "./filterOptions.js";
 import { savePrefs } from "../services/prefs.js";
+import { recordObservation } from "../services/observations.js";
 
 // ── Breadcrumb trail for nearby-object navigation ─────────────────
 
@@ -145,6 +147,38 @@ function detailItem(label: string, value: string): string {
   return `<div class="detail-item"><div class="label">${label}</div><div class="value">${value}</div></div>`;
 }
 
+function detailSourceItem(event: CelestialEvent): string {
+  const key = sourceKeyForEvent(event);
+  if (!key) return "";
+  const source = getCatalogProvenance(key);
+  if (!source) return "";
+  return detailItem(
+    "Source",
+    `<a href="#/about/sources" class="wiki-link">${source.label}</a>`,
+  );
+}
+
+function sourceKeyForEvent(event: CelestialEvent): string | null {
+  const sourceKey = event.extra.sourceKey;
+  if (typeof sourceKey === "string") return sourceKey;
+  if (event.id.startsWith("star-")) return "stars";
+  if (event.id.startsWith("dso-")) return "dso";
+  if (event.id.startsWith("meteor-")) return "meteors";
+
+  switch (event.type) {
+    case "planet":
+      return "planets";
+    case "moon":
+      return "moon";
+    case "eclipse":
+      return "eclipses";
+    case "conjunction":
+      return "conjunctions";
+    default:
+      return null;
+  }
+}
+
 function detailSection(title: string, body: string): string {
   return `<div class="detail-section"><h3 class="detail-section-title">${title}</h3>${body}</div>`;
 }
@@ -179,6 +213,7 @@ function renderEventDetail(
       ${detailItem("Azimuth", event.azimuth !== null ? `${event.azimuth.toFixed(0)}° ${azimuthToCompassShort(event.azimuth ?? 0)}` : "—")}
       ${detailItem("Magnitude", event.magnitude !== null ? event.magnitude.toFixed(1) : "—")}
       ${detailItem("Constellation", event.constellation ? wikiLink(event.constellation + " (constellation)", event.constellation) : "—")}
+      ${detailSourceItem(event)}
       ${event.rise ? detailItem("Rise", fmtTime(event.rise)) : ""}
       ${event.set ? detailItem("Set", fmtTime(event.set)) : ""}
       ${event.transit ? detailItem("Transit", fmtTime(event.transit)) : ""}
@@ -227,6 +262,7 @@ function renderDSODetailFull(
       ${detailItem("Azimuth", event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
       ${detailItem("Magnitude", entry.magnitude.toFixed(1))}
       ${detailItem("Constellation", wikiLink(entry.constellation + " (constellation)", entry.constellation))}
+      ${detailSourceItem(event)}
       ${entry.surfaceBrightness ? detailItem("Surface Brightness", `${entry.surfaceBrightness.toFixed(1)} mag/arcmin²`) : ""}
       ${entry.bestSeason ? detailItem("Best Season", entry.bestSeason) : ""}
       ${detailItem("Apparent Size", `${entry.size.toFixed(1)}'`)}
@@ -338,6 +374,7 @@ function renderStarDetailFull(
       ${detailItem("Apparent Mag", entry.magnitude.toFixed(2))}
       ${detailItem("Absolute Mag", entry.absMagnitude.toFixed(2))}
       ${detailItem("Constellation", wikiLink(entry.constellation + " (constellation)", entry.constellation))}
+      ${detailSourceItem(event)}
       ${detailItem("Spectral Type", entry.spectralType || "—")}
     </div>
   `,
@@ -671,6 +708,7 @@ function renderMeteorDetailFull(
       ${detailItem("ZHR", String(shower.zhr))}
       ${detailItem("Speed", `${shower.speed} km/s`)}
       ${detailItem("Parent Body", wikiLink(shower.parentBody))}
+      ${detailSourceItem(event)}
       ${event.rise ? detailItem("Radiant Rise", fmtTime(event.rise)) : ""}
       ${event.set ? detailItem("Radiant Set", fmtTime(event.set)) : ""}
       ${event.transit ? detailItem("Radiant Transit", fmtTime(event.transit)) : ""}
@@ -1083,11 +1121,25 @@ export function renderDetail(
     const sid = eventId.replace("meteor-", "");
     const shower = METEOR_SHOWERS.find((s) => s.id === sid);
     if (shower) {
+      recordObservation({
+        id: event.id,
+        name: event.name,
+        type: event.type,
+        brief: event.brief,
+        location: ctx.location,
+      });
       renderMeteorDetailFull(container, ctx, event, shower);
       return;
     }
   }
 
+  recordObservation({
+    id: event.id,
+    name: event.name,
+    type: event.type,
+    brief: event.brief,
+    location: ctx.location,
+  });
   renderEventDetail(container, ctx, event);
 }
 
@@ -1102,9 +1154,8 @@ export async function renderDSODetail(
   container.innerHTML +=
     '<p style="padding:20px;color:var(--text-dim)">Loading…</p>';
 
-  const catalog = await loadDSOCatalog();
   const raw = dsoId.replace("dso-", "");
-  const entry = catalog.find((d) => d.id === raw);
+  const entry = await getDSOById(raw);
   if (!entry) {
     container.innerHTML = "";
     renderHeader(container, ctx);
@@ -1134,8 +1185,21 @@ export async function renderDSODetail(
     dec: entry.dec,
     angularSize: entry.size,
     distanceAU: null,
-    extra: { catalogType: entry.type, size: entry.size },
+    extra: {
+      sourceKey: "dso",
+      catalogType: entry.type,
+      size: entry.size,
+      distanceLY: entry.distanceLY,
+      distancePC: entry.distancePC,
+    },
   };
+  recordObservation({
+    id: event.id,
+    name: event.name,
+    type: "dso",
+    brief: event.brief,
+    location: ctx.location,
+  });
   renderDSODetailFull(container, ctx, event, entry);
 }
 
@@ -1150,9 +1214,8 @@ export async function renderStarDetail(
   container.innerHTML +=
     '<p style="padding:20px;color:var(--text-dim)">Loading…</p>';
 
-  const catalog = await loadStarCatalog();
   const raw = starId.replace("star-", "");
-  const entry = catalog.find((s) => s.id === raw);
+  const entry = await getStarById(raw);
   if (!entry) {
     container.innerHTML = "";
     renderHeader(container, ctx);
@@ -1182,8 +1245,22 @@ export async function renderStarDetail(
     dec: entry.dec,
     angularSize: null,
     distanceAU: null,
-    extra: {},
+    extra: {
+      sourceKey: "stars",
+      spectralType: entry.spectralType,
+      isDouble: entry.isDouble,
+      isVariable: entry.isVariable,
+      distanceLY: entry.distanceLY,
+      distancePC: entry.distancePC,
+    },
   };
+  recordObservation({
+    id: event.id,
+    name: event.name,
+    type: "star",
+    brief: event.brief,
+    location: ctx.location,
+  });
   renderStarDetailFull(container, ctx, event, entry);
 }
 
@@ -1231,7 +1308,11 @@ function findEvent(
       dec: shower.radiantDec,
       angularSize: null,
       distanceAU: null,
-      extra: { zhr: shower.zhr, parentBody: shower.parentBody },
+      extra: {
+        sourceKey: "meteors",
+        zhr: shower.zhr,
+        parentBody: shower.parentBody,
+      },
     };
   }
   return null;

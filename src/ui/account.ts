@@ -29,6 +29,15 @@ function renderLoggedIn(container: HTMLElement, ctx: AppContext): void {
   `;
   container.appendChild(card);
 
+  const obsLink = document.createElement("a");
+  obsLink.className = "btn btn-outline btn-block";
+  obsLink.textContent = "Saved observations";
+  obsLink.href = "#/observations";
+  obsLink.style.textDecoration = "none";
+  obsLink.style.textAlign = "center";
+  obsLink.style.marginBottom = "8px";
+  container.appendChild(obsLink);
+
   const logoutBtn = document.createElement("button");
   logoutBtn.className = "btn btn-outline btn-block";
   logoutBtn.textContent = "Sign Out";

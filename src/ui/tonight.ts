@@ -169,11 +169,18 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
 
       const visibleSlice = limit > 0 ? visible.slice(0, limit) : visible;
       visibleRendered = visibleSlice.length;
-      renderEventCards(container, visibleSlice, 0);
+      renderEventCards(container, visibleSlice, 0, ctx.location, now);
 
       const remaining = limit > 0 ? visible.length - limit : 0;
       if (remaining > 0) {
-        renderShowMore(container, visible, visibleSlice.length, 0);
+        renderShowMore(
+          container,
+          visible,
+          visibleSlice.length,
+          0,
+          ctx.location,
+          now,
+        );
       }
     }
 
@@ -187,12 +194,25 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
         limit > 0 ? Math.max(0, limit - visible.length) : below.length;
       const belowSlice = belowLimit > 0 ? below.slice(0, belowLimit) : [];
       if (belowSlice.length > 0) {
-        renderEventCards(container, belowSlice, visibleRendered);
+        renderEventCards(
+          container,
+          belowSlice,
+          visibleRendered,
+          ctx.location,
+          now,
+        );
       }
 
       const belowRemaining = below.length - belowSlice.length;
       if (belowRemaining > 0) {
-        renderShowMore(container, below, belowSlice.length, visibleRendered);
+        renderShowMore(
+          container,
+          below,
+          belowSlice.length,
+          visibleRendered,
+          ctx.location,
+          now,
+        );
       }
     }
   });
@@ -481,6 +501,8 @@ function renderShowMore(
   allEvents: CelestialEvent[],
   alreadyShown: number,
   indexOffset: number,
+  loc?: { lat: number; lon: number; elev: number },
+  now?: Date,
 ): void {
   const remaining = allEvents.length - alreadyShown;
   const btn = document.createElement("button");
@@ -490,8 +512,10 @@ function renderShowMore(
     btn.remove();
     const grid = document.createElement("div");
     grid.className = "card-grid";
+    const t = now ?? new Date();
     for (let i = alreadyShown; i < allEvents.length; i++) {
       const ev = allEvents[i];
+      if (loc) ensureRiseSet(ev, loc, t);
       grid.appendChild(buildCard(ev, indexOffset + i));
     }
     container.appendChild(grid);
@@ -548,7 +572,12 @@ async function collectAllEvents(
         dec: s.radiantDec,
         angularSize: null,
         distanceAU: null,
-        extra: { zhr: s.zhr, speed: s.speed, parentBody: s.parentBody },
+        extra: {
+          sourceKey: "meteors",
+          zhr: s.zhr,
+          speed: s.speed,
+          parentBody: s.parentBody,
+        },
       };
     });
     events.push(...meteorEvents);
@@ -564,16 +593,17 @@ async function collectAllEvents(
           .filter((d) => d.magnitude <= ctx.prefs.magnitudeLimit)
           .map((d): CelestialEvent => {
             const hor = getAltAzForRaDec(d.ra, d.dec, ctx.location, now);
-            const rs = getRiseSetForRaDec(d.ra, d.dec, ctx.location, now);
+            // Rise/set is expensive (~432 horizon calls each). Defer until
+            // the event is actually rendered as a card.
             return {
               id: `dso-${d.id}`,
               name: d.commonName || d.name,
               type: "dso",
               source: "catalog",
               brief: `${d.type} · Mag ${d.magnitude.toFixed(1)} in ${d.constellation}`,
-              rise: rs.rise,
-              set: rs.set,
-              transit: rs.transit,
+              rise: null,
+              set: null,
+              transit: null,
               altitude: hor.altitude,
               azimuth: hor.azimuth,
               magnitude: d.magnitude,
@@ -584,6 +614,7 @@ async function collectAllEvents(
               angularSize: d.size,
               distanceAU: null,
               extra: {
+                sourceKey: "dso",
                 catalogType: d.type,
                 size: d.size,
                 distanceLY: d.distanceLY,
@@ -602,16 +633,15 @@ async function collectAllEvents(
           .filter((s) => s.magnitude <= ctx.prefs.magnitudeLimit)
           .map((s): CelestialEvent => {
             const hor = getAltAzForRaDec(s.ra, s.dec, ctx.location, now);
-            const rs = getRiseSetForRaDec(s.ra, s.dec, ctx.location, now);
             return {
               id: `star-${s.id}`,
               name: s.name,
               type: "dso",
               source: "catalog",
               brief: `${s.spectralType} · Mag ${s.magnitude.toFixed(2)} in ${s.constellation}${s.isDouble ? " · Double" : ""}${s.isVariable ? " · Variable" : ""}`,
-              rise: rs.rise,
-              set: rs.set,
-              transit: rs.transit,
+              rise: null,
+              set: null,
+              transit: null,
               altitude: hor.altitude,
               azimuth: hor.azimuth,
               magnitude: s.magnitude,
@@ -622,6 +652,7 @@ async function collectAllEvents(
               angularSize: null,
               distanceAU: null,
               extra: {
+                sourceKey: "stars",
                 spectralType: s.spectralType,
                 isDouble: s.isDouble,
                 isVariable: s.isVariable,
@@ -680,6 +711,35 @@ function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {
 }
 
 /* ── Card builder (shared by renderEventCards + showMore) */
+
+// Lazy rise/set cache: catalog items skip the expensive rise/set search
+// in collectAllEvents and only compute it for cards that actually render.
+// Keyed by (id|day) so the result is shared across rerenders within the
+// same evening.
+const riseSetCache = new Map<
+  string,
+  { rise: Date | null; set: Date | null; transit: Date | null }
+>();
+
+function ensureRiseSet(
+  ev: CelestialEvent,
+  loc: { lat: number; lon: number; elev: number },
+  now: Date,
+): void {
+  if (ev.rise !== null || ev.set !== null) return;
+  if (ev.ra === null || ev.dec === null) return;
+  const dayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+  const key = `${ev.id}|${dayKey}`;
+  let rs = riseSetCache.get(key);
+  if (!rs) {
+    rs = getRiseSetForRaDec(ev.ra, ev.dec, loc, now);
+    riseSetCache.set(key, rs);
+  }
+  ev.rise = rs.rise;
+  ev.set = rs.set;
+  ev.transit = rs.transit;
+}
+
 function buildCard(ev: CelestialEvent, index: number): HTMLElement {
   const isUp = (ev.altitude ?? -1) > 0;
   const card = document.createElement("div");
@@ -709,10 +769,14 @@ function renderEventCards(
   container: HTMLElement,
   events: CelestialEvent[],
   startIndex = 0,
+  loc?: { lat: number; lon: number; elev: number },
+  now?: Date,
 ): void {
   const grid = document.createElement("div");
   grid.className = "card-grid";
+  const t = now ?? new Date();
   for (let i = 0; i < events.length; i++) {
+    if (loc) ensureRiseSet(events[i], loc, t);
     grid.appendChild(buildCard(events[i], startIndex + i));
   }
   container.appendChild(grid);

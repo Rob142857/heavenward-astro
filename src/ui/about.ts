@@ -1,12 +1,17 @@
 import type { AppContext } from "../types.js";
 import {
   acknowledgementSources,
+  catalogImportJobs,
   expansionCatalogSources,
   type CatalogProvenance,
 } from "../catalog/provenance.js";
-import { renderHeader, renderNav } from "./layout.js";
+import { renderHeader, renderNav, SEBA_SVG } from "./layout.js";
 
-export function renderAbout(container: HTMLElement, ctx: AppContext): void {
+export function renderAbout(
+  container: HTMLElement,
+  ctx: AppContext,
+  focusSection?: "sources",
+): void {
   container.innerHTML = "";
   renderHeader(container, ctx);
   renderNav("#/about");
@@ -15,8 +20,15 @@ export function renderAbout(container: HTMLElement, ctx: AppContext): void {
   content.className = "about-page";
   content.innerHTML = `
     <div class="about-hero">
-      <h2 class="about-title">Heavenward</h2>
+      <div class="about-wordmark">${SEBA_SVG}<span class="logo-text">Heavenward</span></div>
       <p class="about-tagline">Is tonight worth a warm jacket and a cup of tea?</p>
+      <figure class="about-quote">
+        <blockquote>
+          <p>Two men look out through the same bars&#8202;:</p>
+          <p>One sees the mud, and one the stars.</p>
+        </blockquote>
+        <figcaption>&mdash;&#8202;Frederick Langbridge, <cite>A Cluster of Quiet Thoughts</cite>, 1892</figcaption>
+      </figure>
     </div>
 
     <div class="about-section">
@@ -102,10 +114,18 @@ export function renderAbout(container: HTMLElement, ctx: AppContext): void {
         I hope it helps you see more of the sky, learn something new, and feel a little
         wonder when you look up. Please enjoy. ✨
       </p>
-      <p class="about-version">Heavenward v0.1.0</p>
+      <p class="about-version" aria-label="Version">v${__APP_VERSION__} · build ${__APP_BUILD__}</p>
     </div>
   `;
   container.appendChild(content);
+
+  if (focusSection === "sources") {
+    requestAnimationFrame(() => {
+      document.getElementById("about-sources")?.scrollIntoView({
+        block: "start",
+      });
+    });
+  }
 }
 
 function renderDataAcknowledgements(): string {
@@ -117,16 +137,22 @@ function renderDataAcknowledgements(): string {
     .join("");
 
   return `
-    <div class="about-section">
+    <div class="about-section" id="about-sources">
       <h3 class="about-heading">Data Sources &amp; Acknowledgements</h3>
       <p class="about-prose">
         Heavenward stands on open science, public catalogs, careful software, and many patient observers.
         All astronomy computation runs client-side. We are grateful to the maintainers who preserve these
         datasets and especially to the observers whose nights under the sky make the records possible.
       </p>
+      <p class="about-prose">
+        The source switches in Settings are just viewing preferences: they choose which active runtime
+        sources appear in Tonight. This page is the canonical source record, including attribution,
+        license notes, and how imported catalogs are transformed before they ship in the app.
+      </p>
       <div class="about-features about-provenance" style="margin-top:16px">
         ${activeCards}
       </div>
+      ${renderImportPipeline()}
     </div>
 
     <div class="about-section">
@@ -138,6 +164,40 @@ function renderDataAcknowledgements(): string {
       <div class="about-features about-provenance about-provenance-planned" style="margin-top:16px">
         ${plannedCards}
       </div>
+    </div>
+  `;
+}
+
+function renderImportPipeline(): string {
+  const jobCards = catalogImportJobs().map((job) => {
+    const source = acknowledgementSources().find(
+      (item) => item.key === job.key,
+    );
+    return `
+      <div class="provenance-card">
+        <div class="provenance-card-head">
+          <strong>${source?.label ?? job.key}</strong>
+          <span>${modeLabel(job.mode)}</span>
+        </div>
+        <p>${source?.summary ?? "Catalog source registered in the import plan."}</p>
+        <dl>
+          <div><dt>Output</dt><dd>${job.outputFile}</dd></div>
+          <div><dt>Command</dt><dd>${job.command}</dd></div>
+          <div><dt>Validation</dt><dd>${job.validation.join(" ")}</dd></div>
+        </dl>
+      </div>
+    `;
+  });
+
+  return `
+    <div class="about-source-pipeline">
+      <h4 class="about-subheading">Import And Review Pipeline</h4>
+      <p class="about-prose">
+        Run <code>npm run catalog:plan</code> to inspect the current source URLs, transform steps,
+        output files, and validation rules without downloading data. Scripted imports write a refresh
+        report when catalogs are regenerated; manual sources remain listed so review work is explicit.
+      </p>
+      <div class="provenance-grid">${jobCards.join("")}</div>
     </div>
   `;
 }
@@ -203,5 +263,16 @@ function sourceIcon(key: string): string {
       return "🤖";
     default:
       return "•";
+  }
+}
+
+function modeLabel(mode: "scripted" | "manual" | "planned"): string {
+  switch (mode) {
+    case "scripted":
+      return "Scripted";
+    case "manual":
+      return "Manual";
+    case "planned":
+      return "Planned";
   }
 }

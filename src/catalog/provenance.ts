@@ -526,3 +526,7 @@ export function catalogImportJobs(): CatalogImportJob[] {
 export function getCatalogImportJob(key: string): CatalogImportJob | null {
   return catalogImportJobs().find((job) => job.key === key) ?? null;
 }
+
+export function getCatalogProvenance(key: string): CatalogProvenance | null {
+  return CATALOG_PROVENANCE.find((source) => source.key === key) ?? null;
+}
