@@ -2457,3 +2457,80 @@ body {
   50% { opacity: 1; }
   100% { transform: translateX(30%); opacity: 0.4; }
 }
+/* \u2500\u2500 Aurora banner (NOAA SWPC live data) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+.aurora-slot { contain: layout; }
+.aurora-banner {
+  margin: 12px 14px 4px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(79, 195, 247, 0.12), rgba(168, 85, 247, 0.18));
+  border: 1px solid rgba(79, 195, 247, 0.35);
+  color: var(--text, #e0e6f0);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.aurora-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 60% at 50% 0%, rgba(132, 255, 212, 0.18), transparent 60%);
+  pointer-events: none;
+}
+.aurora-banner--moderate {
+  background: linear-gradient(135deg, rgba(132, 255, 212, 0.16), rgba(79, 195, 247, 0.22));
+  border-color: rgba(132, 255, 212, 0.45);
+}
+.aurora-banner--strong {
+  background: linear-gradient(135deg, rgba(255, 122, 188, 0.18), rgba(168, 85, 247, 0.28));
+  border-color: rgba(255, 122, 188, 0.5);
+  animation: aurora-pulse 4s ease-in-out infinite;
+}
+@keyframes aurora-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 122, 188, 0); }
+  50% { box-shadow: 0 0 24px 2px rgba(255, 122, 188, 0.25); }
+}
+.aurora-banner-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.aurora-icon {
+  font-size: 1.1rem;
+}
+.aurora-title {
+  letter-spacing: 0.02em;
+}
+.aurora-storm {
+  margin-left: auto;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text, #e0e6f0);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.aurora-banner-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: rgba(224, 230, 240, 0.92);
+}
+.aurora-banner-stats strong {
+  color: var(--text, #e0e6f0);
+}
+.aurora-sep {
+  opacity: 0.5;
+}
+.aurora-banner-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(224, 230, 240, 0.75);
+  line-height: 1.4;
+}

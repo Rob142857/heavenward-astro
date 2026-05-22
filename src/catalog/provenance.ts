@@ -344,6 +344,46 @@ export const CATALOG_PROVENANCE: CatalogProvenance[] = [
       "Thank you to the observers who keep making planetary meetings part of public sky culture.",
   },
   {
+    key: "aurora",
+    label: "Aurora & Geomagnetic Activity",
+    icon: "aurora",
+    status: "active",
+    kind: "runtime",
+    enabledSource: true,
+    summary:
+      "Live geomagnetic conditions \u2014 current Kp index, 3-day Kp forecast, and the OVATION Prime aurora oval probability for the viewer's latitude \u2014 fetched directly from NOAA Space Weather Prediction Center every 30 minutes. Surfaced on Tonight only when meaningful for your location.",
+    maintainer: "NOAA Space Weather Prediction Center",
+    primaryUrl: "https://www.swpc.noaa.gov/",
+    license: "Public domain (U.S. Government work)",
+    output: "Client-side fetch via src/services/aurora.ts; banner on Tonight",
+    importJob: null,
+    upstreams: [
+      {
+        name: "NOAA SWPC Planetary K-index",
+        url: "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
+        maintainer: "NOAA Space Weather Prediction Center",
+        license: "Public domain",
+        role: "Current observed planetary K-index, 3-hour cadence.",
+      },
+      {
+        name: "NOAA SWPC Planetary K-index forecast",
+        url: "https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json",
+        maintainer: "NOAA Space Weather Prediction Center",
+        license: "Public domain",
+        role: "3-day Kp forecast in 3-hour bins.",
+      },
+      {
+        name: "NOAA SWPC OVATION Prime aurora oval",
+        url: "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json",
+        maintainer: "NOAA Space Weather Prediction Center; Newell/Liou OVATION Prime model",
+        license: "Public domain",
+        role: "1\u00b0 latitude/longitude grid of aurora visibility probability.",
+      },
+    ],
+    gratitude:
+      "Thank you to NOAA SWPC and the OVATION Prime authors for keeping our sense of the geomagnetic sky public and free.",
+  },
+  {
     key: "images",
     label: "Sky Images and Survey Plates",
     icon: "image",

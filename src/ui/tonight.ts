@@ -19,6 +19,7 @@ import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
 import { trackEvent } from "../services/analytics.js";
 import { savePrefs } from "../services/prefs.js";
+import { fetchAuroraStatus, type AuroraStatus } from "../services/aurora.js";
 import {
   CATEGORY_OPTIONS,
   DIRECTION_OPTIONS,
@@ -81,6 +82,13 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
   const twilight = getTwilightTimes(ctx.location, now);
 
   renderTwilightBar(container, twilight);
+
+  // Reserved slot for the aurora banner so it always sits between the
+  // twilight bar and the cards once the async NOAA fetch resolves.
+  const auroraSlot = document.createElement("div");
+  auroraSlot.className = "aurora-slot";
+  container.appendChild(auroraSlot);
+  void renderAuroraBanner(auroraSlot, ctx.location);
 
   // Placeholder for cards while async data loads
   const cardsHolder = document.createElement("div");
@@ -696,6 +704,79 @@ async function collectAllEvents(
   }
 
   return events;
+}
+
+/* ── Aurora banner (NOAA SWPC) ──────────────────────────────────
+ * Renders an unobtrusive card above the cards grid when geomagnetic
+ * activity is meaningful for the viewer's latitude. Hidden entirely
+ * during quiet conditions so it never adds noise.
+ */
+async function renderAuroraBanner(
+  slot: HTMLElement,
+  loc: { lat: number; lon: number; elev: number },
+): Promise<void> {
+  let status: AuroraStatus | null = null;
+  try {
+    status = await fetchAuroraStatus(loc);
+  } catch {
+    status = null;
+  }
+  if (!status || !status.worthSurfacing) return;
+
+  const peakLocal = new Date(status.forecastPeakAt).toLocaleString([], {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const intensityClass =
+    status.forecastPeakKp >= 7
+      ? "aurora-banner--strong"
+      : status.forecastPeakKp >= 5
+        ? "aurora-banner--moderate"
+        : "aurora-banner--watch";
+
+  const banner = document.createElement("div");
+  banner.className = `aurora-banner ${intensityClass}`;
+  banner.setAttribute("role", "status");
+  banner.innerHTML = `
+    <div class="aurora-banner-head">
+      <span class="aurora-icon" aria-hidden="true">\u{1F30C}</span>
+      <span class="aurora-title">Aurora watch</span>
+      ${status.stormLevel ? `<span class="aurora-storm">${escapeHtml(status.stormLevel)}</span>` : ""}
+    </div>
+    <div class="aurora-banner-stats">
+      <span><strong>Kp ${status.currentKp.toFixed(1)}</strong> now</span>
+      <span class="aurora-sep">\u00b7</span>
+      <span>peak <strong>Kp ${status.forecastPeakKp.toFixed(1)}</strong> ${escapeHtml(peakLocal)}</span>
+      <span class="aurora-sep">\u00b7</span>
+      <span><strong>${status.localProbability.toFixed(0)}%</strong> at your latitude</span>
+    </div>
+    <p class="aurora-banner-hint">${escapeHtml(auroraHint(status, loc.lat))}</p>
+  `;
+  slot.appendChild(banner);
+}
+
+function auroraHint(s: AuroraStatus, lat: number): string {
+  const absLat = Math.abs(lat);
+  if (s.localProbability >= 25)
+    return "Step outside and look poleward \u2014 the oval is overhead or very close.";
+  if (s.localProbability >= 10)
+    return "Decent chance of low arcs on the poleward horizon if your sky is dark.";
+  if (s.localProbability >= 3)
+    return "Faint glow possible right on the poleward horizon \u2014 worth a look.";
+  if (s.forecastPeakKp >= 7)
+    return `Storm-level Kp forecast \u2014 aurora may reach mid-latitudes near ${absLat.toFixed(0)}\u00b0.`;
+  if (s.forecastPeakKp >= 5)
+    return "Sub-storm conditions building \u2014 keep an eye out toward the poles tonight.";
+  return "Elevated geomagnetic activity \u2014 darker sites toward the pole may catch a glow.";
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {
