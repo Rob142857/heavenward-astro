@@ -1,52 +1,12 @@
 import type { AppContext, Equipment } from "../types.js";
+import {
+  expansionCatalogSources,
+  runtimeCatalogSources,
+  type CatalogProvenance,
+} from "../catalog/provenance.js";
 import { loadPrefs, savePrefs } from "../services/prefs.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { CATEGORY_OPTIONS, EQUIPMENT_OPTIONS } from "./filterOptions.js";
-
-const SOURCES = [
-  {
-    key: "planets",
-    label: "Planets",
-    tip: `Mercury through Neptune — positions, rise/set times, elongation, and visual magnitudes computed in real time. Powered by <strong>astronomy-engine</strong> by Don Cross (MIT), which uses truncated VSOP87 planetary theory verified against JPL Horizons and NOVAS C 3.1 to ±1 arcminute accuracy. No network calls — all computation happens on your device.`,
-    url: "https://github.com/cosinekitty/astronomy",
-  },
-  {
-    key: "moon",
-    label: "Moon",
-    tip: `Lunar position, phase name, illumination percentage, rise/set/transit times, and libration. Also powered by <strong>astronomy-engine</strong> using ELP/MPP02 lunar theory. Phase angle is calculated from Sun–Moon–Earth geometry to show the exact illuminated fraction at your location.`,
-    url: "https://github.com/cosinekitty/astronomy",
-  },
-  {
-    key: "stars",
-    label: "Stars",
-    tip: `Named and navigational stars with spectral types, magnitudes, colour indices, and double/variable flags. Our catalog is compiled from the <strong>Yale Bright Star Catalogue, 5th Revised Edition</strong> (Hoffleit &amp; Warren, 1991, V/50) — the standard reference for stars brighter than mag 6.5 — cross-referenced with <strong>IAU official star names</strong> (2024 revision). Hosted and maintained by NASA's HEASARC at Goddard Space Flight Center.`,
-    url: "https://heasarc.gsfc.nasa.gov/W3Browse/star-catalog/bsc5p.html",
-  },
-  {
-    key: "dso",
-    label: "Deep Sky Objects",
-    tip: `Galaxies, nebulae, and star clusters with magnitudes, angular sizes, surface brightness, and morphology. Our curated catalog includes all 110 <strong>Messier objects</strong> (Charles Messier, 1774–1781), the 109 <strong>Caldwell objects</strong> (Sir Patrick Moore, 1995), and select NGC/IC highlights. Physical data cross-referenced with the <strong>NGC/IC Project</strong> (Dr. Harold Corwin) and <strong>CDS VizieR</strong> at Strasbourg Astronomical Data Centre.`,
-    url: "https://en.wikipedia.org/wiki/Messier_object",
-  },
-  {
-    key: "meteors",
-    label: "Meteor Showers",
-    tip: `Active shower detection with zenithal hourly rates (ZHR), geocentric velocities, radiant RA/Dec coordinates, and parent body identification. Data compiled from the <strong>IAU Meteor Data Center</strong> working list and the <strong>International Meteor Organization</strong> (IMO) annual calendar. Includes all established showers (Quadrantids, Perseids, Geminids, etc.) with activity windows verified against multi-year observational records.`,
-    url: "https://www.imo.net/resources/meteor-shower-calendar/",
-  },
-  {
-    key: "eclipses",
-    label: "Eclipses",
-    tip: `Solar and lunar eclipse predictions including type (total, partial, annular, penumbral), peak time, and magnitude. Computed by <strong>astronomy-engine</strong>'s Besselian element algorithms, which search forward through time for eclipse geometry. Accuracy verified against NASA's Five Millennium Canon of Eclipses (Espenak &amp; Meeus).`,
-    url: "https://github.com/cosinekitty/astronomy",
-  },
-  {
-    key: "conjunctions",
-    label: "Conjunctions",
-    tip: `Close approaches between planets and the Moon, detected by scanning angular separations in real time. <strong>astronomy-engine</strong> calculates precise geocentric and topocentric positions for each body pair and reports the minimum separation and timing. Includes planet–planet, planet–Moon, and planet–star conjunctions.`,
-    url: "https://github.com/cosinekitty/astronomy",
-  },
-];
 
 export function renderSources(container: HTMLElement, ctx: AppContext): void {
   container.innerHTML = "";
@@ -60,15 +20,25 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
 
   const prefs = loadPrefs();
 
-  for (const src of SOURCES) {
+  const sourcesTitle = document.createElement("h3");
+  sourcesTitle.className = "section-title";
+  sourcesTitle.textContent = "Data Sources";
+  container.appendChild(sourcesTitle);
+
+  const provenanceNote = document.createElement("p");
+  provenanceNote.className = "source-note";
+  provenanceNote.textContent =
+    "Each source lists its maintainers, license notes, transform path, and thanks to the observers behind the data.";
+  container.appendChild(provenanceNote);
+
+  for (const src of runtimeCatalogSources()) {
     const row = document.createElement("div");
     row.className = "toggle-row source-row";
     row.innerHTML = `
       <div class="source-info">
         <span class="toggle-label">${src.label}</span>
         <div class="source-tooltip">
-          <p>${src.tip}</p>
-          <a href="${src.url}" target="_blank" rel="noopener" class="source-link">Learn more ↗</a>
+          ${sourceTooltip(src)}
         </div>
       </div>
       <label class="toggle">
@@ -98,6 +68,8 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
     });
     container.appendChild(row);
   }
+
+  renderCatalogPipeline(container);
 
   // Magnitude limit
   const magSection = document.createElement("h3");
@@ -202,5 +174,92 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
       ctx.prefs = current;
     });
     container.appendChild(row);
+  }
+}
+
+function renderCatalogPipeline(container: HTMLElement): void {
+  const section = document.createElement("h3");
+  section.className = "section-title";
+  section.textContent = "Catalog Import Pipeline";
+  container.appendChild(section);
+
+  const note = document.createElement("p");
+  note.className = "source-note";
+  note.textContent =
+    "Scripted imports are reproducible from npm run refresh. Manual reviews and planned datasets are documented here so licensing and attribution stay visible.";
+  container.appendChild(note);
+
+  const grid = document.createElement("div");
+  grid.className = "provenance-grid";
+  const pipelineSources = [
+    ...runtimeCatalogSources().filter((source) => source.importJob),
+    ...expansionCatalogSources(),
+  ];
+
+  for (const source of pipelineSources) {
+    const card = document.createElement("div");
+    card.className = "provenance-card";
+    card.innerHTML = `
+      <div class="provenance-card-head">
+        <strong>${source.label}</strong>
+        <span>${statusLabel(source.status)}</span>
+      </div>
+      <p>${source.summary}</p>
+      <dl>
+        <div><dt>Output</dt><dd>${source.output}</dd></div>
+        <div><dt>Mode</dt><dd>${source.importJob ? modeLabel(source.importJob.mode) : "Planned"}</dd></div>
+        <div><dt>License</dt><dd>${source.license}</dd></div>
+        <div><dt>Command</dt><dd>${source.importJob ? source.importJob.command : "Planned importer"}</dd></div>
+      </dl>
+      <a href="${source.primaryUrl}" target="_blank" rel="noopener" class="source-link">Primary source</a>
+    `;
+    grid.appendChild(card);
+  }
+
+  container.appendChild(grid);
+}
+
+function sourceTooltip(source: CatalogProvenance): string {
+  const upstreams = source.upstreams
+    .slice(0, 3)
+    .map(
+      (upstream) =>
+        `<li><a href="${upstream.url}" target="_blank" rel="noopener" class="source-link">${upstream.name}</a> - ${upstream.role}</li>`,
+    )
+    .join("");
+
+  return `
+    <p>${source.summary}</p>
+    <p><strong>Maintained by:</strong> ${source.maintainer}</p>
+    <p><strong>License:</strong> ${source.license}</p>
+    <p><strong>Output:</strong> ${source.output}</p>
+    ${source.importJob ? `<p><strong>Import:</strong> ${source.importJob.command}</p>` : ""}
+    <ul class="source-upstream-list">${upstreams}</ul>
+    <p class="source-thanks">${source.gratitude}</p>
+    <a href="${source.primaryUrl}" target="_blank" rel="noopener" class="source-link">Primary source</a>
+  `;
+}
+
+function statusLabel(status: CatalogProvenance["status"]): string {
+  switch (status) {
+    case "active":
+      return "Active";
+    case "planned":
+      return "Planned";
+    case "reference":
+      return "Reference";
+  }
+}
+
+function modeLabel(
+  mode: NonNullable<CatalogProvenance["importJob"]>["mode"],
+): string {
+  switch (mode) {
+    case "scripted":
+      return "Scripted refresh";
+    case "manual":
+      return "Manual review";
+    case "planned":
+      return "Planned importer";
   }
 }

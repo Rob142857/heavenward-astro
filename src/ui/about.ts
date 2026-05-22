@@ -1,4 +1,9 @@
 import type { AppContext } from "../types.js";
+import {
+  acknowledgementSources,
+  expansionCatalogSources,
+  type CatalogProvenance,
+} from "../catalog/provenance.js";
 import { renderHeader, renderNav } from "./layout.js";
 
 export function renderAbout(container: HTMLElement, ctx: AppContext): void {
@@ -68,90 +73,7 @@ export function renderAbout(container: HTMLElement, ctx: AppContext): void {
       </div>
     </div>
 
-    <div class="about-section">
-      <h3 class="about-heading">Data Sources &amp; Acknowledgements</h3>
-      <p class="about-prose">
-        Heavenward stands on the shoulders of extraordinary open-source projects and public datasets.
-        All astronomy computation runs client-side. We are deeply grateful to the people behind these tools:
-      </p>
-      <div class="about-features" style="margin-top:16px">
-        <div class="about-feature">
-          <div class="about-feature-icon">⚙️</div>
-          <div>
-            <strong><a href="https://github.com/cosinekitty/astronomy" target="_blank" rel="noopener" class="wiki-link">astronomy-engine</a></strong>
-            <p>
-              Created by <a href="https://github.com/cosinekitty" target="_blank" rel="noopener" class="wiki-link">Don Cross</a>.
-              A remarkable, dependency-free library that powers all our planetary ephemeris, rise/set times,
-              altitude/azimuth calculations, lunar phases, eclipses, and conjunctions. MIT licensed.
-              Thank you, Don — this app would not exist without your work.
-            </p>
-          </div>
-        </div>
-        <div class="about-feature">
-          <div class="about-feature-icon">🌌</div>
-          <div>
-            <strong>Curated DSO Catalog</strong>
-            <p>
-              Our deep-sky catalog draws from the
-              <a href="https://en.wikipedia.org/wiki/Messier_object" target="_blank" rel="noopener" class="wiki-link">Messier catalog</a>,
-              <a href="https://en.wikipedia.org/wiki/Caldwell_catalogue" target="_blank" rel="noopener" class="wiki-link">Caldwell catalog</a>,
-              and select NGC/IC objects. Physical data sourced from the
-              <a href="https://en.wikipedia.org/wiki/NGC/IC_Project" target="_blank" rel="noopener" class="wiki-link">NGC/IC Project</a>
-              and <a href="https://cdsarc.cds.unistra.fr/" target="_blank" rel="noopener" class="wiki-link">CDS VizieR</a>.
-            </p>
-          </div>
-        </div>
-        <div class="about-feature">
-          <div class="about-feature-icon">⭐</div>
-          <div>
-            <strong>Bright Star Catalog</strong>
-            <p>
-              Navigational and named stars with spectral classifications, based on the
-              <a href="https://heasarc.gsfc.nasa.gov/W3Browse/star-catalog/bsc5p.html" target="_blank" rel="noopener" class="wiki-link">Yale Bright Star Catalogue</a>
-              and <a href="https://www.iau.org/public/themes/naming_stars/" target="_blank" rel="noopener" class="wiki-link">IAU star names</a>.
-              Thank you to the astronomers who have maintained these catalogs for decades.
-            </p>
-          </div>
-        </div>
-        <div class="about-feature">
-          <div class="about-feature-icon">☄️</div>
-          <div>
-            <strong>IAU Meteor Data Center &amp; IMO</strong>
-            <p>
-              Shower activity windows, ZHR rates, velocities, and radiant coordinates compiled from the
-              IAU Meteor Data Center working list and the
-              <a href="https://www.imo.net/resources/meteor-shower-calendar/" target="_blank" rel="noopener" class="wiki-link">International Meteor Organization</a>
-              annual calendar — the definitive resources for meteor shower observation worldwide.
-            </p>
-          </div>
-        </div>
-        <div class="about-feature">
-          <div class="about-feature-icon">🔭</div>
-          <div>
-            <strong><a href="https://skyview.gsfc.nasa.gov/" target="_blank" rel="noopener" class="wiki-link">NASA SkyView</a></strong>
-            <p>
-              DSS2 survey images used for finder chart views. SkyView is developed and maintained at
-              NASA's HEASARC. We also use images from
-              <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener" class="wiki-link">Wikimedia Commons</a>
-              under Creative Commons licenses, with attribution shown per image.
-            </p>
-          </div>
-        </div>
-        <div class="about-feature">
-          <div class="about-feature-icon">🤖</div>
-          <div>
-            <strong><a href="https://github.com/mlc-ai/web-llm" target="_blank" rel="noopener" class="wiki-link">WebLLM</a> local sky guide</strong>
-            <p>
-              Optional on-device AI commentary powered by
-              <a href="https://mlc.ai/" target="_blank" rel="noopener" class="wiki-link">MLC AI</a>'s WebLLM runtime
-              with desktop and mobile model profiles. Runs entirely in your browser via WebGPU —
-              no data leaves your device. Thank you to the MLC and open model teams
-              for making local LLM inference accessible to everyone.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    ${renderDataAcknowledgements()}
 
     <div class="about-section">
       <h3 class="about-heading">Privacy</h3>
@@ -184,4 +106,102 @@ export function renderAbout(container: HTMLElement, ctx: AppContext): void {
     </div>
   `;
   container.appendChild(content);
+}
+
+function renderDataAcknowledgements(): string {
+  const activeCards = acknowledgementSources()
+    .map(renderAcknowledgementCard)
+    .join("");
+  const plannedCards = expansionCatalogSources()
+    .map(renderPlannedCard)
+    .join("");
+
+  return `
+    <div class="about-section">
+      <h3 class="about-heading">Data Sources &amp; Acknowledgements</h3>
+      <p class="about-prose">
+        Heavenward stands on open science, public catalogs, careful software, and many patient observers.
+        All astronomy computation runs client-side. We are grateful to the maintainers who preserve these
+        datasets and especially to the observers whose nights under the sky make the records possible.
+      </p>
+      <div class="about-features about-provenance" style="margin-top:16px">
+        ${activeCards}
+      </div>
+    </div>
+
+    <div class="about-section">
+      <h3 class="about-heading">Catalog Expansion Plan</h3>
+      <p class="about-prose">
+        The next catalog work is designed as reproducible importers with explicit licenses, transforms,
+        validation checks, and attribution before anything is bundled into the app.
+      </p>
+      <div class="about-features about-provenance about-provenance-planned" style="margin-top:16px">
+        ${plannedCards}
+      </div>
+    </div>
+  `;
+}
+
+function renderAcknowledgementCard(source: CatalogProvenance): string {
+  const links = source.upstreams
+    .slice(0, 3)
+    .map(
+      (upstream) =>
+        `<a href="${upstream.url}" target="_blank" rel="noopener" class="wiki-link">${upstream.name}</a>`,
+    )
+    .join(" · ");
+
+  return `
+    <div class="about-feature">
+      <div class="about-feature-icon">${sourceIcon(source.key)}</div>
+      <div>
+        <strong><a href="${source.primaryUrl}" target="_blank" rel="noopener" class="wiki-link">${source.label}</a></strong>
+        <p>${source.summary}</p>
+        <p><span class="about-credit-label">Maintainers:</span> ${source.maintainer}</p>
+        <p><span class="about-credit-label">License:</span> ${source.license}</p>
+        <p><span class="about-credit-label">Sources:</span> ${links}</p>
+        <p class="about-gratitude">${source.gratitude}</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderPlannedCard(source: CatalogProvenance): string {
+  return `
+    <div class="about-feature">
+      <div class="about-feature-icon">${sourceIcon(source.key)}</div>
+      <div>
+        <strong><a href="${source.primaryUrl}" target="_blank" rel="noopener" class="wiki-link">${source.label}</a></strong>
+        <p>${source.summary}</p>
+        <p><span class="about-credit-label">Before bundling:</span> ${source.license}</p>
+        <p class="about-gratitude">${source.gratitude}</p>
+      </div>
+    </div>
+  `;
+}
+
+function sourceIcon(key: string): string {
+  switch (key) {
+    case "planets":
+    case "conjunctions":
+      return "🪐";
+    case "moon":
+    case "eclipses":
+      return "🌙";
+    case "stars":
+    case "gaia-dr3":
+    case "variable-stars":
+      return "⭐";
+    case "dso":
+    case "simbad-vizier-ned":
+      return "🌌";
+    case "meteors":
+      return "☄️";
+    case "images":
+      return "🔭";
+    case "webllm":
+      return "🤖";
+    default:
+      return "•";
+  }
 }

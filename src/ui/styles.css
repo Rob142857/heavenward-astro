@@ -1081,7 +1081,7 @@ body {
 .source-row:hover .source-tooltip,
 .source-row:focus-within .source-tooltip,
 .source-row.expanded .source-tooltip {
-  max-height: 300px;
+  max-height: 680px;
   opacity: 1;
   margin-top: 6px;
 }
@@ -1092,7 +1092,7 @@ body {
   margin: 0 0 4px;
 }
 .source-tooltip strong {
-  color: var(--text-main);
+  color: var(--text);
 }
 .source-link {
   font-size: 0.72rem;
@@ -1102,6 +1102,80 @@ body {
 }
 .source-link:hover {
   opacity: 0.8;
+}
+.source-upstream-list {
+  margin: 6px 0;
+  padding-left: 18px;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+.source-upstream-list li {
+  margin-bottom: 4px;
+}
+.source-thanks {
+  color: var(--gold-light) !important;
+  opacity: 0.9;
+}
+.provenance-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.provenance-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(17, 24, 39, 0.62);
+  padding: 12px;
+}
+.provenance-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.provenance-card-head strong {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.provenance-card-head span {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  border-radius: 999px;
+  color: var(--gold-light);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.provenance-card p {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+.provenance-card dl {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 8px;
+}
+.provenance-card dl div {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 8px;
+}
+.provenance-card dt {
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.provenance-card dd {
+  color: var(--text);
+  font-size: 0.74rem;
+  line-height: 1.35;
 }
 .toggle {
   position: relative;
@@ -1670,6 +1744,17 @@ body {
 .about-feature strong {
   color: var(--text);
   font-size: 0.9rem;
+}
+.about-provenance .about-feature {
+  min-width: 0;
+}
+.about-credit-label {
+  color: var(--gold-light);
+  font-weight: 600;
+}
+.about-gratitude {
+  color: var(--text) !important;
+  opacity: 0.9;
 }
 .about-list {
   color: var(--text-dim);

@@ -9,7 +9,8 @@
     "preview": "wrangler pages dev dist",
     "deploy": "npm run build && wrangler pages deploy dist",
     "typecheck": "tsc --noEmit",
-    "refresh": "node --experimental-strip-types scripts/refresh-catalog.ts --all"
+    "refresh": "node --experimental-strip-types scripts/refresh-catalog.ts",
+    "catalog:plan": "node --experimental-strip-types scripts/refresh-catalog.ts --plan"
   },
   "keywords": [
     "astronomy",
