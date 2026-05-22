@@ -428,7 +428,8 @@ function renderStarDetailFull(
   if (entry.isDouble && entry.doubleCompanion) {
     html += detailSection(
       "Double / Multiple Star",
-      `<p class="detail-prose">${entry.doubleCompanion}</p>`,
+      `<p class="detail-prose">${entry.doubleCompanion}</p>
+       <p class="detail-source">Source: USNO Washington Double Star Catalog.</p>`,
     );
   }
 
@@ -441,9 +442,12 @@ function renderStarDetailFull(
       varItems.push(detailItem("Period", entry.variablePeriod));
     html += detailSection(
       "Variable Star",
-      varItems.length
-        ? `<div class="detail-grid">${varItems.join("")}</div>`
-        : `<p class="detail-prose">This star is a known variable.</p>`,
+      `${
+        varItems.length
+          ? `<div class="detail-grid">${varItems.join("")}</div>`
+          : `<p class="detail-prose">This star is a known variable.</p>`
+      }
+       <p class="detail-source">Source: GCVS &middot; AAVSO VSX.</p>`,
     );
   }
 
@@ -456,6 +460,7 @@ function renderStarDetailFull(
         ${detailItem("Known Planets", String(entry.exoplanetCount))}
       </div>
       ${entry.exoplanetNotes ? `<p class="detail-prose">${entry.exoplanetNotes}</p>` : ""}
+      <p class="detail-source">Source: NASA Exoplanet Archive.</p>
     `,
     );
   }
