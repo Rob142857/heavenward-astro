@@ -19,11 +19,9 @@ export function renderAbout(
   content.innerHTML = `
     <div class="about-hero">
       <div class="about-wordmark">${SEBA_SVG}<span class="logo-text">Heavenward</span></div>
-      <p class="about-tagline">Is tonight worth a warm jacket and a cup of tea?</p>
       <figure class="about-quote">
         <blockquote>
-          <p>Two men look out through the same bars&#8202;:</p>
-          <p>One sees the mud, and one the stars.</p>
+          <p>Two men look out through the same bars&#8202;: one sees the mud, and one the stars.</p>
         </blockquote>
         <figcaption>&mdash;&#8202;Frederick Langbridge, <cite>A Cluster of Quiet Thoughts</cite>, 1892</figcaption>
       </figure>
