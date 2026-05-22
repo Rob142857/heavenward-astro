@@ -249,7 +249,7 @@ function renderDSODetailFull(
   let html = `
     ${renderBreadcrumb(displayName)}
     <h2 class="detail-title">${displayName}</h2>
-    ${catalogId ? `<div class="detail-catalog-id">${catalogId}</div>` : ""}
+    ${catalogId ? `<div class="detail-catalog-id">${catalogId}${entry.caldwell ? ` \u00b7 ${entry.caldwell} (Caldwell)` : ""}</div>` : entry.caldwell ? `<div class="detail-catalog-id">${entry.caldwell} (Caldwell)</div>` : ""}
     <p class="detail-brief">${entry.description}</p>
   `;
 

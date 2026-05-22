@@ -155,6 +155,8 @@ function starToEntry(s: StarEntry): SearchEntry {
 
 function dsoToEntry(d: DSOEntry): SearchEntry {
   const flags = new Set<string>(["dso", d.type]);
+  if (d.caldwell) flags.add("caldwell");
+  if (d.id.startsWith("M") && /^M\d+$/.test(d.id)) flags.add("messier");
 
   // Surface feature keywords found in notableFeatures so chip search hits.
   const featuresBlob = (d.notableFeatures ?? []).join(" ").toLowerCase();
@@ -175,13 +177,15 @@ function dsoToEntry(d: DSOEntry): SearchEntry {
     d.constellation,
     d.description,
     d.morphology ?? "",
+    d.caldwell ?? "",
+    d.caldwell ? `caldwell ${d.caldwell}` : "",
     ...(d.notableFeatures ?? []),
     ...(d.subObjects ?? []),
   ];
   return {
     id: `dso-${d.id}`,
     kind: "dso",
-    name: d.commonName || d.name,
+    name: d.commonName || (d.caldwell ? `${d.name} (${d.caldwell})` : d.name),
     brief: d.description,
     magnitude: d.magnitude,
     constellation: d.constellation,
@@ -215,6 +219,8 @@ const CHIPS: Chip[] = [
   { key: "variable", label: "Variable", icon: "\ud83d\udcab", flags: ["variable"] },
   { key: "exoplanet-host", label: "Exoplanet host", icon: "\ud83d\udd2d", flags: ["exoplanet-host"] },
   // Deep sky
+  { key: "messier", label: "Messier", icon: "M", flags: ["messier"] },
+  { key: "caldwell", label: "Caldwell", icon: "C", flags: ["caldwell"] },
   { key: "galaxy", label: "Galaxy", icon: "\ud83c\udf0c", flags: ["galaxy", "galaxy-pair", "galaxy-group"] },
   { key: "nebula", label: "Nebula", icon: "\ud83c\udf2b", flags: ["nebula", "emission-nebula", "reflection-nebula", "dark-nebula"] },
   { key: "planetary-nebula", label: "Planetary nebula", icon: "\ud83d\udc8d", flags: ["planetary-nebula"] },

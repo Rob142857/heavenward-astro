@@ -2437,3 +2437,23 @@ body {
 .search-results .card-grid {
   margin-top: 6px;
 }
+/* Brief visual feedback while a pending filter rebuild is queued */
+.tonight-controls.is-filtering {
+  position: relative;
+}
+.tonight-controls.is-filtering::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent, #4fc3f7), transparent);
+  animation: ctrl-pulse 700ms ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ctrl-pulse {
+  0% { transform: translateX(-30%); opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { transform: translateX(30%); opacity: 0.4; }
+}

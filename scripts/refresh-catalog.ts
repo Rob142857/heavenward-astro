@@ -617,6 +617,59 @@ function guessSeason(constellation: string): string {
   return "Year-round";
 }
 
+// ── Caldwell catalog overlay ───────────────────────────────────────
+// Patrick Moore's 109-object companion to the Messier catalog (1995).
+// Source: Sky & Telescope, December 1995, with subsequent IAU-aligned
+// corrections. Three entries (C41 Hyades, C99 Coalsack, C9 Sh2-155) are
+// not NGC/IC objects and are not overlaid.
+//
+// Keys: Caldwell number ("C1" .. "C109") \u2192 NGC/IC name (space-stripped,
+// 4-digit zero-padded, matching the OpenNGC `Name` column).
+const CALDWELL_TO_NGC: Record<string, string> = {
+  C1: "NGC0188", C2: "NGC0040", C3: "NGC4236", C4: "NGC7023", C5: "IC0342",
+  C6: "NGC6543", C7: "NGC2403", C8: "NGC0559", C10: "NGC0663", C11: "NGC7635",
+  C12: "NGC6946", C13: "NGC0457", C14: "NGC0869", C15: "NGC6826", C16: "NGC7243",
+  C17: "NGC0147", C18: "NGC0185", C19: "IC5146", C20: "NGC7000", C21: "NGC4449",
+  C22: "NGC7662", C23: "NGC0891", C24: "NGC1275", C25: "NGC2419", C26: "NGC4244",
+  C27: "NGC6888", C28: "NGC0752", C29: "NGC5005", C30: "NGC7331", C31: "IC0405",
+  C32: "NGC4631", C33: "NGC6992", C34: "NGC6960", C35: "NGC4889", C36: "NGC4559",
+  C37: "NGC6885", C38: "NGC4565", C39: "NGC2392", C40: "NGC3626", C42: "NGC7006",
+  C43: "NGC7814", C44: "NGC7479", C45: "NGC5248", C46: "NGC2261", C47: "NGC6934",
+  C48: "NGC2775", C49: "NGC2237", C50: "NGC2244", C51: "IC1613", C52: "NGC4697",
+  C53: "NGC3115", C54: "NGC2506", C55: "NGC7009", C56: "NGC0246", C57: "NGC6822",
+  C58: "NGC2360", C59: "NGC3242", C60: "NGC4038", C61: "NGC4039", C62: "NGC0247",
+  C63: "NGC7293", C64: "NGC2362", C65: "NGC0253", C66: "NGC5694", C67: "NGC1097",
+  C68: "NGC6729", C69: "NGC6302", C70: "NGC0300", C71: "NGC2477", C72: "NGC0055",
+  C73: "NGC1851", C74: "NGC3132", C75: "NGC6124", C76: "NGC6231", C77: "NGC5128",
+  C78: "NGC6541", C79: "NGC3201", C80: "NGC5139", C81: "NGC6352", C82: "NGC6193",
+  C83: "NGC4945", C84: "NGC5286", C85: "IC2391", C86: "NGC6397", C87: "NGC1261",
+  C88: "NGC5823", C89: "NGC6087", C90: "NGC2867", C91: "NGC3532", C92: "NGC3372",
+  C93: "NGC6752", C94: "NGC4755", C95: "NGC6025", C96: "NGC2516", C97: "NGC3766",
+  C98: "NGC4609", C100: "IC2944", C101: "NGC6744", C102: "IC2602", C103: "NGC2070",
+  C104: "NGC0362", C105: "NGC4833", C106: "NGC0104", C107: "NGC6101", C108: "NGC4372",
+  C109: "NGC3195",
+};
+
+// Reverse lookup: NGC/IC id \u2192 Caldwell number. Built once at startup.
+const NGC_TO_CALDWELL: Record<string, string> = {};
+for (const [c, ngc] of Object.entries(CALDWELL_TO_NGC)) {
+  NGC_TO_CALDWELL[ngc] = c;
+}
+
+// A handful of Caldwell targets are bright showpieces whose V/B magnitude
+// is absent in OpenNGC (clusters embedded in extended nebulosity, etc.).
+// Hardcode well-known integrated visual magnitudes so they survive the
+// mag-limit filter and display sensibly.
+const CALDWELL_FALLBACK_MAG: Record<string, number> = {
+  NGC6885: 5.7,  // C37 Vulpecula cluster
+  NGC2237: 9.0,  // C49 Rosette Nebula
+  NGC2244: 4.8,  // C50 Rosette Cluster
+  NGC6729: 9.7,  // C68 R CrA reflection
+  NGC6193: 5.2,  // C82 Ara cluster
+  NGC4755: 4.2,  // C94 Jewel Box
+  IC2602: 1.9,   // C102 Southern Pleiades
+};
+
 // ── DSO type normalization ─────────────────────────────────────────
 
 function normalizeDSOType(raw: string): string {
@@ -719,6 +772,7 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
     morphology: string | null;
     bestSeason: string | null;
     imagingNotes: string | null;
+    caldwell: string | null;
   }
 
   const seen = new Set<string>();
@@ -746,7 +800,14 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
         (decParts[2] ?? 0) / 3600);
 
     const mag = parseFloat(row["V-Mag"] || row["B-Mag"] || "");
-    if (isNaN(mag) || mag > 14) continue; // limit to observable objects
+    // Caldwell objects always pass the magnitude gate \u2014 a handful (Rosette,
+    // Jewel Box, IC 2602, ...) have no V/B mag in OpenNGC despite being
+    // showpiece targets. For everyone else, require mag <= 14.
+    const isCaldwell = Boolean(NGC_TO_CALDWELL[name.replace(/\s/g, "")]);
+    if (!isCaldwell && (isNaN(mag) || mag > 14)) continue;
+    const effectiveMag = Number.isFinite(mag)
+      ? mag
+      : CALDWELL_FALLBACK_MAG[name.replace(/\s/g, "")] ?? 99;
 
     const bMagRaw = parseFloat(row["B-Mag"] ?? "");
     const bMagnitude = isNaN(bMagRaw) ? null : Math.round(bMagRaw * 10) / 10;
@@ -766,9 +827,15 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
     const typeRaw = row["Type"] ?? "";
     // OpenNGC publishes duplicate cross-references and "nonexistent" placeholders
     // (e.g. NGC entries later proven to be fictitious). Skip both \u2014 they are
-    // not observable targets.
+    // not observable targets. Caldwell-listed entries are kept even if marked
+    // Dup, since OpenNGC sometimes tags one of a famous pair (e.g. NGC 2244)
+    // as a duplicate cross-reference.
     const typeLower = typeRaw.toLowerCase().trim();
-    if (typeLower === "dup" || typeLower === "nonex") continue;
+    const isCaldwellPreserve = Boolean(
+      NGC_TO_CALDWELL[name.replace(/\s/g, "")],
+    );
+    if (typeLower === "nonex") continue;
+    if (typeLower === "dup" && !isCaldwellPreserve) continue;
     const type = normalizeDSOType(typeRaw);
 
     const messierRaw = row["M"] ?? "";
@@ -776,6 +843,10 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
     const id = messier ? `M${messier}` : name.replace(/\s/g, "");
     if (seen.has(id)) continue;
     seen.add(id);
+
+    // Caldwell overlay: OpenNGC `name` is the NGC/IC key we use for lookup.
+    const ngcKey = name.replace(/\s/g, "");
+    const caldwell = NGC_TO_CALDWELL[ngcKey] ?? null;
 
     const commonNames = row["Common names"] ?? "";
     const commonName = commonNames.split(",")[0]?.trim() ?? "";
@@ -800,7 +871,7 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
       type,
       ra: Math.round(ra * 10000) / 10000,
       dec: Math.round(dec * 1000) / 1000,
-      magnitude: Math.round(mag * 10) / 10,
+      magnitude: Math.round(effectiveMag * 10) / 10,
       bMagnitude,
       size: Math.round(size * 10) / 10,
       minorAxis,
@@ -811,8 +882,8 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
       description:
         enrichment?.description ??
         (constellation
-          ? `${typeRaw} in ${constellation}. Magnitude ${mag.toFixed(1)}.`
-          : `${typeRaw}. Magnitude ${mag.toFixed(1)}.`),
+          ? `${typeRaw} in ${constellation}. Magnitude ${effectiveMag.toFixed(1)}.`
+          : `${typeRaw}. Magnitude ${effectiveMag.toFixed(1)}.`),
       physicalSize: enrichment?.physicalSize ?? null,
       surfaceBrightness,
       notableFeatures: enrichment?.notableFeatures ?? [],
@@ -822,6 +893,7 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
       morphology: enrichment?.morphology ?? (hubble || null),
       bestSeason: enrichment?.bestSeason ?? guessSeason(constellation),
       imagingNotes: enrichment?.imagingNotes ?? null,
+      caldwell,
     });
   }
 

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T06:26:08.059Z",
+  "generatedAt": "2026-05-22T06:40:06.344Z",
   "results": [
     {
       "key": "dso",
@@ -7,7 +7,7 @@
       "sourceUrl": "https://raw.githubusercontent.com/mattiaverga/OpenNGC/master/database_files/NGC.csv",
       "outputFile": "src/catalog/dso.json",
       "sourceRows": 13969,
-      "outputRows": 5012,
+      "outputRows": 5019,
       "transform": [
         "Fetch OpenNGC CSV from GitHub.",
         "Parse semicolon-separated rows and keep objects with usable RA, Dec, type, and magnitude 14.0 or brighter.",

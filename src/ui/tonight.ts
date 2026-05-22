@@ -373,6 +373,22 @@ function renderControls(
   const bar = document.createElement("div");
   bar.className = "tonight-controls";
 
+  // Coalesce rapid toggles + let the browser paint the new pill state
+  // before we run the heavy filter/render pass.
+  let scheduleTimer: number | null = null;
+  const scheduleChange = (): void => {
+    bar.classList.add("is-filtering");
+    if (scheduleTimer !== null) window.clearTimeout(scheduleTimer);
+    scheduleTimer = window.setTimeout(() => {
+      scheduleTimer = null;
+      // Double rAF guarantees the pill’s new .active class has painted
+      // before we block the main thread on the rebuild.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => onChange());
+      });
+    }, 80);
+  };
+
   // Row 1: equipment + category pills
   const pillRow = document.createElement("div");
   pillRow.className = "ctrl-pill-row";
@@ -386,7 +402,11 @@ function renderControls(
       ctx.prefs.equipment = eq.key;
       ctx.prefs.magnitudeLimit = EQUIPMENT_LIMITS[eq.key];
       savePrefs(ctx.prefs);
-      onChange();
+      pillRow
+        .querySelectorAll<HTMLElement>(".eq-pill")
+        .forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      scheduleChange();
     });
     pillRow.appendChild(pill);
   }
@@ -401,13 +421,15 @@ function renderControls(
     pill.addEventListener("click", () => {
       const cur =
         ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
+      const willBeActive = !cur.includes(cat.key);
       if (cur.includes(cat.key)) {
         ctx.prefs.enabledCategories = cur.filter((k) => k !== cat.key);
       } else {
         ctx.prefs.enabledCategories = [...cur, cat.key];
       }
       savePrefs(ctx.prefs);
-      onChange();
+      pill.classList.toggle("active", willBeActive);
+      scheduleChange();
     });
     pillRow.appendChild(pill);
   }
@@ -432,7 +454,7 @@ function renderControls(
   sortSel.addEventListener("change", () => {
     ctx.prefs.sortBy = sortSel.value as SortBy;
     savePrefs(ctx.prefs);
-    onChange();
+    scheduleChange();
   });
   metaRow.appendChild(sortSel);
 
@@ -452,12 +474,15 @@ function renderControls(
     pill.setAttribute("aria-pressed", active.has(direction.key) ? "true" : "false");
     pill.addEventListener("click", () => {
       const next = new Set(ctx.prefs.directionFilter ?? []);
+      const willBeActive = !next.has(direction.key);
       if (next.has(direction.key)) next.delete(direction.key);
       else next.add(direction.key);
       // All four \u2261 none (both mean \"everywhere\") \u2014 normalise to empty.
       ctx.prefs.directionFilter = next.size === 4 ? [] : Array.from(next);
       savePrefs(ctx.prefs);
-      onChange();
+      pill.classList.toggle("active", willBeActive);
+      pill.setAttribute("aria-pressed", willBeActive ? "true" : "false");
+      scheduleChange();
     });
     directionPills.appendChild(pill);
   }
@@ -478,7 +503,7 @@ function renderControls(
   limitSel.addEventListener("change", () => {
     ctx.prefs.displayLimit = Number(limitSel.value);
     savePrefs(ctx.prefs);
-    onChange();
+    scheduleChange();
   });
   metaRow.appendChild(limitSel);
 

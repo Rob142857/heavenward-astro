@@ -36,6 +36,8 @@ export interface DSOEntry {
   morphology: string | null;
   bestSeason: string | null;
   imagingNotes: string | null;
+  /** Caldwell catalog designation (e.g. "C14"), if this object is a Caldwell. */
+  caldwell: string | null;
 }
 
 let cache: DSOEntry[] | null = null;
