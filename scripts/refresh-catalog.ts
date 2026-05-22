@@ -661,7 +661,10 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
     ra: number;
     dec: number;
     magnitude: number;
+    bMagnitude: number | null;
     size: number;
+    minorAxis: number | null;
+    positionAngle: number | null;
     constellation: string;
     distanceLY: number | null;
     distancePC: number | null;
@@ -704,8 +707,19 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
     const mag = parseFloat(row["V-Mag"] || row["B-Mag"] || "");
     if (isNaN(mag) || mag > 14) continue; // limit to observable objects
 
+    const bMagRaw = parseFloat(row["B-Mag"] ?? "");
+    const bMagnitude = isNaN(bMagRaw) ? null : Math.round(bMagRaw * 10) / 10;
+
     const sizeStr = row["MajAx"] ?? "";
     const size = parseFloat(sizeStr) || 0;
+
+    const minAxRaw = parseFloat(row["MinAx"] ?? "");
+    const minorAxis = isNaN(minAxRaw) ? null : Math.round(minAxRaw * 10) / 10;
+
+    const posAngRaw = parseFloat(row["PosAng"] ?? "");
+    const positionAngle = isNaN(posAngRaw)
+      ? null
+      : Math.round(posAngRaw * 10) / 10;
 
     const constellation = row["Const"] ?? "";
     const typeRaw = row["Type"] ?? "";
@@ -741,13 +755,18 @@ async function fetchDSOCatalog(results: CatalogImportResult[]): Promise<void> {
       ra: Math.round(ra * 10000) / 10000,
       dec: Math.round(dec * 1000) / 1000,
       magnitude: Math.round(mag * 10) / 10,
+      bMagnitude,
       size: Math.round(size * 10) / 10,
+      minorAxis,
+      positionAngle,
       constellation,
       distanceLY: enrichment?.physicalSize ? null : distanceLY, // will be filled from enrichment
       distancePC: distancePC,
       description:
         enrichment?.description ??
-        `${typeRaw} in ${constellation}. Magnitude ${mag.toFixed(1)}.`,
+        (constellation
+          ? `${typeRaw} in ${constellation}. Magnitude ${mag.toFixed(1)}.`
+          : `${typeRaw}. Magnitude ${mag.toFixed(1)}.`),
       physicalSize: enrichment?.physicalSize ?? null,
       surfaceBrightness,
       notableFeatures: enrichment?.notableFeatures ?? [],
@@ -1085,7 +1104,34 @@ const STAR_ENRICHMENTS: Record<string, StarEnrichment> = {
 };
 
 async function fetchStarCatalog(results: CatalogImportResult[]): Promise<void> {
-  console.log("📡 Fetching HYG star database (gzipped)...");
+  // Format a solar-luminosity number for display: thousand-separated for
+  // up to 10^5, scientific (e.g. "1.2 \u00d7 10\u2076 L\u2609") beyond that.
+  function formatLuminosity(value: number): string {
+    if (value < 100) return `${value.toFixed(1)} L\u2609`;
+    if (value < 100_000)
+      return `${Math.round(value).toLocaleString("en-US")} L\u2609`;
+    const exp = Math.floor(Math.log10(value));
+    const mantissa = value / 10 ** exp;
+    const supers: Record<string, string> = {
+      "0": "\u2070",
+      "1": "\u00b9",
+      "2": "\u00b2",
+      "3": "\u00b3",
+      "4": "\u2074",
+      "5": "\u2075",
+      "6": "\u2076",
+      "7": "\u2077",
+      "8": "\u2078",
+      "9": "\u2079",
+    };
+    const expStr = String(exp)
+      .split("")
+      .map((d) => supers[d] ?? d)
+      .join("");
+    return `${mantissa.toFixed(1)} \u00d7 10${expStr} L\u2609`;
+  }
+
+  console.log("\ud83d\udce1 Fetching HYG star database (gzipped)...");
   const res = await fetch(HYG_URL);
   if (!res.ok) throw new Error(`HYG fetch failed: ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
@@ -1111,6 +1157,8 @@ async function fetchStarCatalog(results: CatalogImportResult[]): Promise<void> {
     isVariable: boolean;
     variableType: string | null;
     variablePeriod: string | null;
+    variableRange: string | null;
+    radialVelocity: number | null;
     hasExoplanets: boolean;
     exoplanetCount: number;
     exoplanetNotes: string | null;
@@ -1139,6 +1187,15 @@ async function fetchStarCatalog(results: CatalogImportResult[]): Promise<void> {
     const dec = parseFloat(decStr);
     if (isNaN(ra) || isNaN(dec)) continue;
 
+    // Skip the Sun — it is computed live by astronomy-engine, not from HYG.
+    // (HYG includes Sol with ra/dec/distance ≈ 0 which would otherwise leak in as a broken star.)
+    if (
+      ((row["proper"] ?? "").trim().toLowerCase() === "sol") ||
+      (ra === 0 && dec === 0 && mag < -20)
+    ) {
+      continue;
+    }
+
     // Get best name — HYG has 'proper', 'bayer', 'flam', 'bf' (combined), 'con'
     const proper = (row["proper"] ?? "").trim();
     const bayerRaw = (row["bayer"] ?? "").trim();
@@ -1149,6 +1206,10 @@ async function fetchStarCatalog(results: CatalogImportResult[]): Promise<void> {
     const varDesig = (row["var"] ?? "").trim();
     const varMin = parseFloat(row["var_min"] ?? "");
     const varMax = parseFloat(row["var_max"] ?? "");
+    const rvRaw = parseFloat(row["rv"] ?? "");
+    const radialVelocity = isNaN(rvRaw)
+      ? null
+      : Math.round(rvRaw * 10) / 10;
 
     let name = proper;
     if (!name && bayerRaw && con) name = `${bayerRaw} ${con}`;
@@ -1171,14 +1232,22 @@ async function fetchStarCatalog(results: CatalogImportResult[]): Promise<void> {
     const conAbbr = con;
     const enrichment = STAR_ENRICHMENTS[proper] ?? null;
 
-    // Derive luminosity string from HYG 'lum' field if no enrichment
+    // Derive luminosity string from HYG 'lum' field if no enrichment.
+    // HYG `lum` is in solar luminosities; format with thousand separators for
+    // legibility (e.g. "100,000 L☉" instead of "100000.0 L☉").
     const lumStr =
       enrichment?.luminosity ??
-      (!isNaN(lum) && lum > 0 ? `${lum.toFixed(1)} L☉` : null);
+      (!isNaN(lum) && lum > 0 ? formatLuminosity(lum) : null);
 
     // Use HYG variable designation if no enrichment
     const isVar = enrichment?.isVariable ?? varDesig.length > 0;
     const varType = enrichment?.variableType ?? (varDesig || null);
+
+    // Magnitude range for HYG variables when both min and max are known.
+    const variableRange =
+      !isNaN(varMin) && !isNaN(varMax) && varMin !== varMax
+        ? `${Math.min(varMin, varMax).toFixed(2)} – ${Math.max(varMin, varMax).toFixed(2)} mag`
+        : null;
 
     catalog.push({
       id,
@@ -1198,6 +1267,8 @@ async function fetchStarCatalog(results: CatalogImportResult[]): Promise<void> {
       isVariable: isVar,
       variableType: varType,
       variablePeriod: enrichment?.variablePeriod ?? null,
+      variableRange,
+      radialVelocity,
       hasExoplanets: enrichment?.hasExoplanets ?? false,
       exoplanetCount: enrichment?.exoplanetCount ?? 0,
       exoplanetNotes: enrichment?.exoplanetNotes ?? null,
@@ -1207,7 +1278,9 @@ async function fetchStarCatalog(results: CatalogImportResult[]): Promise<void> {
       age: enrichment?.age ?? null,
       description:
         enrichment?.description ??
-        `${spect} star in ${conAbbr}, magnitude ${mag.toFixed(2)}`,
+        (conAbbr
+          ? `${spect} star in ${conAbbr}, magnitude ${mag.toFixed(2)}`
+          : `${spect} star, magnitude ${mag.toFixed(2)}`),
       notableFeatures: enrichment?.notableFeatures ?? [],
       properMotion: enrichment?.properMotion ?? null,
       bayerDesignation: bayerRaw || null,

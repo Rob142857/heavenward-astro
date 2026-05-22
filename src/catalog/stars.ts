@@ -16,6 +16,8 @@ export interface StarEntry {
   isVariable: boolean;
   variableType: string | null;
   variablePeriod: string | null;
+  variableRange: string | null;
+  radialVelocity: number | null;
   hasExoplanets: boolean;
   exoplanetCount: number;
   exoplanetNotes: string | null;

@@ -19,7 +19,10 @@ export interface DSOEntry {
   ra: number;
   dec: number;
   magnitude: number;
-  size: number; // arcminutes
+  bMagnitude: number | null;
+  size: number; // major axis in arcminutes
+  minorAxis: number | null; // arcminutes
+  positionAngle: number | null; // degrees, north-eastward
   constellation: string;
   distanceLY: number | null;
   distancePC: number | null;

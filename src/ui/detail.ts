@@ -260,12 +260,19 @@ function renderDSODetailFull(
     <div class="detail-grid">
       ${detailItem("Altitude", event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
       ${detailItem("Azimuth", event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
-      ${detailItem("Magnitude", entry.magnitude.toFixed(1))}
+      ${detailItem("Magnitude (V)", entry.magnitude.toFixed(1))}
+      ${entry.bMagnitude !== null && entry.bMagnitude !== undefined ? detailItem("Magnitude (B)", entry.bMagnitude.toFixed(1)) : ""}
       ${detailItem("Constellation", wikiLink(entry.constellation + " (constellation)", entry.constellation))}
       ${detailSourceItem(event)}
       ${entry.surfaceBrightness ? detailItem("Surface Brightness", `${entry.surfaceBrightness.toFixed(1)} mag/arcmin²`) : ""}
       ${entry.bestSeason ? detailItem("Best Season", entry.bestSeason) : ""}
-      ${detailItem("Apparent Size", `${entry.size.toFixed(1)}'`)}
+      ${detailItem(
+        "Apparent Size",
+        entry.minorAxis && entry.minorAxis > 0 && entry.minorAxis < entry.size
+          ? `${entry.size.toFixed(1)}' × ${entry.minorAxis.toFixed(1)}'`
+          : `${entry.size.toFixed(1)}'`,
+      )}
+      ${entry.positionAngle !== null && entry.positionAngle !== undefined ? detailItem("Position Angle", `${entry.positionAngle.toFixed(0)}°`) : ""}
     </div>
   `,
   );
@@ -395,6 +402,13 @@ function renderStarDetailFull(
     );
   if (entry.properMotion)
     distItems.push(detailItem("Proper Motion", entry.properMotion));
+  if (entry.radialVelocity !== null && entry.radialVelocity !== undefined)
+    distItems.push(
+      detailItem(
+        "Radial Velocity",
+        `${entry.radialVelocity > 0 ? "+" : ""}${entry.radialVelocity.toFixed(1)} km/s`,
+      ),
+    );
   if (distItems.length) {
     html += detailSection(
       "Distance & Motion",
@@ -440,6 +454,8 @@ function renderStarDetailFull(
       varItems.push(detailItem("Type", entry.variableType));
     if (entry.variablePeriod)
       varItems.push(detailItem("Period", entry.variablePeriod));
+    if (entry.variableRange)
+      varItems.push(detailItem("Range", entry.variableRange));
     html += detailSection(
       "Variable Star",
       `${

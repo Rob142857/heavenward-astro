@@ -1,0 +1,45 @@
+{
+  "generatedAt": "2026-05-22T05:55:05.825Z",
+  "results": [
+    {
+      "key": "dso",
+      "mode": "scripted",
+      "sourceUrl": "https://raw.githubusercontent.com/mattiaverga/OpenNGC/master/database_files/NGC.csv",
+      "outputFile": "src/catalog/dso.json",
+      "sourceRows": 13969,
+      "outputRows": 5012,
+      "transform": [
+        "Fetch OpenNGC CSV from GitHub.",
+        "Parse semicolon-separated rows and keep objects with usable RA, Dec, type, and magnitude 14.0 or brighter.",
+        "Normalize DSO type, RA hours, Dec degrees, angular size, surface brightness, constellation, common name, and Messier/NGC identifiers.",
+        "Apply curated notes, imaging guidance, morphology, discoverer, and best-season enrichment for selected showpiece objects.",
+        "Sort Messier objects first, then catalog identifiers, and write typed JSON for dynamic import."
+      ],
+      "validation": [
+        "Reject rows without coordinates or visual/blue magnitude.",
+        "Dedupe by normalized Messier or catalog identifier.",
+        "Round numeric fields to stable precision for reproducible diffs."
+      ]
+    },
+    {
+      "key": "stars",
+      "mode": "scripted",
+      "sourceUrl": "https://codeberg.org/astronexus/hyg/media/branch/main/data/hyg/CURRENT/hyg_v42.csv.gz",
+      "outputFile": "src/catalog/stars.json",
+      "sourceRows": 119626,
+      "outputRows": 5054,
+      "transform": [
+        "Fetch HYG v4.2 gzipped CSV from AstroNexus on Codeberg.",
+        "Parse CSV rows and keep stars at magnitude 6.0 or brighter.",
+        "Normalize RA hours, Dec degrees, magnitudes, distance in parsecs and light years, spectral type, constellation, and naming fields.",
+        "Apply curated enrichment for a small set of prominent stars without changing source coordinates.",
+        "Sort by visual magnitude and write typed JSON for dynamic import."
+      ],
+      "validation": [
+        "Reject rows without numeric RA, Dec, or visual magnitude.",
+        "Dedupe by proper-name slug or HR identifier.",
+        "Round coordinates and numeric fields to stable precision for reproducible diffs."
+      ]
+    }
+  ]
+}
