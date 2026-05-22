@@ -479,7 +479,10 @@ function renderControls(
     pill.textContent = direction.shortLabel;
     pill.title = `${direction.label} quadrant \u2014 tap to combine`;
     pill.setAttribute("aria-label", direction.label);
-    pill.setAttribute("aria-pressed", active.has(direction.key) ? "true" : "false");
+    pill.setAttribute(
+      "aria-pressed",
+      active.has(direction.key) ? "true" : "false",
+    );
     pill.addEventListener("click", () => {
       const next = new Set(ctx.prefs.directionFilter ?? []);
       const willBeActive = !next.has(direction.key);
@@ -556,10 +559,42 @@ function renderShowMore(
   container.appendChild(btn);
 }
 
+/**
+ * Memoize the heavy alt/az pass across renderTonight() invocations so
+ * filter-pill toggles within the same minute don't recompute thousands of
+ * star/DSO positions. Key includes location, source set, mag limit, and a
+ * minute-precision time bucket — toggling category/equipment/sort/direction
+ * pills (which don't affect this key) reuses the cached array.
+ */
+let eventsCache: {
+  key: string;
+  events: CelestialEvent[];
+  bucket: number;
+} | null = null;
+
+function eventsCacheKey(ctx: AppContext, now: Date): string {
+  const bucket = Math.floor(now.getTime() / 60_000);
+  const sources = [...ctx.prefs.enabledSources].sort().join(",");
+  const lat = ctx.location.lat.toFixed(4);
+  const lon = ctx.location.lon.toFixed(4);
+  return `${lat},${lon}|${bucket}|${sources}|${ctx.prefs.magnitudeLimit}`;
+}
+
+/** Invalidate cached events — call from preference screens when sources or
+ * location change so the next renderTonight starts fresh. */
+export function invalidateTonightCache(): void {
+  eventsCache = null;
+}
+
 async function collectAllEvents(
   ctx: AppContext,
   now: Date,
 ): Promise<CelestialEvent[]> {
+  const key = eventsCacheKey(ctx, now);
+  if (eventsCache && eventsCache.key === key) {
+    return eventsCache.events;
+  }
+
   const events: CelestialEvent[] = [];
 
   if (ctx.prefs.enabledSources.includes("moon")) {
@@ -703,6 +738,7 @@ async function collectAllEvents(
     events.push(...batch);
   }
 
+  eventsCache = { key, events, bucket: Math.floor(now.getTime() / 60_000) };
   return events;
 }
 

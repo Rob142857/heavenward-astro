@@ -80,7 +80,9 @@ async function boot(): Promise<void> {
 boot();
 
 // Dismiss the inline boot splash once the app has mounted its first view.
-// Two animation frames so the first render commits before we fade.
+// We poll until #app has content — boot() may await GPS (up to 10 s) before
+// the first render lands, so we must NOT force-dismiss on a fixed timer or
+// we leave a blank screen between splash hide and first paint.
 function dismissBootSplash(): void {
   const splash = document.getElementById("boot-splash");
   if (!splash) return;
@@ -92,21 +94,17 @@ requestAnimationFrame(() => {
     const app = document.getElementById("app");
     if (app && app.children.length > 0) {
       dismissBootSplash();
-    } else {
-      // Fallback: poll briefly until first render lands, then dismiss.
-      const start = performance.now();
-      const tick = (): void => {
-        if (app && app.children.length > 0) {
-          dismissBootSplash();
-          return;
-        }
-        if (performance.now() - start > 8000) {
-          dismissBootSplash();
-          return;
-        }
-        requestAnimationFrame(tick);
-      };
-      tick();
+      return;
     }
+    // Poll until #app has content. If boot() catastrophically fails the
+    // splash stays visible — better than a blank dark page.
+    const tick = (): void => {
+      if (app && app.children.length > 0) {
+        dismissBootSplash();
+        return;
+      }
+      requestAnimationFrame(tick);
+    };
+    tick();
   });
 });
