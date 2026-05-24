@@ -147,11 +147,19 @@ tr:hover td{background:rgba(212,175,55,.04)}
 .mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.72rem}
 
 .chart{background:#111827;border:1px solid #1e2a42;border-radius:12px;padding:14px;margin-bottom:14px}
-.bars{display:flex;align-items:flex-end;gap:4px;height:110px}
-.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
-.bar{background:linear-gradient(to top,#b8942e,#f5e6a3);border-radius:3px 3px 0 0;min-width:10px;width:100%}
-.bar-label{font-size:.58rem;color:#7b869c;writing-mode:vertical-lr;transform:rotate(180deg)}
-.bar-n{font-size:.62rem;color:#f5e6a3}
+.chart svg{display:block;width:100%;height:260px;overflow:visible}
+.chart svg .grid{stroke:#1e2a42;stroke-width:1}
+.chart svg .axis{stroke:#2a3a58;stroke-width:1}
+.chart svg .axis-label{fill:#7b869c;font-size:10px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.chart svg .area{fill:url(#chart-grad)}
+.chart svg .line{fill:none;stroke:#f5e6a3;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart svg .dot{fill:#d4af37;stroke:#0a0e1a;stroke-width:1.5;cursor:pointer}
+.chart svg .dot:hover{fill:#f5e6a3;r:5}
+.chart-tooltip{position:absolute;background:#0a0e1a;border:1px solid #d4af37;border-radius:8px;padding:8px 12px;font-size:.75rem;pointer-events:none;opacity:0;transition:opacity .12s;white-space:nowrap;z-index:5;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.chart-tooltip.show{opacity:1}
+.chart-tooltip .t-label{color:#f5e6a3;font-weight:600;margin-bottom:2px}
+.chart-tooltip .t-row{color:#e0e6f0}
+.chart-tooltip .t-k{color:#7b869c;margin-right:6px}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:8px;border:1px solid transparent;font-size:.8rem;font-weight:600;cursor:pointer;background:#d4af37;color:#0a0e1a;line-height:1}
 .btn:hover{background:#f5e6a3}
@@ -233,7 +241,7 @@ textarea{width:100%;min-height:140px;resize:vertical;font-family:ui-monospace,SF
       <option value="uniques">Unique IPs</option>
     </select>
   </div>
-  <div class="chart"><div class="bars" id="ts-chart"><span class="muted">Loading…</span></div></div>
+  <div class="chart" style="position:relative"><div id="ts-chart"><span class="muted">Loading…</span></div><div class="chart-tooltip" id="ts-tip"></div></div>
 
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
     <div>
@@ -342,6 +350,14 @@ document.querySelectorAll(".tab").forEach(function(btn){
 (function(){const h=location.hash.replace("#","");if(h){const b=document.querySelector('.tab[data-tab="'+h+'"]');if(b)b.click();}})();
 
 // ── Overview chart ──
+function niceMax(v){
+  if(v<=0)return 1;
+  const pow=Math.pow(10,Math.floor(Math.log10(v)));
+  const n=v/pow;
+  let m;
+  if(n<=1)m=1;else if(n<=2)m=2;else if(n<=2.5)m=2.5;else if(n<=5)m=5;else m=10;
+  return m*pow;
+}
 async function loadChart(){
   const bucket=document.getElementById("ts-bucket").value;
   const metric=document.getElementById("ts-metric").value;
@@ -352,15 +368,89 @@ async function loadChart(){
   if(!d.ok){el.textContent="Error: "+d.error;return;}
   const pts=d.data.points;
   if(!pts.length){el.innerHTML='<span class="muted">No data in range.</span>';return;}
-  const max=Math.max.apply(null,pts.map(function(p){return p[metric];}));
-  el.innerHTML=pts.map(function(p){
-    const pct=max>0?(p[metric]/max)*100:0;
-    const tip=p.label+" · "+p.pageviews+" pv · "+p.sessions+" sess · "+p.uniques+" IPs";
-    return '<div class="bar-col" title="'+esc(tip)+'"><div class="bar-n">'+p[metric]+'</div><div class="bar" style="height:'+pct+'%"></div><div class="bar-label">'+esc(p.label)+'</div></div>';
-  }).join("");
+
+  const W=el.parentNode.clientWidth-28; // padding
+  const H=260;
+  const padL=44, padR=12, padT=14, padB=46;
+  const innerW=W-padL-padR, innerH=H-padT-padB;
+  const vals=pts.map(p=>p[metric]);
+  const rawMax=Math.max.apply(null,vals);
+  const yMax=niceMax(rawMax);
+  const n=pts.length;
+  const xStep=n>1?innerW/(n-1):0;
+  const x=i=>padL+i*xStep;
+  const y=v=>padT+innerH-(v/yMax)*innerH;
+
+  // gridlines (5 ticks)
+  const ticks=5;
+  let gridLines="",yLabels="";
+  for(let i=0;i<=ticks;i++){
+    const v=Math.round((yMax/ticks)*i);
+    const yp=y(v);
+    gridLines+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+yp+'" y2="'+yp+'"/>';
+    yLabels+='<text class="axis-label" x="'+(padL-6)+'" y="'+(yp+3)+'" text-anchor="end">'+v.toLocaleString()+'</text>';
+  }
+
+  // x labels — show every Nth so they don't overlap
+  const maxLabels=Math.floor(innerW/56);
+  const step=Math.max(1,Math.ceil(n/maxLabels));
+  let xLabels="";
+  for(let i=0;i<n;i+=step){
+    xLabels+='<text class="axis-label" x="'+x(i)+'" y="'+(H-padB+16)+'" text-anchor="middle">'+esc(pts[i].label)+'</text>';
+  }
+
+  // area + line paths
+  let linePath="", areaPath="";
+  for(let i=0;i<n;i++){
+    const px=x(i),py=y(pts[i][metric]);
+    linePath+=(i===0?"M":"L")+px+","+py+" ";
+  }
+  if(n>0){
+    areaPath="M"+x(0)+","+(padT+innerH)+" "+linePath.replace(/^M/,"L")+" L"+x(n-1)+","+(padT+innerH)+" Z";
+  }
+
+  // dots with data attrs for tooltip
+  let dots="";
+  for(let i=0;i<n;i++){
+    dots+='<circle class="dot" cx="'+x(i)+'" cy="'+y(pts[i][metric])+'" r="3.5" data-i="'+i+'"/>';
+  }
+
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
+    '<defs><linearGradient id="chart-grad" x1="0" x2="0" y1="0" y2="1">'+
+      '<stop offset="0%" stop-color="#d4af37" stop-opacity="0.45"/>'+
+      '<stop offset="100%" stop-color="#d4af37" stop-opacity="0"/>'+
+    '</linearGradient></defs>'+
+    gridLines+
+    '<line class="axis" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+(padT+innerH)+'" y2="'+(padT+innerH)+'"/>'+
+    '<line class="axis" x1="'+padL+'" x2="'+padL+'" y1="'+padT+'" y2="'+(padT+innerH)+'"/>'+
+    '<path class="area" d="'+areaPath+'"/>'+
+    '<path class="line" d="'+linePath+'"/>'+
+    dots+
+    yLabels+xLabels+
+  '</svg>';
+
+  // tooltip wiring
+  const tip=document.getElementById("ts-tip");
+  el.querySelectorAll(".dot").forEach(function(c){
+    c.addEventListener("mouseenter",function(ev){
+      const i=Number(c.dataset.i);
+      const p=pts[i];
+      tip.innerHTML='<div class="t-label">'+esc(p.label)+'</div>'+
+        '<div class="t-row"><span class="t-k">Pageviews</span>'+p.pageviews.toLocaleString()+'</div>'+
+        '<div class="t-row"><span class="t-k">Sessions</span>'+p.sessions.toLocaleString()+'</div>'+
+        '<div class="t-row"><span class="t-k">Unique IPs</span>'+p.uniques.toLocaleString()+'</div>';
+      tip.classList.add("show");
+      const rect=el.getBoundingClientRect();
+      const cRect=c.getBoundingClientRect();
+      tip.style.left=(cRect.left-rect.left+8)+"px";
+      tip.style.top=(cRect.top-rect.top-8)+"px";
+    });
+    c.addEventListener("mouseleave",function(){tip.classList.remove("show");});
+  });
 }
 document.getElementById("ts-bucket").addEventListener("change",loadChart);
 document.getElementById("ts-metric").addEventListener("change",loadChart);
+window.addEventListener("resize",function(){clearTimeout(window.__crz);window.__crz=setTimeout(loadChart,200);});
 loadChart();
 
 // ── Users ──
@@ -812,7 +902,16 @@ admin.get("/audit", async (c) => {
     };
   });
 
-  const [pv, dwellAvg, ipCount, ccCount, topRef, topCountry, topCity, topBrowser] = await Promise.all([
+  const [
+    pv,
+    dwellAvg,
+    ipCount,
+    ccCount,
+    topRef,
+    topCountry,
+    topCity,
+    topBrowser,
+  ] = await Promise.all([
     c.env.DB.prepare(
       "SELECT COUNT(*) AS n FROM events WHERE event='pageview' AND ts >= ?",
     )
@@ -877,7 +976,9 @@ admin.get("/audit", async (c) => {
 
   // Roll up browsers by shortUA label
   const brMap = new Map<string, number>();
-  for (const r of (topBrowser.results ?? []) as Array<Record<string, unknown>>) {
+  for (const r of (topBrowser.results ?? []) as Array<
+    Record<string, unknown>
+  >) {
     const label = shortUA(String(r.ua ?? ""));
     brMap.set(label, (brMap.get(label) ?? 0) + (Number(r.n) || 0));
   }
@@ -886,11 +987,15 @@ admin.get("/audit", async (c) => {
     .slice(0, 10)
     .map(([label, n]) => ({ label, n }));
 
-  const countries = ((topCountry.results ?? []) as Array<Record<string, unknown>>).map((r) => ({
+  const countries = (
+    (topCountry.results ?? []) as Array<Record<string, unknown>>
+  ).map((r) => ({
     country: String(r.country),
     n: Number(r.n) || 0,
   }));
-  const cities = ((topCity.results ?? []) as Array<Record<string, unknown>>).map((r) => ({
+  const cities = (
+    (topCity.results ?? []) as Array<Record<string, unknown>>
+  ).map((r) => ({
     label: [r.city, r.country].filter(Boolean).join(", "),
     n: Number(r.n) || 0,
   }));
