@@ -420,7 +420,7 @@ textarea{width:100%;min-height:140px;resize:vertical;font-family:ui-monospace,SF
 
 <div class="toast" id="toast"></div>
 
-<script>
+<script data-cfasync="false">
 // ── Helpers ──
 function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function fmtDur(ms){if(!ms||ms<0)return"—";const s=Math.round(ms/1000);if(s<60)return s+"s";const m=Math.floor(s/60),rs=s%60;if(m<60)return m+"m "+rs+"s";const h=Math.floor(m/60);return h+"h "+(m%60)+"m";}
@@ -430,18 +430,39 @@ function parseDbDate(v){if(!v)return null;const s=String(v);const iso=s.includes
 function fmtAet(v){const d=parseDbDate(v);if(!d)return"—";return new Intl.DateTimeFormat("en-AU",{timeZone:"Australia/Sydney",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZoneName:"short"}).format(d);}
 
 // ── Tabs ──
+const VALID_TABS=["overview","users","audit","export"];
+let usersLoaded=false, userOffset=0, userPageSize=50, lastUsersResp=null;
+let auditLoaded=false;
+let chartLoaded=false;
+let chartResizeTimer=0;
+
+function tabFromUrl(){
+  const params=new URLSearchParams(location.search);
+  const hash=location.hash.replace("#","");
+  const tab=params.get("tab")||hash||"overview";
+  return VALID_TABS.includes(tab)?tab:"overview";
+}
+function writeTabUrl(id,replace){
+  const url=new URL(location.href);
+  url.hash="";
+  if(id==="overview")url.searchParams.delete("tab");else url.searchParams.set("tab",id);
+  const next=url.pathname+(url.search||"");
+  if(next===location.pathname+location.search&&location.hash==="")return;
+  history[replace?"replaceState":"pushState"](null,"",next);
+}
+function activateTab(id,updateUrl){
+  const tab=VALID_TABS.includes(id)?id:"overview";
+  document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("active",t.dataset.tab===tab);});
+  document.querySelectorAll(".section").forEach(function(s){s.classList.toggle("active",s.dataset.section===tab);});
+  if(updateUrl)writeTabUrl(tab,false);
+  if(tab==="overview"&&!chartLoaded){chartLoaded=true;requestAnimationFrame(loadChart);}
+  if(tab==="users"&&!usersLoaded){usersLoaded=true;loadUsers(true);}
+  if(tab==="audit"&&!auditLoaded){auditLoaded=true;loadAudit(7);}
+}
 document.querySelectorAll(".tab").forEach(function(btn){
-  btn.addEventListener("click",function(){
-    const id=btn.dataset.tab;
-    document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t===btn));
-    document.querySelectorAll(".section").forEach(s=>s.classList.toggle("active",s.dataset.section===id));
-    location.hash="#"+id;
-    if(id==="users"&&!usersLoaded){loadUsers(true);usersLoaded=true;}
-    if(id==="audit"&&!auditLoaded){loadAudit(7);auditLoaded=true;}
-  });
+  btn.addEventListener("click",function(){activateTab(btn.dataset.tab||"overview",true);});
 });
-// Restore tab from hash
-(function(){const h=location.hash.replace("#","");if(h){const b=document.querySelector('.tab[data-tab="'+h+'"]');if(b)b.click();}})();
+window.addEventListener("popstate",function(){activateTab(tabFromUrl(),false);});
 
 // ── Overview chart ──
 function niceMax(v){
@@ -463,10 +484,12 @@ async function loadChart(){
   const pts=d.data.points;
   if(!pts.length){el.innerHTML='<span class="muted">No data in range.</span>';return;}
 
-  const W=el.parentNode.clientWidth-28; // padding
+  const parent=el.parentElement;
+  const measured=(parent&&parent.getBoundingClientRect().width)||el.getBoundingClientRect().width||640;
+  const W=Math.max(320,Math.floor(measured-28)); // padding
   const H=260;
   const padL=44, padR=12, padT=14, padB=46;
-  const innerW=W-padL-padR, innerH=H-padT-padB;
+  const innerW=Math.max(1,W-padL-padR), innerH=H-padT-padB;
   const vals=pts.map(p=>p[metric]);
   const rawMax=Math.max.apply(null,vals);
   const yMax=niceMax(rawMax);
@@ -486,7 +509,7 @@ async function loadChart(){
   }
 
   // x labels — show every Nth so they don't overlap
-  const maxLabels=Math.floor(innerW/(bucket==="hour"?48:58));
+  const maxLabels=Math.max(2,Math.floor(innerW/(bucket==="hour"?48:58)));
   const step=Math.max(1,Math.ceil(n/maxLabels));
   let xLabels="";
   for(let i=0;i<n;i+=step){
@@ -544,11 +567,13 @@ async function loadChart(){
 }
 document.getElementById("ts-bucket").addEventListener("change",loadChart);
 document.getElementById("ts-metric").addEventListener("change",loadChart);
-window.addEventListener("resize",function(){clearTimeout(window.__crz);window.__crz=setTimeout(loadChart,200);});
-loadChart();
+window.addEventListener("resize",function(){clearTimeout(chartResizeTimer);const overview=document.querySelector('.section[data-section="overview"]');if(overview&&overview.classList.contains("active")){chartResizeTimer=setTimeout(loadChart,200);}});
+
+const initialTab=tabFromUrl();
+activateTab(initialTab,false);
+if(location.hash)writeTabUrl(initialTab,true);
 
 // ── Users ──
-let usersLoaded=false, userOffset=0, userPageSize=50, lastUsersResp=null;
 async function loadUsers(reset){
   if(reset)userOffset=0;
   const q=document.getElementById("user-search").value.trim();
@@ -708,7 +733,6 @@ document.getElementById("user-export-btn").addEventListener("click",async functi
 });
 
 // ── Audit ──
-let auditLoaded=false;
 function listPanel(title,items,labelKey){
   const total=items.reduce(function(a,b){return a+b.n;},0)||1;
   const rows=items.slice(0,10).map(function(it){
