@@ -9,21 +9,23 @@ function getSessionId(): string {
   return sid;
 }
 
-/** Fire-and-forget event log to /api/event */
-export function trackEvent(
-  event: string,
-  path: string,
-  detail?: string,
-): void {
-  const body = JSON.stringify({
-    sid: getSessionId(),
-    event,
-    path,
-    detail: detail ?? null,
-  });
-  // Use sendBeacon for reliability on unload, fall back to fetch
+interface EventPayload {
+  sid: string;
+  event: string;
+  path: string;
+  detail: string | null;
+  dwell_ms?: number;
+  referrer?: string;
+  tz?: string;
+}
+
+function send(payload: EventPayload): void {
+  const body = JSON.stringify(payload);
   if (navigator.sendBeacon) {
-    navigator.sendBeacon("/api/event", new Blob([body], { type: "application/json" }));
+    navigator.sendBeacon(
+      "/api/event",
+      new Blob([body], { type: "application/json" }),
+    );
   } else {
     fetch("/api/event", {
       method: "POST",
@@ -34,10 +36,69 @@ export function trackEvent(
   }
 }
 
-/** Track page views on hash change */
-export function initAnalytics(): void {
-  trackEvent("pageview", window.location.hash || "#/");
-  window.addEventListener("hashchange", () => {
-    trackEvent("pageview", window.location.hash || "#/");
+/** Fire-and-forget event log to /api/event */
+export function trackEvent(event: string, path: string, detail?: string): void {
+  send({
+    sid: getSessionId(),
+    event,
+    path,
+    detail: detail ?? null,
   });
+}
+
+// ── Dwell tracking ──────────────────────────────────────
+let currentPath = "";
+let pageEnterTs = 0;
+
+function flushDwell(): void {
+  if (!currentPath || !pageEnterTs) return;
+  const dwell = Date.now() - pageEnterTs;
+  pageEnterTs = 0;
+  if (dwell < 250) return; // ignore instant nav
+  send({
+    sid: getSessionId(),
+    event: "dwell",
+    path: currentPath,
+    detail: null,
+    dwell_ms: dwell,
+  });
+}
+
+function recordPageview(path: string): void {
+  flushDwell();
+  currentPath = path;
+  pageEnterTs = Date.now();
+  let tz: string | undefined;
+  try {
+    tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    tz = undefined;
+  }
+  send({
+    sid: getSessionId(),
+    event: "pageview",
+    path,
+    detail: null,
+    referrer: document.referrer || undefined,
+    tz,
+  });
+}
+
+/** Track page views + dwell + nav activity */
+export function initAnalytics(): void {
+  recordPageview(window.location.hash || "#/");
+
+  window.addEventListener("hashchange", () => {
+    recordPageview(window.location.hash || "#/");
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      flushDwell();
+    } else if (document.visibilityState === "visible") {
+      pageEnterTs = Date.now();
+    }
+  });
+  window.addEventListener("pagehide", flushDwell);
+  window.addEventListener("beforeunload", flushDwell);
 }

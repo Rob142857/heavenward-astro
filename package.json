@@ -3,14 +3,20 @@
   "version": "1.0.1",
   "description": "Dusk-till-dawn astronomical event report — everything visible tonight, one tap away",
   "type": "module",
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=20.18.0",
+    "pnpm": ">=11"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "wrangler pages dev dist",
-    "deploy": "npm run deploy:production",
-    "deploy:production": "npm run build && wrangler pages deploy dist --branch production",
-    "deploy:preview": "npm run build && wrangler pages deploy dist --branch preview",
+    "deploy": "pnpm run deploy:production",
+    "deploy:production": "pnpm run build && wrangler pages deploy dist --branch production",
+    "deploy:preview": "pnpm run build && wrangler pages deploy dist --branch preview",
     "typecheck": "tsc --noEmit",
+    "audit": "pnpm audit --audit-level=moderate",
     "refresh": "node --experimental-strip-types scripts/refresh-catalog.ts",
     "catalog:plan": "node --experimental-strip-types scripts/refresh-catalog.ts --plan"
   },
@@ -33,10 +39,26 @@
     "vite": "^8.0.11",
     "vite-plugin-pwa": "^1.3.0",
     "workbox-precaching": "^7.4.1",
+    "workbox-window": "^7.4.1",
     "wrangler": "^4.90.0"
   },
   "devDependencies": {
     "@types/node": "^25.6.2",
     "sharp": "^0.34.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "workerd",
+      "@cloudflare/workerd-darwin-64",
+      "@cloudflare/workerd-darwin-arm64",
+      "@cloudflare/workerd-linux-64",
+      "@cloudflare/workerd-linux-arm64",
+      "@cloudflare/workerd-windows-64"
+    ],
+    "auditConfig": {
+      "ignoreCves": []
+    }
   }
 }

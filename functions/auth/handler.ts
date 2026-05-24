@@ -14,6 +14,90 @@ const ALLOWED_ORIGIN = "sky.incitat.io";
 
 const auth = new Hono<{ Bindings: Env }>();
 
+/** Extract CF geo + IP for login audit */
+function extractGeo(c: {
+  req: { raw: Request; header: (k: string) => string | undefined };
+}): {
+  ip: string | null;
+  country: string | null;
+  city: string | null;
+} {
+  const ip =
+    c.req.header("CF-Connecting-IP") ??
+    c.req.header("X-Forwarded-For")?.split(",")[0]?.trim() ??
+    null;
+  const cf = (c.req.raw as Request & { cf?: Record<string, unknown> }).cf ?? {};
+  return {
+    ip,
+    country: typeof cf.country === "string" ? cf.country : null,
+    city: typeof cf.city === "string" ? cf.city : null,
+  };
+}
+
+/** Check whether a user is allowed to log in. Returns null if OK, else reason. */
+async function checkUserStatus(
+  db: D1Database,
+  userId: string,
+): Promise<string | null> {
+  const row = await db
+    .prepare("SELECT status FROM users WHERE id = ?")
+    .bind(userId)
+    .first<{ status: string | null }>();
+  const status = row?.status ?? "active";
+  if (status === "blocked" || status === "banned") return status;
+  return null;
+}
+
+/** Record a successful login: update users row, emit canonical login event. */
+async function recordLogin(
+  db: D1Database,
+  userId: string,
+  geo: { ip: string | null; country: string | null; city: string | null },
+  ua: string | null,
+): Promise<void> {
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `UPDATE users SET
+         last_login_at = ?,
+         last_login_ip = ?,
+         last_login_country = ?,
+         last_login_city = ?,
+         login_count = COALESCE(login_count, 0) + 1
+       WHERE id = ?`,
+    )
+    .bind(now, geo.ip, geo.country, geo.city, userId)
+    .run();
+  await db
+    .prepare(
+      `INSERT INTO events (session_id, user_id, event, path, detail, ua, ip, country, city, ts)
+       VALUES (?, ?, 'login', '/auth', NULL, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      `login-${userId}-${now}`,
+      userId,
+      ua,
+      geo.ip,
+      geo.country,
+      geo.city,
+      now,
+    )
+    .run();
+}
+
+function blockedPage(status: string): Response {
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Access blocked</title>
+<style>body{background:#0a0e1a;color:#e0e6f0;font-family:-apple-system,sans-serif;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+.card{background:#111827;border:1px solid #1e2a42;border-radius:14px;max-width:420px;padding:28px}
+h1{color:#f5e6a3;margin-bottom:8px}
+p{color:#7b869c;font-size:.9rem;line-height:1.5}</style></head>
+<body><div class="card"><h1>Account ${status}</h1><p>Your Heavenward account is currently ${status}. If you believe this is an error, contact support.</p></div></body></html>`;
+  return new Response(html, {
+    status: 403,
+    headers: { "Content-Type": "text/html;charset=utf-8" },
+  });
+}
+
 /** Reject auth requests from non-production origins */
 auth.use("*", async (c, next) => {
   const host = new URL(c.req.url).hostname;
@@ -65,17 +149,26 @@ auth.get("/google/callback", async (c) => {
       tokens === null ||
       !("access_token" in tokens)
     ) {
-      return c.json({ ok: false, error: "Token exchange failed", details: tokens }, 400);
+      return c.json(
+        { ok: false, error: "Token exchange failed", details: tokens },
+        400,
+      );
     }
 
-    const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-      headers: {
-        Authorization: `Bearer ${(tokens as Record<string, string>).access_token}`,
+    const userRes = await fetch(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${(tokens as Record<string, string>).access_token}`,
+        },
       },
-    });
+    );
     const profile: unknown = await userRes.json();
     if (typeof profile !== "object" || profile === null) {
-      return c.json({ ok: false, error: "Profile fetch failed", details: profile }, 400);
+      return c.json(
+        { ok: false, error: "Profile fetch failed", details: profile },
+        400,
+      );
     }
 
     const p = profile as Record<string, string>;
@@ -86,6 +179,16 @@ auth.get("/google/callback", async (c) => {
     )
       .bind(userId, p.email, p.name, "google", p.email, p.name)
       .run();
+
+    const blocked = await checkUserStatus(c.env.DB, userId);
+    if (blocked) return blockedPage(blocked);
+
+    await recordLogin(
+      c.env.DB,
+      userId,
+      extractGeo(c),
+      c.req.header("User-Agent")?.slice(0, 512) ?? null,
+    );
 
     const jwt = await signJWT(
       { sub: userId, email: p.email, name: p.name, provider: "google" },
@@ -147,13 +250,18 @@ auth.get("/microsoft/callback", async (c) => {
       tokens === null ||
       !("id_token" in tokens)
     ) {
-      return c.json({ ok: false, error: "Token exchange failed", details: tokens }, 400);
+      return c.json(
+        { ok: false, error: "Token exchange failed", details: tokens },
+        400,
+      );
     }
 
     // Decode the ID token payload (already verified by Entra via HTTPS)
     const idToken = (tokens as Record<string, string>).id_token;
     const payloadB64 = idToken.split(".")[1];
-    const payload: unknown = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")));
+    const payload: unknown = JSON.parse(
+      atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")),
+    );
     if (typeof payload !== "object" || payload === null) {
       return c.json({ ok: false, error: "Invalid ID token" }, 400);
     }
@@ -161,7 +269,10 @@ auth.get("/microsoft/callback", async (c) => {
     const claims = payload as Record<string, string>;
     const msId = claims.oid || claims.sub || "";
     if (!msId) {
-      return c.json({ ok: false, error: "No user ID in token", details: claims }, 400);
+      return c.json(
+        { ok: false, error: "No user ID in token", details: claims },
+        400,
+      );
     }
     const userId = `microsoft-${msId}`;
     const email = claims.email || claims.preferred_username || "";
@@ -172,6 +283,16 @@ auth.get("/microsoft/callback", async (c) => {
     )
       .bind(userId, email, name, "microsoft", email, name)
       .run();
+
+    const blocked = await checkUserStatus(c.env.DB, userId);
+    if (blocked) return blockedPage(blocked);
+
+    await recordLogin(
+      c.env.DB,
+      userId,
+      extractGeo(c),
+      c.req.header("User-Agent")?.slice(0, 512) ?? null,
+    );
 
     const jwt = await signJWT(
       {
@@ -186,7 +307,10 @@ auth.get("/microsoft/callback", async (c) => {
     return loginRedirect(jwt);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    return c.json({ ok: false, error: "Microsoft auth error", details: msg }, 500);
+    return c.json(
+      { ok: false, error: "Microsoft auth error", details: msg },
+      500,
+    );
   }
 });
 
@@ -196,8 +320,7 @@ auth.post("/logout", () => {
   return new Response(JSON.stringify({ ok: true }), {
     headers: {
       "Content-Type": "application/json",
-      "Set-Cookie":
-        `session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Domain=${ALLOWED_ORIGIN}`,
+      "Set-Cookie": `session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Domain=${ALLOWED_ORIGIN}`,
     },
   });
 });

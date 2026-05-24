@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from "hono";
 
-interface JWTPayload {
+export interface JWTPayload {
   sub: string;
   email: string;
   name: string;
@@ -20,6 +20,27 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
   const payload = await verifyJWT(token, secret);
   if (!payload) {
     return c.json({ ok: false, error: "Invalid token" }, 401);
+  }
+
+  // Enforce user status (blocked / banned / paused)
+  const db = (c.env as { DB?: D1Database }).DB;
+  if (db) {
+    const row = await db
+      .prepare("SELECT status FROM users WHERE id = ?")
+      .bind(payload.sub)
+      .first<{ status: string | null }>();
+    const status = row?.status ?? "active";
+    if (status === "blocked" || status === "banned") {
+      return c.json({ ok: false, error: "account_" + status }, 403);
+    }
+    // paused: allow reads, block writes
+    if (
+      status === "paused" &&
+      c.req.method !== "GET" &&
+      c.req.method !== "HEAD"
+    ) {
+      return c.json({ ok: false, error: "account_paused" }, 423);
+    }
   }
 
   c.set("user", payload);
@@ -47,7 +68,7 @@ export async function signJWT(
   return `${data}.${sigB64}`;
 }
 
-async function verifyJWT(
+export async function verifyJWT(
   token: string,
   secret: string,
 ): Promise<JWTPayload | null> {
@@ -85,7 +106,7 @@ function importKey(secret: string): Promise<CryptoKey> {
   );
 }
 
-function parseCookie(header: string, name: string): string | null {
+export function parseCookie(header: string, name: string): string | null {
   const match = header.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
   return match ? match[1] : null;
 }

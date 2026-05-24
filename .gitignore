@@ -6,3 +6,7 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Disallow npm/yarn lockfiles — repo uses pnpm exclusively
+package-lock.json
+yarn.lock
