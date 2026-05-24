@@ -882,7 +882,8 @@ admin.get("/stats", async (c) => {
 // ── Time-series for Overview chart ──────────────────────
 admin.get("/timeseries", async (c) => {
   const requested = c.req.query("bucket") ?? "day";
-  const bucket: TimeBucket = requested === "hour" || requested === "week" ? requested : "day";
+  const bucket: TimeBucket =
+    requested === "hour" || requested === "week" ? requested : "day";
   const now = new Date();
   let startDate: Date;
   let buckets: ChartBucket[];
