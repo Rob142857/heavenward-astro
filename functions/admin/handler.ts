@@ -44,14 +44,21 @@ function shortUA(ua: string | null): string {
   return ua.slice(0, 40);
 }
 
+function refHost(ref: string | null): string {
+  if (!ref) return "(direct)";
+  try {
+    const u = new URL(ref);
+    return u.hostname || "(direct)";
+  } catch {
+    return ref.slice(0, 60);
+  }
+}
+
 // ── Dashboard HTML ──────────────────────────────────────
 admin.get("/", async (c) => {
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const weekAgo = new Date(now.getTime() - 7 * 86400000)
-    .toISOString()
-    .slice(0, 10);
-  const monthAgo = new Date(now.getTime() - 30 * 86400000)
     .toISOString()
     .slice(0, 10);
 
@@ -64,7 +71,6 @@ admin.get("/", async (c) => {
     sessions7d,
     topPages,
     topClicks,
-    dailyViews,
   ] = await Promise.all([
     c.env.DB.prepare("SELECT COUNT(*) as n FROM users").first<{ n: number }>(),
     c.env.DB.prepare("SELECT COUNT(*) as n FROM users WHERE created_at >= ?")
@@ -94,11 +100,6 @@ admin.get("/", async (c) => {
     )
       .bind(weekAgo)
       .all(),
-    c.env.DB.prepare(
-      "SELECT DATE(ts) as day, COUNT(*) as n FROM events WHERE event='pageview' AND ts >= ? GROUP BY DATE(ts) ORDER BY day",
-    )
-      .bind(monthAgo)
-      .all(),
   ]);
 
   const tableRows = (rows: unknown[]): string =>
@@ -110,20 +111,6 @@ admin.get("/", async (c) => {
           .join("")}</tr>`;
       })
       .join("");
-
-  const dailyBars = (dailyViews.results ?? [])
-    .map((r: unknown) => {
-      const row = r as Record<string, unknown>;
-      const max = Math.max(
-        ...(dailyViews.results ?? []).map((x: unknown) =>
-          Number((x as Record<string, unknown>).n),
-        ),
-      );
-      const pct = max > 0 ? (Number(row.n) / max) * 100 : 0;
-      const day = String(row.day).slice(5);
-      return `<div class="bar-col"><div class="bar-n">${row.n}</div><div class="bar" style="height:${pct}%"></div><div class="bar-label">${day}</div></div>`;
-    })
-    .join("");
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -231,8 +218,22 @@ textarea{width:100%;min-height:140px;resize:vertical;font-family:ui-monospace,SF
 
 <!-- ── Overview ── -->
 <section class="section active" data-section="overview">
-  <h2>Page Views — Last 30 Days</h2>
-  <div class="chart"><div class="bars">${dailyBars}</div></div>
+  <div class="controls" style="margin-bottom:8px">
+    <h2 style="margin:0;flex:1">Traffic</h2>
+    <label class="muted" style="font-size:.75rem">Bucket:</label>
+    <select id="ts-bucket">
+      <option value="hour">Hourly (last 48h)</option>
+      <option value="day" selected>Daily (last 30d)</option>
+      <option value="week">Weekly (last 12w)</option>
+    </select>
+    <label class="muted" style="font-size:.75rem;margin-left:6px">Metric:</label>
+    <select id="ts-metric">
+      <option value="pageviews" selected>Page views</option>
+      <option value="sessions">Sessions</option>
+      <option value="uniques">Unique IPs</option>
+    </select>
+  </div>
+  <div class="chart"><div class="bars" id="ts-chart"><span class="muted">Loading…</span></div></div>
 
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
     <div>
@@ -280,6 +281,8 @@ textarea{width:100%;min-height:140px;resize:vertical;font-family:ui-monospace,SF
     <button class="rangebtn" data-days="30">30d</button>
   </div>
   <div id="audit-summary" class="stats"></div>
+  <div id="audit-insights" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:14px"></div>
+  <h2 class="sub-h" style="margin-top:0">Recent Sessions</h2>
   <div class="scroll-x" id="audit-sessions"></div>
   <div id="audit-detail" style="display:none;margin-top:16px"></div>
 </section>
@@ -337,6 +340,28 @@ document.querySelectorAll(".tab").forEach(function(btn){
 });
 // Restore tab from hash
 (function(){const h=location.hash.replace("#","");if(h){const b=document.querySelector('.tab[data-tab="'+h+'"]');if(b)b.click();}})();
+
+// ── Overview chart ──
+async function loadChart(){
+  const bucket=document.getElementById("ts-bucket").value;
+  const metric=document.getElementById("ts-metric").value;
+  const el=document.getElementById("ts-chart");
+  el.innerHTML='<span class="muted">Loading…</span>';
+  const r=await fetch("/admin/timeseries?bucket="+bucket);
+  const d=await r.json();
+  if(!d.ok){el.textContent="Error: "+d.error;return;}
+  const pts=d.data.points;
+  if(!pts.length){el.innerHTML='<span class="muted">No data in range.</span>';return;}
+  const max=Math.max.apply(null,pts.map(function(p){return p[metric];}));
+  el.innerHTML=pts.map(function(p){
+    const pct=max>0?(p[metric]/max)*100:0;
+    const tip=p.label+" · "+p.pageviews+" pv · "+p.sessions+" sess · "+p.uniques+" IPs";
+    return '<div class="bar-col" title="'+esc(tip)+'"><div class="bar-n">'+p[metric]+'</div><div class="bar" style="height:'+pct+'%"></div><div class="bar-label">'+esc(p.label)+'</div></div>';
+  }).join("");
+}
+document.getElementById("ts-bucket").addEventListener("change",loadChart);
+document.getElementById("ts-metric").addEventListener("change",loadChart);
+loadChart();
 
 // ── Users ──
 let usersLoaded=false, userOffset=0, userPageSize=50, lastUsersResp=null;
@@ -500,6 +525,14 @@ document.getElementById("user-export-btn").addEventListener("click",async functi
 
 // ── Audit ──
 let auditLoaded=false;
+function listPanel(title,items,labelKey){
+  const total=items.reduce(function(a,b){return a+b.n;},0)||1;
+  const rows=items.slice(0,10).map(function(it){
+    const pct=Math.round((it.n/total)*100);
+    return '<tr><td>'+esc(it[labelKey]||"—")+'</td><td style="text-align:right">'+it.n+'</td><td style="text-align:right;color:#7b869c">'+pct+'%</td></tr>';
+  }).join("")||'<tr><td colspan="3" class="muted">No data.</td></tr>';
+  return '<div class="panel"><h2 class="sub-h" style="margin-top:0">'+title+'</h2><table><tr><th>'+labelKey.charAt(0).toUpperCase()+labelKey.slice(1)+'</th><th style="text-align:right">Sessions</th><th style="text-align:right">%</th></tr>'+rows+'</table></div>';
+}
 async function loadAudit(days){
   document.querySelectorAll(".rangebtn").forEach(b=>b.classList.toggle("active",Number(b.dataset.days)===days));
   document.getElementById("audit-detail").style.display="none";
@@ -514,6 +547,11 @@ async function loadAudit(days){
     '<div class="stat"><div class="n">'+s.countries+'</div><div class="l">Countries</div></div>'+
     '<div class="stat"><div class="n">'+fmtDur(s.avgSessionMs)+'</div><div class="l">Avg Session</div></div>'+
     '<div class="stat"><div class="n">'+fmtDur(s.avgDwellMs)+'</div><div class="l">Avg Dwell</div></div>';
+  document.getElementById("audit-insights").innerHTML=
+    listPanel("Top Referrers",d.data.referrers||[],"host")+
+    listPanel("Browsers",d.data.browsers||[],"label")+
+    listPanel("Countries",d.data.topCountries||[],"country")+
+    listPanel("Cities",d.data.topCities||[],"label");
   const rows=d.data.sessions.map(function(x){
     const loc=[x.city,x.region,x.country].filter(Boolean).join(", ")||"—";
     return '<tr data-sid="'+esc(x.session_id)+'">'+
@@ -525,10 +563,11 @@ async function loadAudit(days){
       '<td>'+esc(loc)+'</td>'+
       '<td class="mono">'+esc(x.ip||"—")+'</td>'+
       '<td>'+esc(x.ua_short||"—")+'</td>'+
+      '<td title="'+esc(x.referrer||"")+'">'+esc(x.ref_host||"(direct)")+'</td>'+
     '</tr>';
   }).join("");
   document.getElementById("audit-sessions").innerHTML=
-    '<table><tr><th>Session</th><th>Started</th><th>Duration</th><th>Views</th><th>Clicks</th><th>Location</th><th>IP</th><th>Client</th></tr>'+rows+'</table>'+
+    '<table><tr><th>Session</th><th>Started</th><th>Duration</th><th>Views</th><th>Clicks</th><th>Location</th><th>IP</th><th>Client</th><th>Referrer</th></tr>'+rows+'</table>'+
     '<p class="notice">Click any row for the full navigation timeline.</p>';
   document.querySelectorAll("#audit-sessions tr[data-sid]").forEach(function(tr){
     tr.addEventListener("click",function(){loadSession(tr.dataset.sid);});
@@ -656,6 +695,75 @@ admin.get("/stats", async (c) => {
 });
 
 // ── Audit log: rolling 7d/30d session list with geo/IP ──
+// ── Time-series for Overview chart ──────────────────────
+admin.get("/timeseries", async (c) => {
+  const bucket = c.req.query("bucket") ?? "day";
+  let groupExpr: string;
+  let labelExpr: string;
+  let start: string;
+  let buckets: number;
+
+  if (bucket === "hour") {
+    // Last 48 hours by hour
+    groupExpr = "strftime('%Y-%m-%d %H', ts)";
+    labelExpr = "strftime('%m-%d %Hh', ts)";
+    start = new Date(Date.now() - 48 * 3600000)
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
+    buckets = 48;
+  } else if (bucket === "week") {
+    // Last 12 ISO weeks
+    groupExpr = "strftime('%Y-%W', ts)";
+    labelExpr = "strftime('%Y-W%W', ts)";
+    start = new Date(Date.now() - 84 * 86400000)
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
+    buckets = 12;
+  } else {
+    // Last 30 days by day
+    groupExpr = "strftime('%Y-%m-%d', ts)";
+    labelExpr = "strftime('%m-%d', ts)";
+    start = new Date(Date.now() - 30 * 86400000)
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
+    buckets = 30;
+  }
+
+  const result = await c.env.DB.prepare(
+    `SELECT ${groupExpr} AS bucket,
+            ${labelExpr} AS label,
+            COUNT(*) AS pageviews,
+            COUNT(DISTINCT session_id) AS sessions,
+            COUNT(DISTINCT ip) AS uniques
+     FROM events
+     WHERE event='pageview' AND ts >= ?
+     GROUP BY bucket
+     ORDER BY bucket`,
+  )
+    .bind(start)
+    .all();
+
+  return c.json({
+    ok: true,
+    data: {
+      bucket,
+      buckets,
+      points: (result.results ?? []).map((r) => {
+        const row = r as Record<string, unknown>;
+        return {
+          label: String(row.label ?? ""),
+          pageviews: Number(row.pageviews) || 0,
+          sessions: Number(row.sessions) || 0,
+          uniques: Number(row.uniques) || 0,
+        };
+      }),
+    },
+  });
+});
+
 admin.get("/audit", async (c) => {
   const days = Math.max(1, Math.min(90, Number(c.req.query("days")) || 7));
   const start = rangeStart(days);
@@ -674,7 +782,8 @@ admin.get("/audit", async (c) => {
        MAX(region) AS region,
        MAX(city) AS city,
        MAX(tz) AS tz,
-       MAX(ua) AS ua
+       MAX(ua) AS ua,
+       MAX(referrer) AS referrer
      FROM events
      WHERE ts >= ?
      GROUP BY session_id
@@ -698,10 +807,12 @@ admin.get("/audit", async (c) => {
       city: (row.city as string | null) ?? null,
       tz: (row.tz as string | null) ?? null,
       ua_short: shortUA((row.ua as string | null) ?? null),
+      referrer: (row.referrer as string | null) ?? null,
+      ref_host: refHost((row.referrer as string | null) ?? null),
     };
   });
 
-  const [pv, dwellAvg, ipCount, ccCount] = await Promise.all([
+  const [pv, dwellAvg, ipCount, ccCount, topRef, topCountry, topCity, topBrowser] = await Promise.all([
     c.env.DB.prepare(
       "SELECT COUNT(*) AS n FROM events WHERE event='pageview' AND ts >= ?",
     )
@@ -722,7 +833,67 @@ admin.get("/audit", async (c) => {
     )
       .bind(start)
       .first<{ n: number }>(),
+    // Top referrers by unique session count
+    c.env.DB.prepare(
+      `SELECT referrer, COUNT(DISTINCT session_id) AS n
+       FROM events WHERE ts >= ? AND referrer IS NOT NULL AND referrer != ''
+       GROUP BY referrer ORDER BY n DESC LIMIT 15`,
+    )
+      .bind(start)
+      .all(),
+    c.env.DB.prepare(
+      `SELECT country, COUNT(DISTINCT session_id) AS n
+       FROM events WHERE ts >= ? AND country IS NOT NULL
+       GROUP BY country ORDER BY n DESC LIMIT 15`,
+    )
+      .bind(start)
+      .all(),
+    c.env.DB.prepare(
+      `SELECT country, city, COUNT(DISTINCT session_id) AS n
+       FROM events WHERE ts >= ? AND city IS NOT NULL
+       GROUP BY country, city ORDER BY n DESC LIMIT 15`,
+    )
+      .bind(start)
+      .all(),
+    c.env.DB.prepare(
+      `SELECT ua, COUNT(DISTINCT session_id) AS n
+       FROM events WHERE ts >= ? AND ua IS NOT NULL
+       GROUP BY ua ORDER BY n DESC LIMIT 50`,
+    )
+      .bind(start)
+      .all(),
   ]);
+
+  // Roll up referrer rows by hostname
+  const refMap = new Map<string, number>();
+  for (const r of (topRef.results ?? []) as Array<Record<string, unknown>>) {
+    const host = refHost(String(r.referrer));
+    refMap.set(host, (refMap.get(host) ?? 0) + (Number(r.n) || 0));
+  }
+  const referrers = [...refMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([host, n]) => ({ host, n }));
+
+  // Roll up browsers by shortUA label
+  const brMap = new Map<string, number>();
+  for (const r of (topBrowser.results ?? []) as Array<Record<string, unknown>>) {
+    const label = shortUA(String(r.ua ?? ""));
+    brMap.set(label, (brMap.get(label) ?? 0) + (Number(r.n) || 0));
+  }
+  const browsers = [...brMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([label, n]) => ({ label, n }));
+
+  const countries = ((topCountry.results ?? []) as Array<Record<string, unknown>>).map((r) => ({
+    country: String(r.country),
+    n: Number(r.n) || 0,
+  }));
+  const cities = ((topCity.results ?? []) as Array<Record<string, unknown>>).map((r) => ({
+    label: [r.city, r.country].filter(Boolean).join(", "),
+    n: Number(r.n) || 0,
+  }));
 
   const totalSessionMs = sessions.reduce((acc, s) => acc + s.duration_ms, 0);
   const avgSessionMs = sessions.length
@@ -742,6 +913,10 @@ admin.get("/audit", async (c) => {
         avgDwellMs: Math.round(Number(dwellAvg?.n) || 0),
       },
       sessions,
+      referrers,
+      browsers,
+      topCountries: countries,
+      topCities: cities,
     },
   });
 });
