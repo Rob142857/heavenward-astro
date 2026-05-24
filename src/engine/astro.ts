@@ -29,24 +29,60 @@ export function getSunAltitude(loc: GeoLocation, date: Date): number {
   return hor.altitude;
 }
 
+function before(date: Date, hours: number): Date {
+  return new Date(date.getTime() - hours * 3_600_000);
+}
+
+function pairedSunset(
+  obs: Astronomy.Observer,
+  sunrise: Astronomy.AstroTime | null,
+  date: Date,
+): Astronomy.AstroTime | null {
+  const anchor = sunrise?.date ?? new Date(date.getTime() + 24 * 3_600_000);
+  return Astronomy.SearchRiseSet(
+    Astronomy.Body.Sun,
+    obs,
+    -1,
+    before(anchor, 36),
+    2,
+  );
+}
+
+function pairedDusk(
+  obs: Astronomy.Observer,
+  dawn: Astronomy.AstroTime | null,
+  date: Date,
+  altitude: number,
+): Astronomy.AstroTime | null {
+  const anchor = dawn?.date ?? new Date(date.getTime() + 24 * 3_600_000);
+  return Astronomy.SearchAltitude(
+    Astronomy.Body.Sun,
+    obs,
+    -1,
+    before(anchor, 36),
+    2,
+    altitude,
+  );
+}
+
 export function getTwilightTimes(loc: GeoLocation, date: Date): TwilightTimes {
   const obs = makeObserver(loc);
 
   const Sun = Astronomy.Body.Sun;
-  const sunset = Astronomy.SearchRiseSet(Sun, obs, -1, date, 1);
   const sunrise = Astronomy.SearchRiseSet(Sun, obs, +1, date, 2);
+  const sunset = pairedSunset(obs, sunrise, date);
 
   // Civil twilight: Sun at -6°
-  const civilDusk = Astronomy.SearchAltitude(Sun, obs, -1, date, 1, -6);
   const civilDawn = Astronomy.SearchAltitude(Sun, obs, +1, date, 2, -6);
+  const civilDusk = pairedDusk(obs, civilDawn, date, -6);
 
   // Nautical twilight: Sun at -12°
-  const nauticalDusk = Astronomy.SearchAltitude(Sun, obs, -1, date, 1, -12);
   const nauticalDawn = Astronomy.SearchAltitude(Sun, obs, +1, date, 2, -12);
+  const nauticalDusk = pairedDusk(obs, nauticalDawn, date, -12);
 
   // Astronomical twilight: Sun at -18°
-  const astronomicalDusk = Astronomy.SearchAltitude(Sun, obs, -1, date, 1, -18);
   const astronomicalDawn = Astronomy.SearchAltitude(Sun, obs, +1, date, 2, -18);
+  const astronomicalDusk = pairedDusk(obs, astronomicalDawn, date, -18);
 
   let nightDurationHours = 0;
   if (astronomicalDusk && astronomicalDawn) {

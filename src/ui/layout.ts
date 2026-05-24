@@ -2,6 +2,7 @@ import type { GeoLocation, AppContext } from "../types.js";
 import { navigate } from "./router.js";
 import { bindInstallPrompt } from "../services/pwa.js";
 import { openObservationsModal } from "./observations.js";
+import { isSocialInAppBrowser } from "../services/browser.js";
 
 let currentCtx: AppContext | null = null;
 
@@ -114,6 +115,9 @@ export function renderHeader(container: HTMLElement, ctx: AppContext): void {
   header.appendChild(actions);
   container.insertBefore(header, container.firstChild);
   container.insertBefore(renderInstallPrompt(), header.nextSibling);
+  if (isSocialInAppBrowser()) {
+    container.insertBefore(renderInAppBrowserNotice(), header.nextSibling);
+  }
 }
 
 function renderInstallPrompt(): HTMLElement {
@@ -141,6 +145,38 @@ function renderInstallPrompt(): HTMLElement {
   }
 
   return prompt;
+}
+
+function renderInAppBrowserNotice(): HTMLElement {
+  const notice = document.createElement("div");
+  notice.className = "browser-notice";
+  notice.innerHTML = `
+    <div class="browser-notice-copy">
+      <strong>Open in your browser for best results</strong>
+      <span>Facebook and Instagram in-app browsers can block location and sky-time calculations.</span>
+    </div>
+    <div class="browser-notice-actions">
+      <button type="button" data-open-browser>Open</button>
+      <button type="button" data-copy-link>Copy link</button>
+    </div>
+  `;
+
+  const open = notice.querySelector<HTMLButtonElement>("[data-open-browser]");
+  const copy = notice.querySelector<HTMLButtonElement>("[data-copy-link]");
+  open?.addEventListener("click", () => {
+    window.open(window.location.href, "_blank", "noopener,noreferrer");
+  });
+  copy?.addEventListener("click", () => {
+    void navigator.clipboard
+      ?.writeText(window.location.href)
+      .then(() => {
+        copy.textContent = "Copied";
+      })
+      .catch(() => {
+        copy.textContent = "Use menu → browser";
+      });
+  });
+  return notice;
 }
 
 export function renderNav(active: string): void {

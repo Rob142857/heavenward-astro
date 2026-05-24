@@ -5,6 +5,35 @@ interface Env {
 }
 
 const admin = new Hono<{ Bindings: Env }>();
+const ADMIN_TIME_ZONE = "Australia/Sydney";
+
+const aetFormatter = new Intl.DateTimeFormat("en-AU", {
+  timeZone: ADMIN_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZoneName: "short",
+});
+
+type TimeBucket = "hour" | "day" | "week";
+
+interface AetParts {
+  year: string;
+  month: string;
+  day: string;
+  hour: string;
+  minute: string;
+  timeZoneName: string;
+}
+
+interface ChartBucket {
+  key: string;
+  label: string;
+  shortLabel: string;
+}
 
 function rangeStart(days: number): string {
   return new Date(Date.now() - days * 86400000)
@@ -52,6 +81,67 @@ function refHost(ref: string | null): string {
   } catch {
     return ref.slice(0, 60);
   }
+}
+
+function parseDbDate(value: unknown): Date | null {
+  const s = String(value ?? "").trim();
+  if (!s) return null;
+  const iso = s.includes("T") ? s : s.replace(" ", "T");
+  const withZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(iso) ? iso : `${iso}Z`;
+  const d = new Date(withZone);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function getAetParts(date: Date): AetParts {
+  const raw = Object.fromEntries(
+    aetFormatter.formatToParts(date).map((part) => [part.type, part.value]),
+  ) as Partial<AetParts>;
+  return {
+    year: raw.year ?? "0000",
+    month: raw.month ?? "01",
+    day: raw.day ?? "01",
+    hour: raw.hour ?? "00",
+    minute: raw.minute ?? "00",
+    timeZoneName: raw.timeZoneName ?? "AET",
+  };
+}
+
+function weekStartKey(parts: AetParts): string {
+  const localNoonUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    12,
+  );
+  const date = new Date(localNoonUtc);
+  const dow = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() - dow + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function chartBucket(date: Date, bucket: TimeBucket): ChartBucket {
+  const parts = getAetParts(date);
+  if (bucket === "hour") {
+    return {
+      key: `${parts.year}-${parts.month}-${parts.day} ${parts.hour}`,
+      label: `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:00 ${parts.timeZoneName}`,
+      shortLabel: `${parts.hour}:00`,
+    };
+  }
+  if (bucket === "week") {
+    const key = weekStartKey(parts);
+    const [, month, day] = key.split("-");
+    return {
+      key,
+      label: `Week of ${day}/${month}/${parts.year} ${parts.timeZoneName}`,
+      shortLabel: `${day}/${month}`,
+    };
+  }
+  return {
+    key: `${parts.year}-${parts.month}-${parts.day}`,
+    label: `${parts.day}/${parts.month}/${parts.year} ${parts.timeZoneName}`,
+    shortLabel: `${parts.day}/${parts.month}`,
+  };
 }
 
 // ── Dashboard HTML ──────────────────────────────────────
@@ -160,6 +250,7 @@ tr:hover td{background:rgba(212,175,55,.04)}
 .chart-tooltip .t-label{color:#f5e6a3;font-weight:600;margin-bottom:2px}
 .chart-tooltip .t-row{color:#e0e6f0}
 .chart-tooltip .t-k{color:#7b869c;margin-right:6px}
+.timezone-note{color:#7b869c;font-size:.72rem;line-height:1.3;flex-basis:100%;text-align:right}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:8px;border:1px solid transparent;font-size:.8rem;font-weight:600;cursor:pointer;background:#d4af37;color:#0a0e1a;line-height:1}
 .btn:hover{background:#f5e6a3}
@@ -206,7 +297,7 @@ textarea{width:100%;min-height:140px;resize:vertical;font-family:ui-monospace,SF
 </style></head><body>
 <div class="wrap">
 <h1>✦ Heavenward Admin</h1>
-<div class="sub">Operations console · ${esc(totalUsers?.n?.toLocaleString() ?? "0")} users · ${esc(totalEvents?.n?.toLocaleString() ?? "0")} events tracked</div>
+<div class="sub">Operations console · ${esc(totalUsers?.n?.toLocaleString() ?? "0")} users · ${esc(totalEvents?.n?.toLocaleString() ?? "0")} events tracked · Times shown in Australia/Sydney</div>
 
 <div class="stats">
   <div class="stat"><div class="n">${totalUsers?.n ?? 0}</div><div class="l">Total Users</div></div>
@@ -240,6 +331,7 @@ textarea{width:100%;min-height:140px;resize:vertical;font-family:ui-monospace,SF
       <option value="sessions">Sessions</option>
       <option value="uniques">Unique IPs</option>
     </select>
+    <span class="timezone-note">Clock labels are Australia/Sydney local time (AEST/AEDT).</span>
   </div>
   <div class="chart" style="position:relative"><div id="ts-chart"><span class="muted">Loading…</span></div><div class="chart-tooltip" id="ts-tip"></div></div>
 
@@ -334,6 +426,8 @@ function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").
 function fmtDur(ms){if(!ms||ms<0)return"—";const s=Math.round(ms/1000);if(s<60)return s+"s";const m=Math.floor(s/60),rs=s%60;if(m<60)return m+"m "+rs+"s";const h=Math.floor(m/60);return h+"h "+(m%60)+"m";}
 function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800);}
 async function copyText(text){try{await navigator.clipboard.writeText(text);toast("Copied ✓");}catch(e){toast("Copy failed");}}
+function parseDbDate(v){if(!v)return null;const s=String(v);const iso=s.includes("T")?s:s.replace(" ","T");const z=/(Z|[+-]\d{2}:?\d{2})$/i.test(iso)?iso:iso+"Z";const d=new Date(z);return Number.isNaN(d.getTime())?null:d;}
+function fmtAet(v){const d=parseDbDate(v);if(!d)return"—";return new Intl.DateTimeFormat("en-AU",{timeZone:"Australia/Sydney",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23",timeZoneName:"short"}).format(d);}
 
 // ── Tabs ──
 document.querySelectorAll(".tab").forEach(function(btn){
@@ -392,11 +486,11 @@ async function loadChart(){
   }
 
   // x labels — show every Nth so they don't overlap
-  const maxLabels=Math.floor(innerW/56);
+  const maxLabels=Math.floor(innerW/(bucket==="hour"?48:58));
   const step=Math.max(1,Math.ceil(n/maxLabels));
   let xLabels="";
   for(let i=0;i<n;i+=step){
-    xLabels+='<text class="axis-label" x="'+x(i)+'" y="'+(H-padB+16)+'" text-anchor="middle">'+esc(pts[i].label)+'</text>';
+    xLabels+='<text class="axis-label" x="'+x(i)+'" y="'+(H-padB+16)+'" text-anchor="middle">'+esc(pts[i].shortLabel||pts[i].label)+'</text>';
   }
 
   // area + line paths
@@ -477,7 +571,7 @@ async function loadUsers(reset){
     '<span class="status-badge st-banned">'+sc.banned+" banned</span>";
   const rows=d.data.users.map(function(u){
     const loc=[u.last_login_city,u.last_login_country].filter(Boolean).join(", ")||"—";
-    const last=u.last_login_at?u.last_login_at.replace("T"," ").slice(0,16):"never";
+    const last=u.last_login_at?fmtAet(u.last_login_at):"never";
     return '<tr data-uid="'+esc(u.id)+'">'+
       '<td>'+esc(u.email)+'</td>'+
       '<td>'+esc(u.name)+'</td>'+
@@ -518,21 +612,21 @@ async function loadUserDetail(uid){
   if(!d.ok){el.textContent="Error: "+d.error;return;}
   const u=d.data.user,t=d.data.totals;
   const loginRows=d.data.logins.map(function(l){
-    return '<tr><td>'+esc((l.ts||"").replace("T"," ").slice(0,19))+'</td>'+
+    return '<tr><td>'+esc(fmtAet(l.ts))+'</td>'+
       '<td class="mono">'+esc(l.ip||"—")+'</td>'+
       '<td>'+esc([l.city,l.country].filter(Boolean).join(", ")||"—")+'</td>'+
       '<td class="mono">'+esc((l.ua||"").slice(0,60))+'</td></tr>';
   }).join("")||'<tr><td colspan="4" class="muted">No login events recorded.</td></tr>';
   const sessRows=d.data.sessions.map(function(s){
     return '<tr><td class="mono">'+esc(s.session_id.slice(0,8))+'</td>'+
-      '<td>'+esc((s.started_at||"").replace("T"," ").slice(0,16))+'</td>'+
+      '<td>'+esc(fmtAet(s.started_at))+'</td>'+
       '<td>'+fmtDur(s.duration_ms||0)+'</td>'+
       '<td style="text-align:right">'+(s.pageviews||0)+'</td>'+
       '<td>'+esc([s.city,s.country].filter(Boolean).join(", ")||"—")+'</td>'+
       '<td class="mono">'+esc(s.ip||"—")+'</td></tr>';
   }).join("")||'<tr><td colspan="6" class="muted">No sessions recorded.</td></tr>';
   const adminRows=d.data.adminLog.map(function(a){
-    return '<tr><td>'+esc((a.ts||"").replace("T"," ").slice(0,19))+'</td>'+
+    return '<tr><td>'+esc(fmtAet(a.ts))+'</td>'+
       '<td>'+esc(a.actor_email||"—")+'</td>'+
       '<td>'+esc(a.action)+'</td>'+
       '<td>'+esc(a.detail||"")+'</td></tr>';
@@ -550,8 +644,8 @@ async function loadUserDetail(uid){
       '<div><span class="k">User ID:</span> <span class="mono">'+esc(u.id)+'</span></div>'+
       '<div><span class="k">Name:</span> '+esc(u.name)+'</div>'+
       '<div><span class="k">Provider:</span> '+esc(u.provider)+'</div>'+
-      '<div><span class="k">Created:</span> '+esc((u.created_at||"").slice(0,19).replace("T"," "))+'</div>'+
-      '<div><span class="k">Last login:</span> '+esc((u.last_login_at||"never").replace("T"," ").slice(0,19))+'</div>'+
+      '<div><span class="k">Created:</span> '+esc(fmtAet(u.created_at))+'</div>'+
+      '<div><span class="k">Last login:</span> '+esc(u.last_login_at?fmtAet(u.last_login_at):"never")+'</div>'+
       '<div><span class="k">Login count:</span> '+(u.login_count||0)+'</div>'+
       '<div><span class="k">Last IP:</span> <span class="mono">'+esc(u.last_login_ip||"—")+'</span></div>'+
       '<div><span class="k">Last location:</span> '+esc([u.last_login_city,u.last_login_country].filter(Boolean).join(", ")||"—")+'</div>'+
@@ -559,7 +653,7 @@ async function loadUserDetail(uid){
       '<div><span class="k">Pageviews:</span> '+(t.pageviews||0)+'</div>'+
       '<div><span class="k">Clicks:</span> '+(t.clicks||0)+'</div>'+
       '<div><span class="k">Total dwell:</span> '+fmtDur(t.total_dwell_ms||0)+'</div>'+
-      (u.status_reason?'<div style="grid-column:1/-1;color:#f5e6a3"><span class="k">Status reason:</span> '+esc(u.status_reason)+' <span class="k">by</span> '+esc(u.status_changed_by||"")+' '+esc((u.status_changed_at||"").replace("T"," ").slice(0,16))+'</div>':"")+
+      (u.status_reason?'<div style="grid-column:1/-1;color:#f5e6a3"><span class="k">Status reason:</span> '+esc(u.status_reason)+' <span class="k">by</span> '+esc(u.status_changed_by||"")+' '+esc(fmtAet(u.status_changed_at))+'</div>':"")+
     '</div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">'+
       ['active','paused','blocked','banned'].map(function(s){
@@ -646,7 +740,7 @@ async function loadAudit(days){
     const loc=[x.city,x.region,x.country].filter(Boolean).join(", ")||"—";
     return '<tr data-sid="'+esc(x.session_id)+'">'+
       '<td class="mono">'+esc(x.session_id.slice(0,8))+'</td>'+
-      '<td>'+esc(x.started_at.replace("T"," ").slice(0,16))+'</td>'+
+      '<td>'+esc(fmtAet(x.started_at))+'</td>'+
       '<td>'+fmtDur(x.duration_ms)+'</td>'+
       '<td style="text-align:right">'+x.pageviews+'</td>'+
       '<td style="text-align:right">'+x.clicks+'</td>'+
@@ -671,7 +765,7 @@ async function loadSession(sid){
   if(!d.ok){el.textContent="Error: "+d.error;return;}
   const meta=d.data.meta;
   const rows=d.data.events.map(function(e){
-    return '<tr><td class="mono">'+esc(e.ts.replace("T"," ").slice(0,19))+'</td>'+
+    return '<tr><td class="mono">'+esc(fmtAet(e.ts))+'</td>'+
       '<td>'+esc(e.event)+'</td>'+
       '<td>'+esc(e.path)+'</td>'+
       '<td>'+esc(e.detail||"")+'</td>'+
@@ -686,8 +780,8 @@ async function loadSession(sid){
       '<div><span class="k">Location:</span> '+esc(loc)+'</div>'+
       '<div><span class="k">Timezone:</span> '+esc(meta.tz||"—")+'</div>'+
       '<div><span class="k">Referrer:</span> '+esc(meta.referrer||"—")+'</div>'+
-      '<div><span class="k">First seen:</span> '+esc((meta.first_seen||"").replace("T"," ").slice(0,19))+'</div>'+
-      '<div><span class="k">Last seen:</span> '+esc((meta.last_seen||"").replace("T"," ").slice(0,19))+'</div>'+
+      '<div><span class="k">First seen:</span> '+esc(fmtAet(meta.first_seen))+'</div>'+
+      '<div><span class="k">Last seen:</span> '+esc(fmtAet(meta.last_seen))+'</div>'+
       '<div style="grid-column:1/-1"><span class="k">User-Agent:</span> <span class="mono">'+esc(meta.ua||"—")+'</span></div>'+
     '</div>'+
     '<div class="scroll-x"><table><tr><th>Time</th><th>Event</th><th>Path</th><th>Detail</th><th>Dwell</th></tr>'+rows+'</table></div>';
@@ -787,67 +881,75 @@ admin.get("/stats", async (c) => {
 // ── Audit log: rolling 7d/30d session list with geo/IP ──
 // ── Time-series for Overview chart ──────────────────────
 admin.get("/timeseries", async (c) => {
-  const bucket = c.req.query("bucket") ?? "day";
-  let groupExpr: string;
-  let labelExpr: string;
-  let start: string;
-  let buckets: number;
+  const requested = c.req.query("bucket") ?? "day";
+  const bucket: TimeBucket = requested === "hour" || requested === "week" ? requested : "day";
+  const now = new Date();
+  let startDate: Date;
+  let buckets: ChartBucket[];
 
   if (bucket === "hour") {
     // Last 48 hours by hour
-    groupExpr = "strftime('%Y-%m-%d %H', ts)";
-    labelExpr = "strftime('%m-%d %Hh', ts)";
-    start = new Date(Date.now() - 48 * 3600000)
-      .toISOString()
-      .slice(0, 19)
-      .replace("T", " ");
-    buckets = 48;
+    startDate = new Date(now.getTime() - 47 * 3600000);
+    buckets = Array.from({ length: 48 }, (_, i) =>
+      chartBucket(new Date(startDate.getTime() + i * 3600000), bucket),
+    );
   } else if (bucket === "week") {
-    // Last 12 ISO weeks
-    groupExpr = "strftime('%Y-%W', ts)";
-    labelExpr = "strftime('%Y-W%W', ts)";
-    start = new Date(Date.now() - 84 * 86400000)
-      .toISOString()
-      .slice(0, 19)
-      .replace("T", " ");
-    buckets = 12;
+    // Last 12 Australia/Sydney local weeks
+    startDate = new Date(now.getTime() - 77 * 86400000);
+    buckets = Array.from({ length: 12 }, (_, i) =>
+      chartBucket(new Date(startDate.getTime() + i * 7 * 86400000), bucket),
+    );
   } else {
-    // Last 30 days by day
-    groupExpr = "strftime('%Y-%m-%d', ts)";
-    labelExpr = "strftime('%m-%d', ts)";
-    start = new Date(Date.now() - 30 * 86400000)
-      .toISOString()
-      .slice(0, 19)
-      .replace("T", " ");
-    buckets = 30;
+    // Last 30 Australia/Sydney local days
+    startDate = new Date(now.getTime() - 29 * 86400000);
+    buckets = Array.from({ length: 30 }, (_, i) =>
+      chartBucket(new Date(startDate.getTime() + i * 86400000), bucket),
+    );
   }
 
+  const start = startDate.toISOString().slice(0, 19).replace("T", " ");
+
   const result = await c.env.DB.prepare(
-    `SELECT ${groupExpr} AS bucket,
-            ${labelExpr} AS label,
-            COUNT(*) AS pageviews,
-            COUNT(DISTINCT session_id) AS sessions,
-            COUNT(DISTINCT ip) AS uniques
+    `SELECT ts, session_id, ip
      FROM events
      WHERE event='pageview' AND ts >= ?
-     GROUP BY bucket
-     ORDER BY bucket`,
+     ORDER BY ts`,
   )
     .bind(start)
     .all();
+
+  const counts = new Map<
+    string,
+    { pageviews: number; sessions: Set<string>; ips: Set<string> }
+  >();
+  for (const b of buckets) {
+    counts.set(b.key, { pageviews: 0, sessions: new Set(), ips: new Set() });
+  }
+
+  for (const r of (result.results ?? []) as Array<Record<string, unknown>>) {
+    const date = parseDbDate(r.ts);
+    if (!date) continue;
+    const key = chartBucket(date, bucket).key;
+    const entry = counts.get(key);
+    if (!entry) continue;
+    entry.pageviews += 1;
+    if (r.session_id) entry.sessions.add(String(r.session_id));
+    if (r.ip) entry.ips.add(String(r.ip));
+  }
 
   return c.json({
     ok: true,
     data: {
       bucket,
-      buckets,
-      points: (result.results ?? []).map((r) => {
-        const row = r as Record<string, unknown>;
+      timeZone: ADMIN_TIME_ZONE,
+      points: buckets.map((b) => {
+        const entry = counts.get(b.key);
         return {
-          label: String(row.label ?? ""),
-          pageviews: Number(row.pageviews) || 0,
-          sessions: Number(row.sessions) || 0,
-          uniques: Number(row.uniques) || 0,
+          label: b.label,
+          shortLabel: b.shortLabel,
+          pageviews: entry?.pageviews ?? 0,
+          sessions: entry?.sessions.size ?? 0,
+          uniques: entry?.ips.size ?? 0,
         };
       }),
     },

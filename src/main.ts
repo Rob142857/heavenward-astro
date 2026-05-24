@@ -2,7 +2,7 @@ import "./ui/styles.css";
 import type { AppContext } from "./types.js";
 import { requestGPS, getSavedLocation } from "./services/geolocation.js";
 import { loadPrefs } from "./services/prefs.js";
-import { route, startRouter } from "./ui/router.js";
+import { navigate, route, startRouter } from "./ui/router.js";
 import { renderTonight } from "./ui/tonight.js";
 import {
   renderDetail,
@@ -18,6 +18,7 @@ import { renderObservations } from "./ui/observations.js";
 import { renderSearch } from "./ui/search.js";
 import { initAnalytics } from "./services/analytics.js";
 import { initPWA } from "./services/pwa.js";
+import { isSocialInAppBrowser } from "./services/browser.js";
 
 const DEFAULT_LOCATION = { lat: 51.48, lon: -0.01, elev: 0 }; // Greenwich
 
@@ -27,15 +28,10 @@ async function boot(): Promise<void> {
   const app = document.getElementById("app");
   if (!app) return;
 
-  // Resolve location: saved → GPS → fallback
-  let location = getSavedLocation();
-  if (!location) {
-    try {
-      location = await requestGPS();
-    } catch {
-      location = DEFAULT_LOCATION;
-    }
-  }
+  // Render immediately. Some in-app browsers delay or block geolocation,
+  // which otherwise prevents the twilight bar from appearing at all.
+  const savedLocation = getSavedLocation();
+  const location = savedLocation ?? DEFAULT_LOCATION;
 
   const ctx: AppContext = {
     location,
@@ -75,6 +71,17 @@ async function boot(): Promise<void> {
   });
 
   startRouter();
+
+  if (!savedLocation && !isSocialInAppBrowser()) {
+    requestGPS()
+      .then((loc) => {
+        ctx.location = loc;
+        navigate(window.location.hash || "#/");
+      })
+      .catch(() => {
+        // Keep the already-rendered fallback location visible.
+      });
+  }
 }
 
 boot();
