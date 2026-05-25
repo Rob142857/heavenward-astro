@@ -18,13 +18,19 @@ let doRoute: (() => void) | null = null;
 
 export function navigate(hash: string, state?: unknown): void {
   const url = hash.startsWith("#") ? hash : `#${hash}`;
-  const currentHash = window.location.hash || "#/";
+  const currentPath = cleanPathname(window.location.pathname);
+  const currentHash = window.location.hash || (currentPath === "/" ? "#/" : "");
+  const target = url.startsWith("#/") ? `/${url}` : url;
   // Avoid pushing duplicate entries for the same route
   if (currentHash === url && !state) {
     doRoute?.();
     return;
   }
-  history.pushState(state ?? null, "", url);
+  history.pushState(state ?? null, "", target);
+  doRoute?.();
+}
+
+export function reroute(): void {
   doRoute?.();
 }
 
@@ -48,7 +54,8 @@ export function startRouter(): void {
     }
     // fallback to home
     if (hash !== "/") {
-      navigate("#/");
+      history.replaceState(null, "", "/#/");
+      doRoute?.();
     }
   };
   window.addEventListener("popstate", doRoute);

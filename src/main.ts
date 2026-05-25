@@ -2,7 +2,7 @@ import "./ui/styles.css";
 import type { AppContext } from "./types.js";
 import { requestGPS, getSavedLocation } from "./services/geolocation.js";
 import { loadPrefs } from "./services/prefs.js";
-import { navigate, route, startRouter } from "./ui/router.js";
+import { navigate, reroute, route, startRouter } from "./ui/router.js";
 import { renderTonight } from "./ui/tonight.js";
 import {
   renderDetail,
@@ -21,8 +21,41 @@ import { initPWA } from "./services/pwa.js";
 import { isSocialInAppBrowser } from "./services/browser.js";
 
 const DEFAULT_LOCATION = { lat: 51.48, lon: -0.01, elev: 0 }; // Greenwich
+const SERVER_ROUTE_RELEASE_KEY = "heavenward-server-route-release";
 
-initPWA();
+if (isServerHandledPath(window.location.pathname)) {
+  void releaseServerHandledPath();
+} else {
+  sessionStorage.removeItem(SERVER_ROUTE_RELEASE_KEY);
+  initPWA();
+  void boot();
+  watchBootSplash();
+}
+
+function isServerHandledPath(pathname: string): boolean {
+  return (
+    /^\/admin(?:\/|$)/.test(pathname) ||
+    /^\/cdn-cgi\/access(?:\/|$)/.test(pathname)
+  );
+}
+
+async function releaseServerHandledPath(): Promise<void> {
+  if (
+    sessionStorage.getItem(SERVER_ROUTE_RELEASE_KEY) === window.location.href
+  ) {
+    return;
+  }
+  sessionStorage.setItem(SERVER_ROUTE_RELEASE_KEY, window.location.href);
+
+  if ("serviceWorker" in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations.map((registration) => registration.unregister()),
+    );
+  }
+
+  window.location.reload();
+}
 
 async function boot(): Promise<void> {
   const app = document.getElementById("app");
@@ -76,15 +109,13 @@ async function boot(): Promise<void> {
     requestGPS()
       .then((loc) => {
         ctx.location = loc;
-        navigate(window.location.hash || "#/");
+        reroute();
       })
       .catch(() => {
         // Keep the already-rendered fallback location visible.
       });
   }
 }
-
-boot();
 
 // Dismiss the inline boot splash once the app has mounted its first view.
 // We poll until #app has content — boot() may await GPS (up to 10 s) before
@@ -96,22 +127,26 @@ function dismissBootSplash(): void {
   splash.classList.add("hide");
   window.setTimeout(() => splash.remove(), 400);
 }
-requestAnimationFrame(() => {
+
+function watchBootSplash(): void {
   requestAnimationFrame(() => {
-    const app = document.getElementById("app");
-    if (app && app.children.length > 0) {
-      dismissBootSplash();
-      return;
-    }
-    // Poll until #app has content. If boot() catastrophically fails the
-    // splash stays visible — better than a blank dark page.
-    const tick = (): void => {
+    requestAnimationFrame(() => {
+      const app = document.getElementById("app");
       if (app && app.children.length > 0) {
         dismissBootSplash();
         return;
       }
-      requestAnimationFrame(tick);
-    };
-    tick();
+
+      // Poll until #app has content. If boot() catastrophically fails the
+      // splash stays visible — better than a blank dark page.
+      const tick = (): void => {
+        if (app && app.children.length > 0) {
+          dismissBootSplash();
+          return;
+        }
+        requestAnimationFrame(tick);
+      };
+      tick();
+    });
   });
-});
+}
