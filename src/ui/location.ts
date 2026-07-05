@@ -2,6 +2,7 @@ import type { AppContext } from "../types.js";
 import { requestGPS, saveLocation } from "../services/geolocation.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
+import { t } from "../i18n/translations.js";
 
 export function renderLocation(container: HTMLElement, ctx: AppContext): void {
   container.innerHTML = "";
@@ -10,7 +11,7 @@ export function renderLocation(container: HTMLElement, ctx: AppContext): void {
 
   const title = document.createElement("h3");
   title.className = "section-title";
-  title.textContent = "Location";
+  title.textContent = t("location");
   container.appendChild(title);
 
   // GPS button
@@ -45,7 +46,7 @@ export function renderLocation(container: HTMLElement, ctx: AppContext): void {
     <input class="input" type="number" id="lat" placeholder="Latitude" value="${ctx.location.lat}" step="0.01" min="-90" max="90">
     <input class="input" type="number" id="lon" placeholder="Longitude" value="${ctx.location.lon}" step="0.01" min="-180" max="180">
     <input class="input" type="number" id="elev" placeholder="Elevation (m)" value="${ctx.location.elev}" step="1" min="0">
-    <button class="btn btn-outline btn-block" id="save-loc">Save Location</button>
+    <button class="btn btn-outline btn-block" id="save-loc">${t("location")}</button>
   `;
   container.appendChild(form);
 

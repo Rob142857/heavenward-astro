@@ -59,7 +59,10 @@ async function releaseServerHandledPath(): Promise<void> {
 
 async function boot(): Promise<void> {
   const app = document.getElementById("app");
-  if (!app) return;
+  if (!app) {
+    console.error("[BOOT] App element not found");
+    return;
+  }
 
   // Render immediately. Some in-app browsers delay or block geolocation,
   // which otherwise prevents the twilight bar from appearing at all.
@@ -105,6 +108,7 @@ async function boot(): Promise<void> {
 
   startRouter();
 
+  // Request GPS with timeout for better UX
   if (!savedLocation && !isSocialInAppBrowser()) {
     requestGPS()
       .then((loc) => {
@@ -112,8 +116,14 @@ async function boot(): Promise<void> {
         reroute();
       })
       .catch(() => {
-        // Keep the already-rendered fallback location visible.
+        console.log("[GPS] Using saved or fallback location");
       });
+  } else if (!savedLocation) {
+    console.log("[GPS] Waiting for timeout");
+    setTimeout(() => {
+      console.log("[GPS] Fallback: rendering without GPS");
+      reroute();
+    }, 1000);
   }
 }
 
