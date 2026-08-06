@@ -14,6 +14,10 @@ import type { StarEntry } from "../catalog/stars.js";
 import { METEOR_SHOWERS } from "../catalog/meteors.js";
 import type { MeteorShower } from "../catalog/meteors.js";
 import { getCatalogProvenance } from "../catalog/provenance.js";
+import {
+  constellationName,
+  constellationWikiTitle,
+} from "../catalog/constellations.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { renderFinderChart } from "../chart/finder.js";
 import type { FieldStar } from "../chart/finder.js";
@@ -214,7 +218,7 @@ function renderEventDetail(
       ${detailItem(t("detail.label.altitude"), event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
       ${detailItem(t("detail.label.azimuth"), event.azimuth !== null ? `${event.azimuth.toFixed(0)}° ${azimuthToCompassShort(event.azimuth ?? 0)}` : "—")}
       ${detailItem(t("detail.label.magnitude"), event.magnitude !== null ? event.magnitude.toFixed(1) : "—")}
-      ${detailItem(t("detail.label.constellation"), event.constellation ? wikiLink(event.constellation + " (constellation)", event.constellation) : "—")}
+      ${detailItem(t("detail.label.constellation"), event.constellation ? wikiLink(constellationWikiTitle(event.constellation) ?? event.constellation, constellationName(event.constellation) ?? event.constellation) : "—")}
       ${detailSourceItem(event)}
       ${event.rise ? detailItem(t("detail.label.rise"), fmtTime(event.rise)) : ""}
       ${event.set ? detailItem(t("detail.label.set"), fmtTime(event.set)) : ""}
@@ -268,7 +272,7 @@ function renderDSODetailFull(
       ${detailItem(t("detail.label.azimuth"), event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
       ${detailItem(t("detail.label.magnitudeV"), entry.magnitude.toFixed(1))}
       ${entry.bMagnitude !== null && entry.bMagnitude !== undefined ? detailItem(t("detail.label.magnitudeB"), entry.bMagnitude.toFixed(1)) : ""}
-      ${detailItem(t("detail.label.constellation"), wikiLink(entry.constellation + " (constellation)", entry.constellation))}
+      ${detailItem(t("detail.label.constellation"), wikiLink(constellationWikiTitle(entry.constellation) ?? entry.constellation, constellationName(entry.constellation) ?? entry.constellation))}
       ${detailSourceItem(event)}
       ${entry.surfaceBrightness ? detailItem(t("detail.label.surfaceBrightness"), `${entry.surfaceBrightness.toFixed(1)} mag/arcmin²`) : ""}
       ${entry.bestSeason ? detailItem(t("detail.label.bestSeason"), entry.bestSeason) : ""}
@@ -386,7 +390,7 @@ function renderStarDetailFull(
       ${detailItem(t("detail.label.azimuth"), event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
       ${detailItem(t("detail.label.apparentMag"), entry.magnitude.toFixed(2))}
       ${detailItem(t("detail.label.absoluteMag"), entry.absMagnitude.toFixed(2))}
-      ${detailItem(t("detail.label.constellation"), wikiLink(entry.constellation + " (constellation)", entry.constellation))}
+      ${detailItem(t("detail.label.constellation"), wikiLink(constellationWikiTitle(entry.constellation) ?? entry.constellation, constellationName(entry.constellation) ?? entry.constellation))}
       ${detailSourceItem(event)}
       ${detailItem(t("detail.label.spectralType"), entry.spectralType || "—")}
     </div>

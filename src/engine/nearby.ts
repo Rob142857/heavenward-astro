@@ -16,6 +16,7 @@ import { getMythologyForConstellation } from "../catalog/mythology.js";
 import type { MythologyEntry } from "../catalog/mythology.js";
 import { getHistoryForConstellation } from "../catalog/history.js";
 import type { HistoryEntry } from "../catalog/history.js";
+import { constellationCode } from "../catalog/constellations.js";
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -185,11 +186,17 @@ export async function buildSkyContext(
     return emptyContext(event);
   }
 
+  // Normalise first: the star/DSO catalogs store the IAU code ("UMa") while
+  // the solar-system engine reports the full name ("Ursa Major"), and the
+  // myth/history catalogs are keyed by code. Looking up the raw value meant
+  // planets and the Moon could never match a mythology entry at all.
+  const constellation = constellationCode(event.constellation);
+
   const [dsos, stars, mythology, history] = await Promise.all([
     loadDSOCatalog(),
     loadStarCatalog(),
-    getMythologyForConstellation(event.constellation),
-    getHistoryForConstellation(event.constellation),
+    getMythologyForConstellation(constellation),
+    getHistoryForConstellation(constellation),
   ]);
 
   // The target itself may be a DSO/star with rich catalog fields (description,
