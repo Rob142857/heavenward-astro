@@ -24,11 +24,13 @@ import {
   getLLMError,
   loadLLM,
   generateSkyNarrative,
+  continueSkyConversation,
   getModelSizeMB,
   getModelLabel,
   getLLMDiagnostics,
   checkGPUCapability,
 } from "../services/llm.js";
+import type { ChatCompletionMessageParam } from "@mlc-ai/web-llm";
 import { navigate } from "./router.js";
 import { SORT_OPTIONS } from "./filterOptions.js";
 import { savePrefs } from "../services/prefs.js";
@@ -1122,6 +1124,28 @@ function formatLLMDiagnostics(): string {
 
 // ── LLM section (top of detail, always button-activated) ──────────
 
+/** Extracts the plain-text content of the last message, if any — used to
+ *  detect an empty completion. Messages this app sends are always
+ *  plain-string content, never the multi-part content-array shape. */
+function lastMessageText(messages: ChatCompletionMessageParam[]): string {
+  const last = messages[messages.length - 1];
+  return typeof last?.content === "string" ? last.content : "";
+}
+
+function appendAnswerTurn(conversation: HTMLElement): HTMLElement {
+  const p = document.createElement("p");
+  p.className = "llm-narrative llm-answer detail-prose";
+  conversation.appendChild(p);
+  return p;
+}
+
+function appendQuestionTurn(conversation: HTMLElement, question: string): void {
+  const p = document.createElement("p");
+  p.className = "llm-question detail-prose";
+  p.textContent = question; // user input — textContent only, never innerHTML
+  conversation.appendChild(p);
+}
+
 function appendLLMSection(
   container: HTMLElement,
   event: CelestialEvent,
@@ -1142,6 +1166,11 @@ function appendLLMSection(
       <p class="llm-progress-text detail-prose"></p>
     </div>
     <p class="llm-narrative detail-prose" style="display:none"></p>
+    <div class="llm-conversation" style="display:none"></div>
+    <form class="llm-followup" style="display:none">
+      <input type="text" class="input llm-followup-input" placeholder="${t("detail.followUpPlaceholder")}" />
+      <button type="submit" class="btn btn-outline llm-followup-send">${t("detail.followUpSend")}</button>
+    </form>
   `;
   container.appendChild(section);
 
@@ -1153,6 +1182,68 @@ function appendLLMSection(
     ".llm-progress-text",
   ) as HTMLElement;
   const narrative = section.querySelector(".llm-narrative") as HTMLElement;
+  const conversation = section.querySelector(
+    ".llm-conversation",
+  ) as HTMLElement;
+  const followupForm = section.querySelector(
+    ".llm-followup",
+  ) as HTMLFormElement;
+  const followupInput = section.querySelector(
+    ".llm-followup-input",
+  ) as HTMLInputElement;
+  const followupSend = section.querySelector(
+    ".llm-followup-send",
+  ) as HTMLButtonElement;
+
+  // Conversation state for this section instance — a fresh appendLLMSection
+  // call (i.e. navigating to a different object) starts a fresh closure, so
+  // this naturally resets per object without needing module-level state.
+  let history: ChatCompletionMessageParam[] = [];
+
+  followupForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const question = followupInput.value.trim();
+    if (!question || !history.length) return;
+
+    followupInput.value = "";
+    followupInput.disabled = true;
+    followupSend.disabled = true;
+
+    const abort = freshAbort();
+    appendQuestionTurn(conversation, question);
+    const answer = appendAnswerTurn(conversation);
+    answer.textContent = t("detail.generating");
+
+    continueSkyConversation(
+      history,
+      question,
+      (text) => {
+        if (!abort.signal.aborted) answer.innerHTML = sanitizeLLMHtml(text);
+      },
+      abort.signal,
+    )
+      .then((messages) => {
+        if (abort.signal.aborted) return;
+        history = messages;
+        if (!lastMessageText(messages)) {
+          answer.textContent = t("detail.emptyResponse");
+        }
+      })
+      .catch((err: unknown) => {
+        if (!abort.signal.aborted) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error("[LLM follow-up]", err);
+          answer.textContent = t("detail.generateError", {
+            msg,
+            diagnostics: formatLLMDiagnostics(),
+          });
+        }
+      })
+      .finally(() => {
+        followupInput.disabled = false;
+        followupSend.disabled = false;
+      });
+  });
 
   // Run GPU check before showing button
   checkGPUCapability().then((cap) => {
@@ -1184,26 +1275,30 @@ function appendLLMSection(
 
       const runGeneration = (skyCtx: SkyContext) => {
         if (abort.signal.aborted) return;
-        narrative.style.display = "block";
-        narrative.textContent = t("detail.generating");
+        conversation.style.display = "block";
+        const answer = appendAnswerTurn(conversation);
+        answer.textContent = t("detail.generating");
         generateSkyNarrative(
           skyCtx,
           (text) => {
-            if (!abort.signal.aborted)
-              narrative.innerHTML = sanitizeLLMHtml(text);
+            if (!abort.signal.aborted) answer.innerHTML = sanitizeLLMHtml(text);
           },
           abort.signal,
         )
-          .then((result) => {
-            if (!abort.signal.aborted && !result) {
-              narrative.textContent = t("detail.emptyResponse");
+          .then((messages) => {
+            if (abort.signal.aborted) return;
+            history = messages;
+            if (!lastMessageText(messages)) {
+              answer.textContent = t("detail.emptyResponse");
+            } else {
+              followupForm.style.display = "flex";
             }
           })
           .catch((err: unknown) => {
             if (!abort.signal.aborted) {
               const msg = err instanceof Error ? err.message : String(err);
               console.error("[LLM generate]", err);
-              narrative.textContent = t("detail.generateError", {
+              answer.textContent = t("detail.generateError", {
                 msg,
                 diagnostics: formatLLMDiagnostics(),
               });

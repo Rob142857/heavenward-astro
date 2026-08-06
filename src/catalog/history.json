@@ -1,0 +1,83 @@
+[
+  {
+    "constellation": "CMa",
+    "starName": "Sirius",
+    "topic": "The star that predicted the Nile flood",
+    "summary": "Ancient Egyptians called Sirius \"Sopdet\" (Sothis to the Greeks). After about 70 days invisible below the horizon, its first pre-dawn reappearance — its heliacal rising — fell close to the Nile's annual flood and marked the start of the Egyptian civil year. Because that 365-day calendar had no leap day, the rising slowly drifted against it, realigning only once every roughly 1,460 years — the \"Sothic cycle,\" recorded by the Roman writer Censorinus in 238 CE.",
+    "sourceType": "primary",
+    "source": "Censorinus, De Die Natali (238 CE)",
+    "sourceDetail": "Corroborated in R.A. Parker, The Calendars of Ancient Egypt (1950), and J.A. Belmonte, Trabajos de Egiptología 2 (2003)"
+  },
+  {
+    "constellation": "Ori",
+    "topic": "\"The True Shepherd of Anu\"",
+    "summary": "The Babylonian astronomical compendium MUL.APIN (compiled by around 1000 BCE from older material) names the stars we call Orion \"SIPA.ZI.AN.NA\" — the True Shepherd of Anu — and places it in its list of the sky's northern \"Path of Anu.\"",
+    "sourceType": "primary",
+    "source": "MUL.APIN, Tablet I, \"Path of Anu\" star list",
+    "sourceDetail": "Critical translation: Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989)"
+  },
+  {
+    "constellation": "Ori",
+    "topic": "Orion as Osiris",
+    "summary": "Egyptian sky-watchers identified a constellation called \"Sah\" — covering the stars of Orion and part of Lepus — with the god Osiris. A Pyramid Text inscribed for King Pepi I states plainly: \"Lo, he has come as Orion, Lo, Osiris has come as Orion.\" Scholars identified Sah with Orion using Egypt's decan star lists and surviving temple/tomb ceiling star charts.",
+    "sourceType": "primary",
+    "source": "Pyramid Texts, Utterance 442 (Pepi I), trans. R.O. Faulkner",
+    "sourceDetail": "Identification established in O. Neugebauer & R.A. Parker, Egyptian Astronomical Texts (1960–1969)"
+  },
+  {
+    "constellation": "Tau",
+    "topic": "A farmer's calendar in the stars",
+    "summary": "The Greek poet Hesiod's farming manual, written around 700 BCE, times the whole agricultural year by the Pleiades star cluster: \"When the Pleiades... are rising, begin your harvest, and your ploughing when they are going to set.\" Later in the same poem he warns sailors to pull their ships ashore once the Pleiades \"plunge into the misty sea to escape Orion's rude strength,\" and till the land instead.",
+    "sourceType": "primary",
+    "source": "Hesiod, Works and Days, lines 383–387 and 618–623",
+    "sourceDetail": "Trans. Hugh G. Evelyn-White, Loeb Classical Library (1914)"
+  },
+  {
+    "constellation": "Tau",
+    "topic": "Matariki, the Māori new year",
+    "summary": "Across Polynesia the Pleiades mark the turn of the year — Matariki to the Māori, Makaliʻi in Hawaiʻi, Matariʻi in Tahiti. In Māori tradition the cluster's heliacal rising in late June sets the start of the maramataka, the traditional lunar calendar, a practice documented from 19th-century Māori manuscript sources.",
+    "sourceType": "academic",
+    "source": "R. Matamua, Matariki: The Star of the Year (Huia Publishers, 2017)",
+    "sourceDetail": "Also W. Orchiston, \"A Polynesian Astronomical Perspective: The Maori of New Zealand,\" in Astronomy Across Cultures (2000)"
+  },
+  {
+    "constellation": "Tau",
+    "topic": "\"The Bull of Heaven\" and \"the Stars\"",
+    "summary": "MUL.APIN names the constellation behind Taurus \"GU4.AN.NA,\" the Bull of Heaven, and lists the Pleiades separately as \"MUL.MUL\" — literally \"the Stars.\" The cluster heads MUL.APIN's whole star list and turns up in agricultural omen texts, including one reading that an elongated appearance of the Pleiades foretold a good harvest.",
+    "sourceType": "primary",
+    "source": "MUL.APIN, Tablet I star lists",
+    "sourceDetail": "Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989); J.H. Rogers, Journal of the British Astronomical Association 108 (1998)"
+  },
+  {
+    "constellation": "Sco",
+    "topic": "\"The Scorpion\"",
+    "summary": "MUL.APIN calls the constellation we know as Scorpius \"GIR.TAB,\" the Scorpion, and gives it a fixed place in the Babylonian calendar — its ideal rising date falls on day 5 of the eighth month in the text's scheme, with Antares serving as a seasonal marker star.",
+    "sourceType": "primary",
+    "source": "MUL.APIN, Tablets I–II",
+    "sourceDetail": "Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989)"
+  },
+  {
+    "constellation": "Lib",
+    "topic": "Once the scorpion's claws",
+    "summary": "For most of antiquity, the stars of Libra weren't their own constellation at all — Greek astronomers, including Aratus in his 3rd-century-BCE poem the Phaenomena, counted them as the Claws (Chelae) of Scorpius. Rome introduced the separate \"Scales\" figure around the 1st century BCE, but the old name held on in technical astronomy — Ptolemy's Almagest, written some two centuries later, still calls it the Claws. Two of its brightest stars keep the memory alive: Zubenelgenubi (\"southern claw\") and Zubeneschamali (\"northern claw\").",
+    "sourceType": "primary",
+    "source": "Aratus, Phaenomena; Ptolemy, Almagest",
+    "sourceDetail": "Classical sourcing synthesized in I. Ridpath, Star Tales (1988)"
+  },
+  {
+    "constellation": "Vir",
+    "topic": "\"The Furrow\"",
+    "summary": "MUL.APIN calls the stretch of sky around Spica \"AB.SIN,\" the Furrow — picturing that part of the ecliptic as a ploughed field with Spica as its ripened ear of grain. Its heliacal rising in early autumn lined up with the Mesopotamian sowing season, giving it a direct, practical role in the farming calendar.",
+    "sourceType": "primary",
+    "source": "MUL.APIN, Tablet I star list",
+    "sourceDetail": "Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989)"
+  },
+  {
+    "constellation": "UMa",
+    "topic": "The Dipper that told the seasons",
+    "summary": "Han-dynasty Chinese astronomers read the season directly off the Big Dipper's handle. The Huainanzi (139 BCE) states it outright: \"When the handle of the Dipper points East, all under heaven is spring; when it points south, all under heaven is summer; when it points west, all under heaven is autumn; when it points north, all under heaven is winter.\" Sima Qian's Shiji, written a few decades later, likewise treats the Dipper as central to fixing the calendar.",
+    "sourceType": "primary",
+    "source": "Huainanzi, \"Tianwen xun\" (139 BCE); Sima Qian, Shiji, \"Tianguan shu\" (c. 91 BCE)",
+    "sourceDetail": "Trans. in D.W. Pankenier, Astrology and Cosmology in Early China (Cambridge University Press, 2013)"
+  }
+]

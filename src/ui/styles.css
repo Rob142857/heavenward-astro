@@ -1934,6 +1934,43 @@ body {
   font-size: 0.82rem;
 }
 
+.llm-conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.llm-question {
+  align-self: flex-end;
+  max-width: 85%;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 12px 12px 2px 12px;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.llm-answer {
+  margin: 0;
+}
+
+.llm-followup {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.llm-followup-input {
+  flex: 1 1 auto;
+}
+
+.llm-followup-send {
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+}
+
 /* ── About page ──────────────────────────────────────── */
 .about-page {
   padding: 0 16px 100px;

@@ -176,6 +176,10 @@ function sourceIcon(key: string): string {
       return "🔭";
     case "webllm":
       return "🤖";
+    case "mythology":
+      return "📖";
+    case "history":
+      return "📜";
     default:
       return "•";
   }

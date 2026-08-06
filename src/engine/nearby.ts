@@ -8,12 +8,32 @@ import {
   getRiseSetForRaDec,
 } from "./astro.js";
 import { loadDSOCatalog } from "../catalog/dso.js";
+import type { DSOEntry } from "../catalog/dso.js";
 import { loadStarCatalog } from "../catalog/stars.js";
+import type { StarEntry } from "../catalog/stars.js";
 import { METEOR_SHOWERS } from "../catalog/meteors.js";
+import { getMythologyForConstellation } from "../catalog/mythology.js";
+import type { MythologyEntry } from "../catalog/mythology.js";
+import { getHistoryForConstellation } from "../catalog/history.js";
+import type { HistoryEntry } from "../catalog/history.js";
 
 // ── Types ──────────────────────────────────────────────────────────
 
-export interface NearbyObject {
+// Fields sourced straight from the DSO/star catalog entries — already
+// shipped in dso.json/stars.json but previously never made it into the LLM
+// prompt. Optional because meteor showers/planets/stars don't populate all
+// of them (e.g. only DSOs have discoverer/morphology).
+export interface CatalogRichDetails {
+  description?: string;
+  notableFeatures?: string[];
+  discoverer?: string | null;
+  yearDiscovered?: number | null;
+  morphology?: string | null;
+  imagingNotes?: string | null;
+  subObjects?: string[];
+}
+
+export interface NearbyObject extends CatalogRichDetails {
   id: string;
   name: string;
   type: string;
@@ -29,7 +49,7 @@ export interface NearbyObject {
 }
 
 export interface SkyContext {
-  target: {
+  target: CatalogRichDetails & {
     name: string;
     lookDirection: string;
     compassShort: string;
@@ -37,6 +57,12 @@ export interface SkyContext {
     altitude: number;
     azimuth: number;
     constellation: string | null;
+    /** Present only when a sourced Campbell entry exists for this
+     *  constellation — most won't have one. Never invent when absent. */
+    mythology?: MythologyEntry;
+    /** Documented historical-astronomy facts for this constellation, if
+     *  any — usually empty. */
+    history: HistoryEntry[];
   };
   nearby: NearbyObject[];
   constellationObjects: NearbyObject[];
@@ -159,10 +185,18 @@ export async function buildSkyContext(
     return emptyContext(event);
   }
 
-  const [dsos, stars] = await Promise.all([
+  const [dsos, stars, mythology, history] = await Promise.all([
     loadDSOCatalog(),
     loadStarCatalog(),
+    getMythologyForConstellation(event.constellation),
+    getHistoryForConstellation(event.constellation),
   ]);
+
+  // The target itself may be a DSO/star with rich catalog fields (description,
+  // discoverer, notableFeatures, ...) that CelestialEvent doesn't carry — look
+  // it up directly rather than threading everything through `extra` at every
+  // event-construction call site.
+  const targetDetails = findRichDetails(event, dsos, stars);
 
   const candidates: NearbyObject[] = [];
 
@@ -192,6 +226,13 @@ export async function buildSkyContext(
       constellation: d.constellation,
       ra: d.ra,
       dec: d.dec,
+      description: d.description,
+      notableFeatures: d.notableFeatures,
+      discoverer: d.discoverer,
+      yearDiscovered: d.yearDiscovered,
+      morphology: d.morphology,
+      imagingNotes: d.imagingNotes,
+      subObjects: d.subObjects,
     });
   }
 
@@ -221,6 +262,8 @@ export async function buildSkyContext(
       constellation: s.constellation,
       ra: s.ra,
       dec: s.dec,
+      description: s.description,
+      notableFeatures: s.notableFeatures,
     });
   }
 
@@ -298,6 +341,9 @@ export async function buildSkyContext(
       altitude: alt,
       azimuth: az,
       constellation: event.constellation,
+      ...targetDetails,
+      mythology,
+      history,
     },
     nearby,
     constellationObjects,
@@ -359,6 +405,34 @@ function buildLookingDescription(
 
 // ── Helpers ────────────────────────────────────────────────────────
 
+/** Look up the target event's own catalog entry for its rich fields, if it
+ *  is a DSO or star (planets/moon/meteor showers have none of these). */
+function findRichDetails(
+  event: CelestialEvent,
+  dsos: DSOEntry[],
+  stars: StarEntry[],
+): CatalogRichDetails {
+  if (event.id.startsWith("dso-")) {
+    const d = dsos.find((x) => x.id === event.id.replace("dso-", ""));
+    if (!d) return {};
+    return {
+      description: d.description,
+      notableFeatures: d.notableFeatures,
+      discoverer: d.discoverer,
+      yearDiscovered: d.yearDiscovered,
+      morphology: d.morphology,
+      imagingNotes: d.imagingNotes,
+      subObjects: d.subObjects,
+    };
+  }
+  if (event.id.startsWith("star-")) {
+    const s = stars.find((x) => x.id === event.id.replace("star-", ""));
+    if (!s) return {};
+    return { description: s.description, notableFeatures: s.notableFeatures };
+  }
+  return {};
+}
+
 function emptyContext(event: CelestialEvent): SkyContext {
   return {
     target: {
@@ -369,6 +443,7 @@ function emptyContext(event: CelestialEvent): SkyContext {
       altitude: 0,
       azimuth: 0,
       constellation: null,
+      history: [],
     },
     nearby: [],
     constellationObjects: [],

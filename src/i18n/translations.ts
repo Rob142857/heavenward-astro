@@ -244,6 +244,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"detail.starNotFound": "Star not found.",
 		"detail.starBrief": "{spectralType} · Mag {magnitude} in {constellation}",
 		"detail.meteorBriefZhrSpeed": "ZHR {zhr} · {speed} km/s",
+		"detail.followUpPlaceholder": "Ask a follow-up…",
+		"detail.followUpSend": "Send",
 
 		"search.chip.planet": "Planet",
 		"search.chip.moon": "Moon",
@@ -613,6 +615,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"detail.starNotFound": "Étoile introuvable.",
 		"detail.starBrief": "{spectralType} · Mag {magnitude} dans {constellation}",
 		"detail.meteorBriefZhrSpeed": "ZHR {zhr} · {speed} km/s",
+		"detail.followUpPlaceholder": "Posez une question…",
+		"detail.followUpSend": "Envoyer",
 
 		"search.chip.planet": "Planète",
 		"search.chip.moon": "Lune",
@@ -982,6 +986,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"detail.starNotFound": "星が見つかりません。",
 		"detail.starBrief": "{spectralType} · {constellation}座 · 等級{magnitude}",
 		"detail.meteorBriefZhrSpeed": "ZHR {zhr} · 秒速{speed} km",
+		"detail.followUpPlaceholder": "質問を入力…",
+		"detail.followUpSend": "送信",
 
 		"search.chip.planet": "惑星",
 		"search.chip.moon": "月",
@@ -1351,6 +1357,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"detail.starNotFound": "未找到该恒星。",
 		"detail.starBrief": "{spectralType} · 位于{constellation} · 星等{magnitude}",
 		"detail.meteorBriefZhrSpeed": "ZHR {zhr} · 每秒{speed}公里",
+		"detail.followUpPlaceholder": "输入你的问题…",
+		"detail.followUpSend": "发送",
 
 		"search.chip.planet": "行星",
 		"search.chip.moon": "月球",

@@ -1,0 +1,90 @@
+[
+  {
+    "constellation": "Ari",
+    "figure": "The Golden Fleece",
+    "connectionStrength": "thin",
+    "summary": "Campbell doesn't discuss how the ram itself became a constellation, but he retells the story of Jason and the Golden Fleece in The Hero with a Thousand Faces as an example of a hero fleeing with a hard-won prize — Jason seizing the fleece before the Argo puts to sea, the king in swift pursuit. He returns to the fleece again later in the book as shorthand for the treasure a hero brings back to the ordinary world.",
+    "source": "The Hero with a Thousand Faces (1949)",
+    "sourceDetail": "Commemorative Edition, \"The Magic Flight\" and \"Return\" sections"
+  },
+  {
+    "constellation": "Aur",
+    "figure": "Phaethon",
+    "connectionStrength": "thin",
+    "summary": "In The Hero with a Thousand Faces, Campbell tells the story of Phaethon — son of the sun god Helios — who demands to drive his father's sun-chariot for a day, loses control, and scorches the earth before Zeus strikes him down. Campbell uses it as a cautionary tale about power seized without proper initiation. Phaethon is one of several figures ancient writers connected to the charioteer constellation Auriga, alongside the more common Erichthonius.",
+    "source": "The Hero with a Thousand Faces (1949)",
+    "sourceDetail": "Commemorative Edition, \"Atonement with the Father\" section"
+  },
+  {
+    "constellation": "Ori",
+    "figure": "Dionysus",
+    "connectionStrength": "explicit",
+    "summary": "Discussing a 3rd-century Orphic-Christian engraved gem, Campbell notes that its cross-shaped design evokes both the Christian cross and \"the chief stars of the constellation Orion, known also as that of Dionysus\" — a direct reference to the ancient identification of Orion's stars with the wine-god.",
+    "source": "The Masks of God, Vol. 4: Creative Mythology (1968)",
+    "sourceDetail": "Part II, \"Where Words Turn Back\""
+  },
+  {
+    "constellation": "Gem",
+    "figure": "Castor and Pollux",
+    "connectionStrength": "moderate",
+    "summary": "Discussing figures on an Orphic sacramental bowl, Campbell writes of \"the immortal twin Pollux and... the mortal Castor\" as a symbol of an initiate returning to ordinary life while carrying transcendent wisdom within. He doesn't name the constellation Gemini directly, but the twins he describes are the same pair it represents.",
+    "source": "The Masks of God, Vol. 4: Creative Mythology (1968)",
+    "sourceDetail": "Part II, \"Where Words Turn Back\""
+  },
+  {
+    "constellation": "Cyg",
+    "figure": "Leda and the Swan",
+    "connectionStrength": "thin",
+    "summary": "Campbell mentions \"Leda and the swan\" in passing, in a list of Greek virgin-birth motifs, during a conversation with Bill Moyers about goddess mythology. It's a brief aside rather than a discussion of the myth or the constellation itself.",
+    "source": "The Power of Myth (1988)",
+    "sourceDetail": "Episode 5, \"Love and the Goddess\" (PBS interviews with Bill Moyers)"
+  },
+  {
+    "constellation": "UMa",
+    "figure": "The Great Bear",
+    "connectionStrength": "explicit",
+    "summary": "Campbell traces bear-ceremony mythology across Siberian, Native American, and Ainu cultures and connects it directly to the sky, writing of the Great and Little Bears \"revolving forever as constellations around the Pole Star, axis mundi of the heavenly vault.\" Related bear-ceremonial material also appears in his survey of Paleolithic hunting cultures.",
+    "source": "Historical Atlas of World Mythology, Vol. I: The Way of the Animal Powers (1983)",
+    "sourceDetail": "Part 2, \"Mythologies of the Great Hunt\"; related material in The Masks of God: Primitive Mythology"
+  },
+  {
+    "constellation": "UMi",
+    "figure": "The Little Bear",
+    "connectionStrength": "explicit",
+    "summary": "In the same passage as the Great Bear, Campbell names both bears together as the pair of circumpolar constellations turning around the Pole Star — the axis many hunting cultures understood the whole sky to revolve around.",
+    "source": "Historical Atlas of World Mythology, Vol. I: The Way of the Animal Powers (1983)",
+    "sourceDetail": "Part 2, \"Mythologies of the Great Hunt\""
+  },
+  {
+    "constellation": "Per",
+    "figure": "Perseus and Medusa",
+    "connectionStrength": "moderate",
+    "summary": "Captioning a Greek vase image of Perseus fleeing with Medusa's severed head, pursued by her Gorgon sisters, Campbell describes how Perseus killed the sleeping Medusa with a sickle-sword from Hermes and escaped on winged sandals thanks to a cap of invisibility — his example of the hero's \"flight\" after seizing the prize.",
+    "source": "The Hero with a Thousand Faces (1949)",
+    "sourceDetail": "Commemorative Edition, Figure 9a caption"
+  },
+  {
+    "constellation": "Car",
+    "figure": "Jason and the Argonauts",
+    "connectionStrength": "moderate",
+    "summary": "Campbell captions an Etruscan vase image of Jason emerging reborn from the dragon's jaws, the Golden Fleece hanging nearby and Athena looking on, as his example of a hero's \"rebirth from the monster.\" The ship Jason sailed, the Argo, gave its name to the old constellation Argo Navis, which 18th-century astronomers later split into Carina, Puppis, and Vela.",
+    "source": "The Hero with a Thousand Faces (1949)",
+    "sourceDetail": "Commemorative Edition, Figure 12 caption"
+  },
+  {
+    "constellation": "Pup",
+    "figure": "Jason and the Argonauts",
+    "connectionStrength": "moderate",
+    "summary": "Campbell captions an Etruscan vase image of Jason emerging reborn from the dragon's jaws, the Golden Fleece hanging nearby and Athena looking on, as his example of a hero's \"rebirth from the monster.\" The ship Jason sailed, the Argo, gave its name to the old constellation Argo Navis, which 18th-century astronomers later split into Carina, Puppis, and Vela.",
+    "source": "The Hero with a Thousand Faces (1949)",
+    "sourceDetail": "Commemorative Edition, Figure 12 caption"
+  },
+  {
+    "constellation": "Vel",
+    "figure": "Jason and the Argonauts",
+    "connectionStrength": "moderate",
+    "summary": "Campbell captions an Etruscan vase image of Jason emerging reborn from the dragon's jaws, the Golden Fleece hanging nearby and Athena looking on, as his example of a hero's \"rebirth from the monster.\" The ship Jason sailed, the Argo, gave its name to the old constellation Argo Navis, which 18th-century astronomers later split into Carina, Puppis, and Vela.",
+    "source": "The Hero with a Thousand Faces (1949)",
+    "sourceDetail": "Commemorative Edition, Figure 12 caption"
+  }
+]
