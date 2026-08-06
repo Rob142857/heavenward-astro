@@ -23,14 +23,13 @@ import {
   getLLMStatus,
   getLLMError,
   loadLLM,
-  generateSkyNarrative,
-  continueSkyConversation,
+  startSkyConversation,
   getModelSizeMB,
   getModelLabel,
   getLLMDiagnostics,
   checkGPUCapability,
 } from "../services/llm.js";
-import type { ChatCompletionMessageParam } from "@mlc-ai/web-llm";
+import type { SkyConversation } from "../services/llm.js";
 import { navigate } from "./router.js";
 import { SORT_OPTIONS } from "./filterOptions.js";
 import { savePrefs } from "../services/prefs.js";
@@ -1124,14 +1123,6 @@ function formatLLMDiagnostics(): string {
 
 // ── LLM section (top of detail, always button-activated) ──────────
 
-/** Extracts the plain-text content of the last message, if any — used to
- *  detect an empty completion. Messages this app sends are always
- *  plain-string content, never the multi-part content-array shape. */
-function lastMessageText(messages: ChatCompletionMessageParam[]): string {
-  const last = messages[messages.length - 1];
-  return typeof last?.content === "string" ? last.content : "";
-}
-
 function appendAnswerTurn(conversation: HTMLElement): HTMLElement {
   const p = document.createElement("p");
   p.className = "llm-narrative llm-answer detail-prose";
@@ -1198,12 +1189,12 @@ function appendLLMSection(
   // Conversation state for this section instance — a fresh appendLLMSection
   // call (i.e. navigating to a different object) starts a fresh closure, so
   // this naturally resets per object without needing module-level state.
-  let history: ChatCompletionMessageParam[] = [];
+  let skyChat: SkyConversation | null = null;
 
   followupForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const question = followupInput.value.trim();
-    if (!question || !history.length) return;
+    if (!question || !skyChat) return;
 
     followupInput.value = "";
     followupInput.disabled = true;
@@ -1214,20 +1205,17 @@ function appendLLMSection(
     const answer = appendAnswerTurn(conversation);
     answer.textContent = t("detail.generating");
 
-    continueSkyConversation(
-      history,
-      question,
-      (text) => {
-        if (!abort.signal.aborted) answer.innerHTML = sanitizeLLMHtml(text);
-      },
-      abort.signal,
-    )
-      .then((messages) => {
+    skyChat
+      .ask(
+        question,
+        (text) => {
+          if (!abort.signal.aborted) answer.innerHTML = sanitizeLLMHtml(text);
+        },
+        abort.signal,
+      )
+      .then((text) => {
         if (abort.signal.aborted) return;
-        history = messages;
-        if (!lastMessageText(messages)) {
-          answer.textContent = t("detail.emptyResponse");
-        }
+        if (!text) answer.textContent = t("detail.emptyResponse");
       })
       .catch((err: unknown) => {
         if (!abort.signal.aborted) {
@@ -1278,17 +1266,17 @@ function appendLLMSection(
         conversation.style.display = "block";
         const answer = appendAnswerTurn(conversation);
         answer.textContent = t("detail.generating");
-        generateSkyNarrative(
+        startSkyConversation(
           skyCtx,
           (text) => {
             if (!abort.signal.aborted) answer.innerHTML = sanitizeLLMHtml(text);
           },
           abort.signal,
         )
-          .then((messages) => {
+          .then((chat) => {
             if (abort.signal.aborted) return;
-            history = messages;
-            if (!lastMessageText(messages)) {
+            skyChat = chat;
+            if (!chat.opening) {
               answer.textContent = t("detail.emptyResponse");
             } else {
               followupForm.style.display = "flex";

@@ -9,6 +9,12 @@ import { loadPrefs, savePrefs } from "../services/prefs.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { t, LOCALES, type Locale } from "../i18n/translations.js";
 import { setUILocale, getLocale } from "../i18n/i18n.js";
+import {
+  getAIQuality,
+  isGemma4Available,
+  setAIQuality,
+  type AIQuality,
+} from "../services/llm.js";
 
 // Of the sources with enabledSource: true in provenance.ts, only these keys
 // actually gate anything in tonight.ts's event collection today (eclipses/
@@ -53,6 +59,43 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
     langPills.appendChild(pill);
   }
   container.appendChild(langPills);
+
+  // ── AI model quality ──────────────────────────────────────
+  // Only offered where the Gemma 4 runtime can actually run; on devices
+  // without WebGPU the choice would be a promise we can't keep.
+  if (isGemma4Available()) {
+    const aiTitle = document.createElement("h3");
+    aiTitle.className = "section-title";
+    aiTitle.textContent = t("settings.aiQuality.heading");
+    container.appendChild(aiTitle);
+
+    const aiNote = document.createElement("p");
+    aiNote.className = "source-note";
+    aiNote.textContent = t("settings.aiQuality.note");
+    container.appendChild(aiNote);
+
+    const aiPills = document.createElement("div");
+    aiPills.className = "ctrl-pill-row";
+    aiPills.style.marginBottom = "12px";
+    const currentQuality = getAIQuality();
+    const options: { key: AIQuality; labelKey: string }[] = [
+      { key: "standard", labelKey: "settings.aiQuality.standard" },
+      { key: "best", labelKey: "settings.aiQuality.best" },
+    ];
+    for (const opt of options) {
+      const pill = document.createElement("button");
+      pill.type = "button";
+      pill.className = `ctrl-pill${opt.key === currentQuality ? " active" : ""}`;
+      pill.textContent = t(opt.labelKey);
+      pill.addEventListener("click", () => {
+        if (opt.key === getAIQuality()) return;
+        setAIQuality(opt.key);
+        renderSources(container, ctx);
+      });
+      aiPills.appendChild(pill);
+    }
+    container.appendChild(aiPills);
+  }
 
   // ── Data sources ──────────────────────────────────────────
   const sourcesTitle = document.createElement("h3");

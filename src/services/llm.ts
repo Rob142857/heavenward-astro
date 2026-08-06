@@ -6,6 +6,15 @@
 
 import type { SkyContext } from "../engine/nearby.js";
 import { t } from "../i18n/translations.js";
+import {
+  createLiteRTConversation,
+  getActiveLiteRTModel,
+  GEMMA4_E2B,
+  isLiteRTLoaded,
+  isLiteRTSupported,
+  loadLiteRT,
+  sendLiteRTMessage,
+} from "./litert.js";
 import type {
   ChatCompletion,
   ChatCompletionChunk,
@@ -223,16 +232,32 @@ function getFallbackModel(): ModelProfile {
   return candidates[candidates.length - 1];
 }
 
+// These drive the activation button's copy, so they must describe whichever
+// engine will actually run — including before load, when the user's quality
+// preference is all we have to go on.
+function pendingLiteRTModel(): typeof GEMMA4_E2B | null {
+  const active = getActiveLiteRTModel();
+  if (active) return active;
+  if (getAIQuality() === "best" && isLiteRTSupported()) return GEMMA4_E2B;
+  return null;
+}
+
 export function getModelSizeMB(): number {
-  return (activeModel ?? getInitialModel()).sizeMB;
+  return pendingLiteRTModel()?.sizeMB ?? (activeModel ?? getInitialModel()).sizeMB;
 }
 
 export function getModelLabel(): string {
-  return (activeModel ?? getInitialModel()).label;
+  return pendingLiteRTModel()?.label ?? (activeModel ?? getInitialModel()).label;
 }
 
 export function getLLMDiagnostics(): LLMDiagnostics {
-  return { ...lastDiagnostics, activeModelId: activeModel?.id ?? lastDiagnostics.activeModelId };
+  return {
+    ...lastDiagnostics,
+    activeModelId:
+      getActiveLiteRTModel()?.id ??
+      activeModel?.id ??
+      lastDiagnostics.activeModelId,
+  };
 }
 
 export function isWebGPUAvailable(): boolean {
@@ -311,6 +336,7 @@ function getAdapterLabel(adapter: GPUAdapter): string | null {
 
 export function getLLMStatus(): "unavailable" | "not-loaded" | "loading" | "ready" | "error" {
   if (!isWebGPUAvailable()) return "unavailable";
+  if (isLiteRTLoaded()) return "ready";
   if (loadError) return "error";
   if (loading) return "loading";
   if (engine && activeModel) return "ready";
@@ -414,15 +440,45 @@ async function loadModel(
   }
 }
 
+const AI_QUALITY_KEY = "heavenward-ai-quality";
+
+/** "best" opts into Gemma 4 via LiteRT (~2 GB). Deliberately not the default:
+ *  that is a large download to start without being asked, especially on
+ *  cellular data. Standard is Gemma 3 1B at 711 MB. */
+export type AIQuality = "standard" | "best";
+
+export function getAIQuality(): AIQuality {
+  return localStorage.getItem(AI_QUALITY_KEY) === "best" ? "best" : "standard";
+}
+
+export function setAIQuality(quality: AIQuality): void {
+  localStorage.setItem(AI_QUALITY_KEY, quality);
+}
+
+export function isGemma4Available(): boolean {
+  return isLiteRTSupported();
+}
+
 export async function loadLLM(
   onProgress?: (text: string, pct: number) => void,
 ): Promise<boolean> {
+  if (isLiteRTLoaded()) return true;
   if (engine && activeModel) return true;
   if (!isWebGPUAvailable()) {
     loadError = "WebGPU not supported in this browser";
     return false;
   }
   if (loading) return false;
+
+  // Gemma 4 first when the user has asked for it. A failure here is not fatal
+  // — it falls through to the WebLLM chain below, which is the whole reason
+  // that chain is kept while LiteRT is still an early preview.
+  if (getAIQuality() === "best" && isLiteRTSupported()) {
+    loadError = null;
+    const ok = await loadLiteRT(GEMMA4_E2B, onProgress);
+    if (ok) return true;
+    onProgress?.(t("llm.didNotFitTryingSmaller", { label: GEMMA4_E2B.label }), 0);
+  }
 
   loading = true;
   loadError = null;
@@ -761,36 +817,80 @@ function trimHistory(
   return tail.length > maxTail ? [...head, ...tail.slice(-maxTail)] : messages;
 }
 
-/** Starts a new sky-guide conversation for the given context. Returns the
- *  full message history (system + grounding turn + first reply) so the
- *  caller can persist it and pass it to continueSkyConversation() for
- *  follow-up questions. */
-export async function generateSkyNarrative(
+/**
+ * A running sky-guide conversation, independent of which backend produced it.
+ * The two engines keep history very differently — WebLLM needs the full
+ * message array resent every turn, LiteRT holds it inside its own Conversation
+ * object — so the UI is given this handle rather than either representation.
+ */
+export interface SkyConversation {
+  /** The opening narrative, already streamed to onChunk during start. */
+  readonly opening: string;
+  /** Asks a follow-up, streaming the answer. Resolves to the full text. */
+  ask(
+    question: string,
+    onChunk: (text: string) => void,
+    signal?: AbortSignal,
+  ): Promise<string>;
+}
+
+function createWebLLMConversation(
+  initial: ChatCompletionMessageParam[],
+  opening: string,
+): SkyConversation {
+  let history: ChatCompletionMessageParam[] = [
+    ...initial,
+    { role: "assistant", content: opening },
+  ];
+  return {
+    opening,
+    async ask(question, onChunk, signal) {
+      const messages = trimHistory([
+        ...history,
+        { role: "user", content: question },
+      ]);
+      const text = await completeWithRetry(messages, onChunk, signal);
+      history = [...messages, { role: "assistant", content: text }];
+      return text;
+    },
+  };
+}
+
+/**
+ * Opens a sky-guide conversation, streaming the opening narrative as it
+ * generates. Uses whichever backend is loaded: Gemma 4 via LiteRT when the
+ * user has opted into it, otherwise the WebLLM chain.
+ */
+export async function startSkyConversation(
   ctx: SkyContext,
   onChunk: (text: string) => void,
   signal?: AbortSignal,
-): Promise<ChatCompletionMessageParam[]> {
+): Promise<SkyConversation> {
+  const prompt = buildPrompt(ctx);
+
+  if (isLiteRTLoaded()) {
+    const conversation = await createLiteRTConversation(getSystemPrompt());
+    if (conversation) {
+      const opening = await sendLiteRTMessage(
+        conversation,
+        prompt,
+        onChunk,
+        signal,
+      );
+      return {
+        opening,
+        ask: (question, chunkCb, sig) =>
+          sendLiteRTMessage(conversation, question, chunkCb, sig),
+      };
+    }
+    // Conversation creation failed on a loaded engine — fall through to
+    // WebLLM rather than leaving the user with nothing.
+  }
+
   const messages: ChatCompletionMessageParam[] = [
     { role: "system", content: getSystemPrompt() },
-    { role: "user", content: buildPrompt(ctx) },
+    { role: "user", content: prompt },
   ];
-  const text = await completeWithRetry(messages, onChunk, signal);
-  return [...messages, { role: "assistant", content: text }];
-}
-
-/** Continues an existing conversation (from generateSkyNarrative or a prior
- *  call to this function) with a user follow-up question. Returns the
- *  updated message history for the caller to persist. */
-export async function continueSkyConversation(
-  history: ChatCompletionMessageParam[],
-  question: string,
-  onChunk: (text: string) => void,
-  signal?: AbortSignal,
-): Promise<ChatCompletionMessageParam[]> {
-  const messages = trimHistory([
-    ...history,
-    { role: "user", content: question },
-  ]);
-  const text = await completeWithRetry(messages, onChunk, signal);
-  return [...messages, { role: "assistant", content: text }];
+  const opening = await completeWithRetry(messages, onChunk, signal);
+  return createWebLLMConversation(messages, opening);
 }

@@ -375,6 +375,10 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"account.signInWithMicrosoft": "Sign in with Microsoft",
 		"account.syncNote": "Sign in to sync preferences between devices.",
 
+		"settings.aiQuality.heading": "AI sky guide",
+		"settings.aiQuality.note": "Standard runs Gemma 3 1B (711 MB) and works on most devices. Best runs Google's Gemma 4 (about 2 GB) for richer commentary — worth it on Wi-Fi and a capable device. If Best cannot run, the app quietly falls back to Standard.",
+		"settings.aiQuality.standard": "Standard · 711 MB",
+		"settings.aiQuality.best": "Best · 2 GB",
 		"settings.language.heading": "Language",
 		"settings.dataSources.heading": "Data Sources",
 		"settings.dataSources.note":
@@ -748,6 +752,10 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"account.signInWithMicrosoft": "Se connecter avec Microsoft",
 		"account.syncNote": "Connectez-vous pour synchroniser vos préférences entre appareils.",
 
+		"settings.aiQuality.heading": "Guide du ciel par IA",
+		"settings.aiQuality.note": "Standard utilise Gemma 3 1B (711 Mo) et fonctionne sur la plupart des appareils. Meilleur utilise Gemma 4 de Google (environ 2 Go) pour un commentaire plus riche — intéressant en Wi-Fi sur un appareil performant. Si Meilleur ne peut pas fonctionner, l'application revient discrètement à Standard.",
+		"settings.aiQuality.standard": "Standard · 711 Mo",
+		"settings.aiQuality.best": "Meilleur · 2 Go",
 		"settings.language.heading": "Langue",
 		"settings.dataSources.heading": "Sources de données",
 		"settings.dataSources.note":
@@ -1121,6 +1129,10 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"account.signInWithMicrosoft": "Microsoftでサインイン",
 		"account.syncNote": "サインインすると、デバイス間で設定を同期できます。",
 
+		"settings.aiQuality.heading": "AI空ガイド",
+		"settings.aiQuality.note": "「標準」はGemma 3 1B（711 MB）を使用し、ほとんどの端末で動作します。「最高品質」はGoogleのGemma 4（約2 GB）を使用し、より豊かな解説が得られます — Wi-Fi接続と高性能な端末での利用がおすすめです。動作できない場合は自動的に「標準」に戻ります。",
+		"settings.aiQuality.standard": "標準 · 711 MB",
+		"settings.aiQuality.best": "最高品質 · 2 GB",
 		"settings.language.heading": "言語",
 		"settings.dataSources.heading": "データソース",
 		"settings.dataSources.note":
@@ -1494,6 +1506,10 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"account.signInWithMicrosoft": "使用Microsoft登录",
 		"account.syncNote": "登录后可在设备间同步你的偏好设置。",
 
+		"settings.aiQuality.heading": "AI观星向导",
+		"settings.aiQuality.note": "“标准”使用 Gemma 3 1B（711 MB），适用于大多数设备。“最佳”使用谷歌 Gemma 4（约 2 GB），解说更丰富——建议在 Wi-Fi 和高性能设备上使用。若无法运行，应用会自动回退到“标准”。",
+		"settings.aiQuality.standard": "标准 · 711 MB",
+		"settings.aiQuality.best": "最佳 · 2 GB",
 		"settings.language.heading": "语言",
 		"settings.dataSources.heading": "数据来源",
 		"settings.dataSources.note": "选择“今晚”页面显示的内容。点击信息按钮查看简短的来源说明；完整信息见“关于”页面。",
