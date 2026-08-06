@@ -4,6 +4,7 @@ import {
   type CatalogProvenance,
 } from "../catalog/provenance.js";
 import { renderHeader, renderNav, SEBA_SVG } from "./layout.js";
+import { t } from "../i18n/translations.js";
 
 export function renderAbout(
   container: HTMLElement,
@@ -21,61 +22,57 @@ export function renderAbout(
       <div class="about-wordmark">${SEBA_SVG}<span class="logo-text">Heavenward</span></div>
       <figure class="about-quote">
         <blockquote>
-          <p>Two men look out through the same bars&#8202;: one sees the mud, and one the stars.</p>
+          <p>${t("about.quote.text")}</p>
         </blockquote>
-        <figcaption>&mdash;&#8202;Frederick Langbridge, <cite>A Cluster of Quiet Thoughts</cite>, 1892</figcaption>
+        <figcaption>${t("about.quote.attribution")}</figcaption>
       </figure>
     </div>
 
     <div class="about-section">
       <p class="about-prose">
-        Heavenward answers a simple question: what's above you right now that's worth
-        setting up the telescope, dragging out the banana chair, and staying up a little
-        past bedtime for? It checks your location, works out what's visible tonight, and
-        tells you plainly — no star-chart puzzles, no date pickers, no fuss. Just open it
-        and see what the sky has in store.
+        ${t("about.intro.description")}
       </p>
       <p class="about-prose" style="margin-top:12px;opacity:0.85;font-size:0.95em;">
-        Free and <a href="https://github.com/Rob142857/heavenward-astro" target="_blank" rel="noopener" class="wiki-link">open source</a>.
+        ${t("about.intro.openSource", { link: `<a href="https://github.com/Rob142857/heavenward-astro" target="_blank" rel="noopener" class="wiki-link">${t("about.intro.openSourceLinkText")}</a>` })}
       </p>
     </div>
 
     <div class="about-section">
-      <h3 class="about-heading">Tonight's Sky, at a Glance</h3>
+      <h3 class="about-heading">${t("about.features.heading")}</h3>
       <div class="about-features">
         <div class="about-feature">
           <div class="about-feature-icon">🌙</div>
           <div>
-            <strong>Planets, Moon &amp; Stars</strong>
-            <p>Rise/set times, altitude, magnitude, constellation — all computed live for your GPS location.</p>
+            <strong>${t("about.features.planets.title")}</strong>
+            <p>${t("about.features.planets.body")}</p>
           </div>
         </div>
         <div class="about-feature">
           <div class="about-feature-icon">🌌</div>
           <div>
-            <strong>Deep Sky Objects</strong>
-            <p>Hundreds of galaxies, nebulae, and clusters from a curated catalog with imaging notes and surface brightness.</p>
+            <strong>${t("about.features.deepSky.title")}</strong>
+            <p>${t("about.features.deepSky.body")}</p>
           </div>
         </div>
         <div class="about-feature">
           <div class="about-feature-icon">☄️</div>
           <div>
-            <strong>Meteor Showers</strong>
-            <p>Active shower tracking with ZHR, radiant position, peak dates, and practical observing tips.</p>
+            <strong>${t("about.features.meteors.title")}</strong>
+            <p>${t("about.features.meteors.body")}</p>
           </div>
         </div>
         <div class="about-feature">
           <div class="about-feature-icon">🧭</div>
           <div>
-            <strong>Sky Guide</strong>
-            <p>Tap any object for compass directions, nearby objects, finder charts, and photography tips — everything you need to point your eyes or your camera.</p>
+            <strong>${t("about.features.skyGuide.title")}</strong>
+            <p>${t("about.features.skyGuide.body")}</p>
           </div>
         </div>
         <div class="about-feature">
           <div class="about-feature-icon">🤖</div>
           <div>
-            <strong>AI Commentary</strong>
-            <p>Optional on-device AI generates rich, conversational guides to any region of the sky — fascinating facts, observing directions, Wikipedia links, and photography advice. Runs entirely in your browser using WebGPU. No data leaves your device.</p>
+            <strong>${t("about.features.aiCommentary.title")}</strong>
+            <p>${t("about.features.aiCommentary.body")}</p>
           </div>
         </div>
       </div>
@@ -84,33 +81,27 @@ export function renderAbout(
     ${renderDataAcknowledgements()}
 
     <div class="about-section">
-      <h3 class="about-heading">Privacy</h3>
+      <h3 class="about-heading">${t("about.privacy.heading")}</h3>
       <p class="about-prose">
-        Your GPS location is used only for astronomical calculations and <strong>never leaves your device</strong>.
-        All ephemeris, rise/set, and visibility computations run entirely client-side — no coordinates
-        are transmitted to any server, even if you sign in. The AI model also runs entirely in your
-        browser via WebGPU — no cloud, no tracking, no data sent anywhere.
+        ${t("about.privacy.description")}
       </p>
     </div>
 
     <div class="about-section">
-      <h3 class="about-heading">Source &amp; License</h3>
+      <h3 class="about-heading">${t("about.license.heading")}</h3>
       <p class="about-prose">
-        Heavenward is open source under the
-        <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener" class="wiki-link">Apache 2.0 License</a>.
-        The source code is available on
-        <a href="https://github.com/Rob142857/heavenward-astro" target="_blank" rel="noopener" class="wiki-link">GitHub</a>.
-        Contributions, bug reports, and feature ideas are welcome.
+        ${t("about.license.description", {
+          apacheLink: `<a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener" class="wiki-link">${t("about.license.apacheLinkText")}</a>`,
+          githubLink: `<a href="https://github.com/Rob142857/heavenward-astro" target="_blank" rel="noopener" class="wiki-link">${t("about.license.githubLinkText")}</a>`,
+        })}
       </p>
     </div>
 
     <div class="about-section about-closing">
       <p class="about-prose about-personal">
-        This is the astronomy app I always wanted but could never find — so I made it.
-        I hope it helps you see more of the sky, learn something new, and feel a little
-        wonder when you look up. Please enjoy. ✨
+        ${t("about.closing.message")}
       </p>
-      <p class="about-version" aria-label="Version">v${__APP_VERSION__} · build ${__APP_BUILD__}</p>
+      <p class="about-version" aria-label="${t("about.version.ariaLabel")}">${t("about.version.label", { version: __APP_VERSION__, build: __APP_BUILD__ })}</p>
     </div>
   `;
   container.appendChild(content);
@@ -131,12 +122,9 @@ function renderDataAcknowledgements(): string {
 
   return `
     <div class="about-section" id="about-sources">
-      <h3 class="about-heading">The Sources Beneath the Sky</h3>
+      <h3 class="about-heading">${t("about.sources.heading")}</h3>
       <p class="about-prose">
-        Everything you see in Heavenward is real observation. Each catalog below is a
-        reservoir of meticulous measurement — orbits refined over centuries, positions taken
-        plate by plate and frame by frame, brightnesses logged on cold nights at the eyepiece
-        and across modern surveys. Heavenward is the front end; these are its substance.
+        ${t("about.sources.intro")}
       </p>
       <div class="about-features about-provenance" style="margin-top:16px">
         ${cards}

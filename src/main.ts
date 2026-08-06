@@ -19,6 +19,7 @@ import { renderSearch } from "./ui/search.js";
 import { initAnalytics } from "./services/analytics.js";
 import { initPWA } from "./services/pwa.js";
 import { isSocialInAppBrowser } from "./services/browser.js";
+import { initI18n } from "./i18n/i18n.js";
 
 const DEFAULT_LOCATION = { lat: 51.48, lon: -0.01, elev: 0 }; // Greenwich
 const SERVER_ROUTE_RELEASE_KEY = "heavenward-server-route-release";
@@ -63,6 +64,9 @@ async function boot(): Promise<void> {
     console.error("[BOOT] App element not found");
     return;
   }
+
+  // Must run before any view renders — every t() call reads this.
+  initI18n();
 
   // Render immediately. Some in-app browsers delay or block geolocation,
   // which otherwise prevents the twilight bar from appearing at all.

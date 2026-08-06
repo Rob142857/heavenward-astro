@@ -1,6 +1,7 @@
 import type { AppContext } from "../types.js";
 import { fetchUser, logout } from "../services/api.js";
 import { renderHeader, renderNav } from "./layout.js";
+import { t } from "../i18n/translations.js";
 
 export function renderAccount(container: HTMLElement, ctx: AppContext): void {
   container.innerHTML = "";
@@ -9,7 +10,7 @@ export function renderAccount(container: HTMLElement, ctx: AppContext): void {
 
   const title = document.createElement("h3");
   title.className = "section-title";
-  title.textContent = "Account";
+  title.textContent = t("nav.account");
   container.appendChild(title);
 
   if (ctx.user) {
@@ -25,13 +26,13 @@ function renderLoggedIn(container: HTMLElement, ctx: AppContext): void {
   card.style.cursor = "default";
   card.innerHTML = `
     <div class="card-title">${ctx.user!.name}</div>
-    <div class="card-brief">${ctx.user!.email} · ${ctx.user!.provider}</div>
+    <div class="card-brief">${t("account.emailProvider", { email: ctx.user!.email, provider: ctx.user!.provider })}</div>
   `;
   container.appendChild(card);
 
   const obsLink = document.createElement("a");
   obsLink.className = "btn btn-outline btn-block";
-  obsLink.textContent = "Saved observations";
+  obsLink.textContent = t("account.savedObservations");
   obsLink.href = "#/observations";
   obsLink.style.textDecoration = "none";
   obsLink.style.textAlign = "center";
@@ -40,7 +41,7 @@ function renderLoggedIn(container: HTMLElement, ctx: AppContext): void {
 
   const logoutBtn = document.createElement("button");
   logoutBtn.className = "btn btn-outline btn-block";
-  logoutBtn.textContent = "Sign Out";
+  logoutBtn.textContent = t("account.signOut");
   logoutBtn.addEventListener("click", async () => {
     await logout();
     ctx.user = null;
@@ -52,7 +53,7 @@ function renderLoggedIn(container: HTMLElement, ctx: AppContext): void {
 function renderLoggedOut(container: HTMLElement, _ctx: AppContext): void {
   const googleBtn = document.createElement("a");
   googleBtn.className = "btn btn-primary btn-block";
-  googleBtn.textContent = "Sign in with Google";
+  googleBtn.textContent = t("account.signInWithGoogle");
   googleBtn.href = "/auth/google";
   googleBtn.style.marginBottom = "8px";
   googleBtn.style.textDecoration = "none";
@@ -61,7 +62,7 @@ function renderLoggedOut(container: HTMLElement, _ctx: AppContext): void {
 
   const msBtn = document.createElement("a");
   msBtn.className = "btn btn-outline btn-block";
-  msBtn.textContent = "Sign in with Microsoft";
+  msBtn.textContent = t("account.signInWithMicrosoft");
   msBtn.href = "/auth/microsoft";
   msBtn.style.textDecoration = "none";
   msBtn.style.textAlign = "center";
@@ -70,7 +71,7 @@ function renderLoggedOut(container: HTMLElement, _ctx: AppContext): void {
   const note = document.createElement("p");
   note.style.cssText =
     "font-size:0.75rem;color:var(--text-dim);margin-top:16px;text-align:center;";
-  note.textContent = "Sign in to sync preferences between devices.";
+  note.textContent = t("account.syncNote");
   container.appendChild(note);
 }
 

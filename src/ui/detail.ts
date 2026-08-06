@@ -33,6 +33,7 @@ import { navigate } from "./router.js";
 import { SORT_OPTIONS } from "./filterOptions.js";
 import { savePrefs } from "../services/prefs.js";
 import { recordObservation } from "../services/observations.js";
+import { t } from "../i18n/translations.js";
 
 // ── Breadcrumb trail for nearby-object navigation ─────────────────
 
@@ -69,7 +70,7 @@ function renderBreadcrumb(currentName: string): string {
 
   // "Tonight" root — always shown
   parts.push(
-    `<a href="#/" class="bc-link bc-root" data-bc-action="root">Tonight</a>`,
+    `<a href="#/" class="bc-link bc-root" data-bc-action="root">${t("detail.breadcrumbHome")}</a>`,
   );
 
   // Trail entries with separation arrows between them
@@ -153,7 +154,7 @@ function detailSourceItem(event: CelestialEvent): string {
   const source = getCatalogProvenance(key);
   if (!source) return "";
   return detailItem(
-    "Source",
+    t("detail.label.source"),
     `<a href="#/about/sources" class="wiki-link">${source.label}</a>`,
   );
 }
@@ -209,17 +210,17 @@ function renderEventDetail(
     <h2 class="detail-title">${event.name}</h2>
     <p class="detail-brief">${event.brief}</p>
     <div class="detail-grid">
-      ${detailItem("Altitude", event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
-      ${detailItem("Azimuth", event.azimuth !== null ? `${event.azimuth.toFixed(0)}° ${azimuthToCompassShort(event.azimuth ?? 0)}` : "—")}
-      ${detailItem("Magnitude", event.magnitude !== null ? event.magnitude.toFixed(1) : "—")}
-      ${detailItem("Constellation", event.constellation ? wikiLink(event.constellation + " (constellation)", event.constellation) : "—")}
+      ${detailItem(t("detail.label.altitude"), event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
+      ${detailItem(t("detail.label.azimuth"), event.azimuth !== null ? `${event.azimuth.toFixed(0)}° ${azimuthToCompassShort(event.azimuth ?? 0)}` : "—")}
+      ${detailItem(t("detail.label.magnitude"), event.magnitude !== null ? event.magnitude.toFixed(1) : "—")}
+      ${detailItem(t("detail.label.constellation"), event.constellation ? wikiLink(event.constellation + " (constellation)", event.constellation) : "—")}
       ${detailSourceItem(event)}
-      ${event.rise ? detailItem("Rise", fmtTime(event.rise)) : ""}
-      ${event.set ? detailItem("Set", fmtTime(event.set)) : ""}
-      ${event.transit ? detailItem("Transit", fmtTime(event.transit)) : ""}
-      ${event.distanceAU !== null ? detailItem("Distance", `${event.distanceAU.toFixed(3)} AU`) : ""}
-      ${event.illumination !== null ? detailItem("Phase", `${(event.illumination * 100).toFixed(0)}%`) : ""}
-      ${event.angularSize !== null ? detailItem("Size", `${event.angularSize.toFixed(1)}'`) : ""}
+      ${event.rise ? detailItem(t("detail.label.rise"), fmtTime(event.rise)) : ""}
+      ${event.set ? detailItem(t("detail.label.set"), fmtTime(event.set)) : ""}
+      ${event.transit ? detailItem(t("detail.label.transit"), fmtTime(event.transit)) : ""}
+      ${event.distanceAU !== null ? detailItem(t("detail.label.distance"), `${event.distanceAU.toFixed(3)} AU`) : ""}
+      ${event.illumination !== null ? detailItem(t("detail.label.phase"), `${(event.illumination * 100).toFixed(0)}%`) : ""}
+      ${event.angularSize !== null ? detailItem(t("detail.label.size"), `${event.angularSize.toFixed(1)}'`) : ""}
     </div>
   `;
   container.appendChild(content);
@@ -246,33 +247,37 @@ function renderDSODetailFull(
   const displayName = entry.commonName || entry.name;
   const catalogId = entry.id !== displayName ? entry.id : "";
 
+  const caldwellText = entry.caldwell
+    ? t("detail.caldwellLabel", { code: entry.caldwell })
+    : "";
+
   let html = `
     ${renderBreadcrumb(displayName)}
     <h2 class="detail-title">${displayName}</h2>
-    ${catalogId ? `<div class="detail-catalog-id">${catalogId}${entry.caldwell ? ` \u00b7 ${entry.caldwell} (Caldwell)` : ""}</div>` : entry.caldwell ? `<div class="detail-catalog-id">${entry.caldwell} (Caldwell)</div>` : ""}
+    ${catalogId ? `<div class="detail-catalog-id">${catalogId}${caldwellText ? ` \u00b7 ${caldwellText}` : ""}</div>` : caldwellText ? `<div class="detail-catalog-id">${caldwellText}</div>` : ""}
     <p class="detail-brief">${entry.description}</p>
   `;
 
   // Position & Visibility
   html += detailSection(
-    "Position & Visibility",
+    t("detail.section.positionVisibility"),
     `
     <div class="detail-grid">
-      ${detailItem("Altitude", event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
-      ${detailItem("Azimuth", event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
-      ${detailItem("Magnitude (V)", entry.magnitude.toFixed(1))}
-      ${entry.bMagnitude !== null && entry.bMagnitude !== undefined ? detailItem("Magnitude (B)", entry.bMagnitude.toFixed(1)) : ""}
-      ${detailItem("Constellation", wikiLink(entry.constellation + " (constellation)", entry.constellation))}
+      ${detailItem(t("detail.label.altitude"), event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
+      ${detailItem(t("detail.label.azimuth"), event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
+      ${detailItem(t("detail.label.magnitudeV"), entry.magnitude.toFixed(1))}
+      ${entry.bMagnitude !== null && entry.bMagnitude !== undefined ? detailItem(t("detail.label.magnitudeB"), entry.bMagnitude.toFixed(1)) : ""}
+      ${detailItem(t("detail.label.constellation"), wikiLink(entry.constellation + " (constellation)", entry.constellation))}
       ${detailSourceItem(event)}
-      ${entry.surfaceBrightness ? detailItem("Surface Brightness", `${entry.surfaceBrightness.toFixed(1)} mag/arcmin²`) : ""}
-      ${entry.bestSeason ? detailItem("Best Season", entry.bestSeason) : ""}
+      ${entry.surfaceBrightness ? detailItem(t("detail.label.surfaceBrightness"), `${entry.surfaceBrightness.toFixed(1)} mag/arcmin²`) : ""}
+      ${entry.bestSeason ? detailItem(t("detail.label.bestSeason"), entry.bestSeason) : ""}
       ${detailItem(
-        "Apparent Size",
+        t("detail.label.apparentSize"),
         entry.minorAxis && entry.minorAxis > 0 && entry.minorAxis < entry.size
           ? `${entry.size.toFixed(1)}' × ${entry.minorAxis.toFixed(1)}'`
           : `${entry.size.toFixed(1)}'`,
       )}
-      ${entry.positionAngle !== null && entry.positionAngle !== undefined ? detailItem("Position Angle", `${entry.positionAngle.toFixed(0)}°`) : ""}
+      ${entry.positionAngle !== null && entry.positionAngle !== undefined ? detailItem(t("detail.label.positionAngle"), `${entry.positionAngle.toFixed(0)}°`) : ""}
     </div>
   `,
   );
@@ -280,35 +285,35 @@ function renderDSODetailFull(
   // Physical Properties
   const physProps: string[] = [];
   if (entry.type)
-    physProps.push(detailItem("Type", entry.type.replace(/-/g, " ")));
+    physProps.push(detailItem(t("detail.label.type"), entry.type.replace(/-/g, " ")));
   if (entry.morphology)
-    physProps.push(detailItem("Morphology", entry.morphology));
+    physProps.push(detailItem(t("detail.label.morphology"), entry.morphology));
   if (entry.physicalSize)
-    physProps.push(detailItem("Physical Size", entry.physicalSize));
+    physProps.push(detailItem(t("detail.label.physicalSize"), entry.physicalSize));
   if (entry.distanceLY)
     physProps.push(
-      detailItem("Distance", `${entry.distanceLY.toLocaleString()} ly`),
+      detailItem(t("detail.label.distance"), `${entry.distanceLY.toLocaleString()} ly`),
     );
   if (entry.distancePC)
     physProps.push(
-      detailItem("Distance", `${entry.distancePC.toLocaleString()} pc`),
+      detailItem(t("detail.label.distance"), `${entry.distancePC.toLocaleString()} pc`),
     );
   if (physProps.length) {
     html += detailSection(
-      "Physical Properties",
+      t("detail.section.physicalProperties"),
       `<div class="detail-grid">${physProps.join("")}</div>`,
     );
   }
 
   // Notable Features
   if (entry.notableFeatures.length) {
-    html += detailSection("Notable Features", tagList(entry.notableFeatures));
+    html += detailSection(t("detail.section.notableFeatures"), tagList(entry.notableFeatures));
   }
 
   // Sub-Objects
   if (entry.subObjects.length) {
     html += detailSection(
-      "Sub-Objects & Companions",
+      t("detail.section.subObjects"),
       tagList(entry.subObjects),
     );
   }
@@ -316,11 +321,11 @@ function renderDSODetailFull(
   // Discovery
   if (entry.discoverer || entry.yearDiscovered) {
     html += detailSection(
-      "Discovery",
+      t("detail.section.discovery"),
       `
       <div class="detail-grid">
-        ${entry.discoverer ? detailItem("Discoverer", wikiLink(entry.discoverer)) : ""}
-        ${entry.yearDiscovered ? detailItem("Year", entry.yearDiscovered < 0 ? `${Math.abs(entry.yearDiscovered)} BC` : String(entry.yearDiscovered)) : ""}
+        ${entry.discoverer ? detailItem(t("detail.label.discoverer"), wikiLink(entry.discoverer)) : ""}
+        ${entry.yearDiscovered ? detailItem(t("detail.label.year"), entry.yearDiscovered < 0 ? t("detail.yearBC", { year: Math.abs(entry.yearDiscovered) }) : String(entry.yearDiscovered)) : ""}
       </div>
     `,
     );
@@ -329,7 +334,7 @@ function renderDSODetailFull(
   // Imaging Notes
   if (entry.imagingNotes) {
     html += detailSection(
-      "Imaging Notes",
+      t("detail.section.imagingNotes"),
       `<p class="detail-prose">${entry.imagingNotes}</p>`,
     );
   }
@@ -373,16 +378,16 @@ function renderStarDetailFull(
 
   // Position & Visibility
   html += detailSection(
-    "Position & Visibility",
+    t("detail.section.positionVisibility"),
     `
     <div class="detail-grid">
-      ${detailItem("Altitude", event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
-      ${detailItem("Azimuth", event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
-      ${detailItem("Apparent Mag", entry.magnitude.toFixed(2))}
-      ${detailItem("Absolute Mag", entry.absMagnitude.toFixed(2))}
-      ${detailItem("Constellation", wikiLink(entry.constellation + " (constellation)", entry.constellation))}
+      ${detailItem(t("detail.label.altitude"), event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
+      ${detailItem(t("detail.label.azimuth"), event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
+      ${detailItem(t("detail.label.apparentMag"), entry.magnitude.toFixed(2))}
+      ${detailItem(t("detail.label.absoluteMag"), entry.absMagnitude.toFixed(2))}
+      ${detailItem(t("detail.label.constellation"), wikiLink(entry.constellation + " (constellation)", entry.constellation))}
       ${detailSourceItem(event)}
-      ${detailItem("Spectral Type", entry.spectralType || "—")}
+      ${detailItem(t("detail.label.spectralType"), entry.spectralType || "—")}
     </div>
   `,
   );
@@ -392,26 +397,26 @@ function renderStarDetailFull(
   if (entry.distanceLY)
     distItems.push(
       detailItem(
-        "Distance",
-        `${entry.distanceLY.toLocaleString()} light-years`,
+        t("detail.label.distance"),
+        t("detail.unitLightYears", { value: entry.distanceLY.toLocaleString() }),
       ),
     );
   if (entry.distancePC)
     distItems.push(
-      detailItem("Distance", `${entry.distancePC.toLocaleString()} parsecs`),
+      detailItem(t("detail.label.distance"), t("detail.unitParsecs", { value: entry.distancePC.toLocaleString() })),
     );
   if (entry.properMotion)
-    distItems.push(detailItem("Proper Motion", entry.properMotion));
+    distItems.push(detailItem(t("detail.label.properMotion"), entry.properMotion));
   if (entry.radialVelocity !== null && entry.radialVelocity !== undefined)
     distItems.push(
       detailItem(
-        "Radial Velocity",
+        t("detail.label.radialVelocity"),
         `${entry.radialVelocity > 0 ? "+" : ""}${entry.radialVelocity.toFixed(1)} km/s`,
       ),
     );
   if (distItems.length) {
     html += detailSection(
-      "Distance & Motion",
+      t("detail.section.distanceMotion"),
       `<div class="detail-grid">${distItems.join("")}</div>`,
     );
   }
@@ -419,21 +424,21 @@ function renderStarDetailFull(
   // Physical Properties
   const physItems: string[] = [];
   if (entry.luminosity)
-    physItems.push(detailItem("Luminosity", entry.luminosity));
-  if (entry.mass) physItems.push(detailItem("Mass", entry.mass));
-  if (entry.radius) physItems.push(detailItem("Radius", entry.radius));
+    physItems.push(detailItem(t("detail.label.luminosity"), entry.luminosity));
+  if (entry.mass) physItems.push(detailItem(t("detail.label.mass"), entry.mass));
+  if (entry.radius) physItems.push(detailItem(t("detail.label.radius"), entry.radius));
   if (entry.temperature)
     physItems.push(
-      detailItem("Temperature", `${entry.temperature.toLocaleString()} K`),
+      detailItem(t("detail.label.temperature"), `${entry.temperature.toLocaleString()} K`),
     );
   if (entry.colorIndex !== null)
     physItems.push(
-      detailItem("Color Index (B-V)", entry.colorIndex.toFixed(2)),
+      detailItem(t("detail.label.colorIndex"), entry.colorIndex.toFixed(2)),
     );
-  if (entry.age) physItems.push(detailItem("Age", entry.age));
+  if (entry.age) physItems.push(detailItem(t("detail.label.age"), entry.age));
   if (physItems.length) {
     html += detailSection(
-      "Physical Properties",
+      t("detail.section.physicalProperties"),
       `<div class="detail-grid">${physItems.join("")}</div>`,
     );
   }
@@ -441,9 +446,9 @@ function renderStarDetailFull(
   // Double Star
   if (entry.isDouble && entry.doubleCompanion) {
     html += detailSection(
-      "Double / Multiple Star",
+      t("detail.section.doubleStar"),
       `<p class="detail-prose">${entry.doubleCompanion}</p>
-       <p class="detail-source">Source: USNO Washington Double Star Catalog.</p>`,
+       <p class="detail-source">${t("detail.sourceUSNO")}</p>`,
     );
   }
 
@@ -451,39 +456,39 @@ function renderStarDetailFull(
   if (entry.isVariable) {
     const varItems: string[] = [];
     if (entry.variableType)
-      varItems.push(detailItem("Type", entry.variableType));
+      varItems.push(detailItem(t("detail.label.type"), entry.variableType));
     if (entry.variablePeriod)
-      varItems.push(detailItem("Period", entry.variablePeriod));
+      varItems.push(detailItem(t("detail.label.period"), entry.variablePeriod));
     if (entry.variableRange)
-      varItems.push(detailItem("Range", entry.variableRange));
+      varItems.push(detailItem(t("detail.label.range"), entry.variableRange));
     html += detailSection(
-      "Variable Star",
+      t("detail.section.variableStar"),
       `${
         varItems.length
           ? `<div class="detail-grid">${varItems.join("")}</div>`
-          : `<p class="detail-prose">This star is a known variable.</p>`
+          : `<p class="detail-prose">${t("detail.variableStarFallback")}</p>`
       }
-       <p class="detail-source">Source: GCVS &middot; AAVSO VSX.</p>`,
+       <p class="detail-source">${t("detail.sourceGCVS")}</p>`,
     );
   }
 
   // Exoplanets
   if (entry.hasExoplanets) {
     html += detailSection(
-      "Exoplanets",
+      t("detail.section.exoplanets"),
       `
       <div class="detail-grid">
-        ${detailItem("Known Planets", String(entry.exoplanetCount))}
+        ${detailItem(t("detail.label.knownPlanets"), String(entry.exoplanetCount))}
       </div>
       ${entry.exoplanetNotes ? `<p class="detail-prose">${entry.exoplanetNotes}</p>` : ""}
-      <p class="detail-source">Source: NASA Exoplanet Archive.</p>
+      <p class="detail-source">${t("detail.sourceNASAExoplanet")}</p>
     `,
     );
   }
 
   // Notable Features
   if (entry.notableFeatures.length) {
-    html += detailSection("Notable Features", tagList(entry.notableFeatures));
+    html += detailSection(t("detail.section.notableFeatures"), tagList(entry.notableFeatures));
   }
 
   content.innerHTML = html;
@@ -558,11 +563,72 @@ interface WikiImageResult {
   artist: string;
 }
 
+// Bare catalog identifiers (M2, NGC 2244, IC 1396, C14, ...) are short and
+// ambiguous — a free-text Commons search for "M2" collides with completely
+// unrelated files (vehicles, weapons, model numbers). Objects with a real
+// common name ("Orion Nebula") are specific enough to search reliably.
+const BARE_CATALOG_ID_RE = /^(M|NGC|IC|C)\s?\d+[A-Za-z]?$/i;
+
+function isBareCatalogId(name: string): boolean {
+  return BARE_CATALOG_ID_RE.test(name.trim());
+}
+
+const IMAGE_SEARCH_STOPWORDS = new Set([
+  "astronomy",
+  "and",
+  "the",
+  "in",
+  "of",
+  "with",
+]);
+
+function humanizeCatalogType(catalogType: string | undefined): string {
+  return catalogType ? catalogType.replace(/-/g, " ") : "";
+}
+
+// Build a disambiguated search query for objects whose bare name is too
+// short/ambiguous on its own, using whatever context CelestialEvent already
+// carries (constellation, DSO type in `extra.catalogType`).
+function buildImageSearchQuery(event: CelestialEvent): string {
+  if (isBareCatalogId(event.name)) {
+    const catalogType = humanizeCatalogType(
+      event.extra.catalogType as string | undefined,
+    );
+    return [event.name, catalogType, event.constellation]
+      .filter(Boolean)
+      .join(" ");
+  }
+  return event.name;
+}
+
+function significantTokens(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((tok) => tok.length >= 3 && !IMAGE_SEARCH_STOPWORDS.has(tok));
+}
+
+// Loose relevance check: accept a Commons candidate only if its title shares
+// a meaningful word with the query, or literally contains the catalog code
+// as its own token (e.g. "NGC 2244" in "NGC 2244 Rosette Nebula.jpg"). This
+// is a safety net, not a guarantee — see loadBestImage() for how bare
+// catalog IDs prefer the astrometrically-correct SkyView cutout instead.
+function isRelevantTitle(title: string, event: CelestialEvent): boolean {
+  const titleTokens = new Set(title.toLowerCase().split(/[^a-z0-9]+/));
+  const catalogCode = event.name.trim().toLowerCase();
+  if (catalogCode && titleTokens.has(catalogCode.replace(/\s+/g, ""))) {
+    return true;
+  }
+  const queryTokens = significantTokens(buildImageSearchQuery(event));
+  if (queryTokens.length === 0) return true;
+  return queryTokens.some((tok) => titleTokens.has(tok));
+}
+
 async function searchWikimediaCommons(
-  name: string,
+  query: string,
+  event: CelestialEvent,
 ): Promise<WikiImageResult | null> {
-  // Normalize search terms: "Orion Nebula", "M42", etc.
-  const terms = encodeURIComponent(name);
+  const terms = encodeURIComponent(query);
   const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${terms}%20astronomy&gsrlimit=5&prop=imageinfo&iiprop=url|extmetadata|size|mime&iiurlwidth=600&format=json&origin=*`;
 
   try {
@@ -573,6 +639,7 @@ async function searchWikimediaCommons(
         pages?: Record<
           string,
           {
+            title?: string;
             imageinfo?: Array<{
               thumburl?: string;
               url: string;
@@ -590,7 +657,8 @@ async function searchWikimediaCommons(
     const pages = data.query?.pages;
     if (!pages) return null;
 
-    // Find the best image: prefer larger, only accept raster image MIME types
+    // Walk all candidates (not just the first) and only accept one that
+    // passes both the format/size check and the relevance check.
     for (const page of Object.values(pages)) {
       const info = page.imageinfo?.[0];
       if (!info) continue;
@@ -598,6 +666,7 @@ async function searchWikimediaCommons(
       if (!info.mime.startsWith("image/") || info.mime === "image/svg+xml")
         continue;
       if (info.width < 200 || info.height < 200) continue;
+      if (!page.title || !isRelevantTitle(page.title, event)) continue;
 
       const imgUrl = info.thumburl ?? info.url;
       const artist = info.extmetadata?.Artist?.value ?? "";
@@ -607,7 +676,7 @@ async function searchWikimediaCommons(
       return {
         url: imgUrl,
         descriptionUrl: info.descriptionurl,
-        artist: cleanArtist || "Wikimedia Commons",
+        artist: cleanArtist || t("detail.wikimediaCommons"),
       };
     }
     return null;
@@ -620,27 +689,75 @@ function loadBestImage(event: CelestialEvent, wrap: HTMLElement): void {
   const objectName = event.name;
   const wikiSlug = objectName.trim().replace(/\s+/g, "_");
   const wikiPageUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(wikiSlug)}`;
+  const searchQuery = buildImageSearchQuery(event);
 
-  searchWikimediaCommons(objectName).then((result) => {
-    wrap.classList.remove("skeleton");
+  // Bare catalog IDs (the ~98% of DSOs with no common name) are ambiguous
+  // text-search terms, but SkyView's DSS2 cutout is queried by RA/Dec, so
+  // it's astrometrically guaranteed to show the right patch of sky. Try
+  // that first for these, and only fall back to a Commons text search if
+  // the positional image itself fails to load.
+  if (isBareCatalogId(objectName) && event.ra !== null && event.dec !== null) {
+    renderSkyView(event, wrap, wikiPageUrl, () => {
+      searchWikimediaCommons(searchQuery, event).then((result) => {
+        if (result) {
+          renderCommonsImage(result, wrap, objectName, () =>
+            showNoImage(wrap, objectName, wikiPageUrl),
+          );
+        } else {
+          showNoImage(wrap, objectName, wikiPageUrl);
+        }
+      });
+    });
+    return;
+  }
 
+  searchWikimediaCommons(searchQuery, event).then((result) => {
     if (result) {
-      // Wikimedia Commons image found
-      wrap.innerHTML = `
-        <img class="object-img" src="${result.url}" alt="${objectName}" loading="lazy" />
-        <div class="image-attribution">
-          <span>📷 ${result.artist}</span>
-          <a href="${result.descriptionUrl}" target="_blank" rel="noopener" class="wiki-link">Wikimedia Commons</a>
-        </div>
-      `;
-      const img = wrap.querySelector("img") as HTMLImageElement;
-      img.onerror = () => fallbackToSkyView(event, wrap, wikiPageUrl);
+      renderCommonsImage(result, wrap, objectName, () =>
+        fallbackToSkyView(event, wrap, wikiPageUrl),
+      );
       return;
     }
-
     // No Commons result — try SkyView DSS2
     fallbackToSkyView(event, wrap, wikiPageUrl);
   });
+}
+
+function renderCommonsImage(
+  result: WikiImageResult,
+  wrap: HTMLElement,
+  objectName: string,
+  onError: () => void,
+): void {
+  wrap.classList.remove("skeleton");
+  wrap.innerHTML = `
+    <img class="object-img" src="${result.url}" alt="${objectName}" loading="lazy" />
+    <div class="image-attribution">
+      <span>📷 ${result.artist}</span>
+      <a href="${result.descriptionUrl}" target="_blank" rel="noopener" class="wiki-link">${t("detail.wikimediaCommons")}</a>
+    </div>
+  `;
+  const img = wrap.querySelector("img") as HTMLImageElement;
+  img.onerror = onError;
+}
+
+function renderSkyView(
+  event: CelestialEvent,
+  wrap: HTMLElement,
+  wikiPageUrl: string,
+  onError: () => void,
+): void {
+  wrap.classList.remove("skeleton");
+  const skyviewUrl = `https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Position=${event.ra},${event.dec}&Survey=DSS2+Red&Size=0.5&Pixels=400&Return=PNG`;
+  wrap.innerHTML = `
+    <img class="object-img" src="${skyviewUrl}" alt="${t("detail.dss2ImageAlt", { name: event.name })}" loading="lazy" />
+    <div class="image-attribution">
+      <span>${t("detail.dss2SurveyVia")} <a href="https://skyview.gsfc.nasa.gov/" target="_blank" rel="noopener" class="wiki-link">NASA SkyView</a></span>
+      <a href="${wikiPageUrl}" target="_blank" rel="noopener" class="wiki-link">${t("detail.viewOnWikipedia")}</a>
+    </div>
+  `;
+  const img = wrap.querySelector("img") as HTMLImageElement;
+  img.onerror = onError;
 }
 
 function fallbackToSkyView(
@@ -652,17 +769,9 @@ function fallbackToSkyView(
     showNoImage(wrap, event.name, wikiPageUrl);
     return;
   }
-
-  const skyviewUrl = `https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Position=${event.ra},${event.dec}&Survey=DSS2+Red&Size=0.5&Pixels=400&Return=PNG`;
-  wrap.innerHTML = `
-    <img class="object-img" src="${skyviewUrl}" alt="DSS2 survey image of ${event.name}" loading="lazy" />
-    <div class="image-attribution">
-      <span>DSS2 Red survey via <a href="https://skyview.gsfc.nasa.gov/" target="_blank" rel="noopener" class="wiki-link">NASA SkyView</a></span>
-      <a href="${wikiPageUrl}" target="_blank" rel="noopener" class="wiki-link">View on Wikipedia</a>
-    </div>
-  `;
-  const img = wrap.querySelector("img") as HTMLImageElement;
-  img.onerror = () => showNoImage(wrap, event.name, wikiPageUrl);
+  renderSkyView(event, wrap, wikiPageUrl, () =>
+    showNoImage(wrap, event.name, wikiPageUrl),
+  );
 }
 
 function showNoImage(
@@ -672,8 +781,8 @@ function showNoImage(
 ): void {
   wrap.innerHTML = `
     <div class="image-unavailable">
-      <p>No image available at present</p>
-      <a href="${wikiPageUrl}" target="_blank" rel="noopener" class="wiki-link">Try Wikipedia →</a>
+      <p>${t("detail.noImageAvailable")}</p>
+      <a href="${wikiPageUrl}" target="_blank" rel="noopener" class="wiki-link">${t("detail.tryWikipedia")}</a>
     </div>
   `;
 }
@@ -706,72 +815,80 @@ function renderMeteorDetailFull(
   let html = `
     ${renderBreadcrumb(shower.name)}
     <h2 class="detail-title">${shower.name}</h2>
-    <p class="detail-brief">Meteor shower from parent body ${wikiLink(shower.parentBody)}</p>
+    <p class="detail-brief">${t("detail.meteorParentBodyBrief", { parentBody: wikiLink(shower.parentBody) })}</p>
   `;
 
   // Activity status
   const statusTag = isPeak
-    ? '<span class="tag tag-peak">Peak Tonight!</span>'
+    ? `<span class="tag tag-peak">${t("detail.peakTonight")}</span>`
     : daysFromPeak <= 3
-      ? `<span class="tag tag-near-peak">${daysFromPeak} day${daysFromPeak > 1 ? "s" : ""} from peak</span>`
-      : `<span class="tag">Active</span>`;
+      ? `<span class="tag tag-near-peak">${daysFromPeak > 1 ? t("detail.daysFromPeakPlural", { days: daysFromPeak }) : t("detail.daysFromPeakSingular", { days: daysFromPeak })}</span>`
+      : `<span class="tag">${t("detail.activeTag")}</span>`;
 
   html += `<div class="detail-tags" style="margin-bottom:16px">${statusTag}</div>`;
 
   // Observing info
   html += detailSection(
-    "Observing Information",
+    t("detail.section.observingInfo"),
     `
     <div class="detail-grid">
-      ${detailItem("Altitude", event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
-      ${detailItem("Direction", event.azimuth !== null ? `${event.azimuth.toFixed(0)}° ${azimuthToCompassShort(event.azimuth)}` : "—")}
-      ${detailItem("Look", event.altitude !== null ? altitudeDescription(event.altitude) : "—")}
-      ${detailItem("ZHR", String(shower.zhr))}
-      ${detailItem("Speed", `${shower.speed} km/s`)}
-      ${detailItem("Parent Body", wikiLink(shower.parentBody))}
+      ${detailItem(t("detail.label.altitude"), event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
+      ${detailItem(t("detail.label.direction"), event.azimuth !== null ? `${event.azimuth.toFixed(0)}° ${azimuthToCompassShort(event.azimuth)}` : "—")}
+      ${detailItem(t("detail.label.look"), event.altitude !== null ? altitudeDescription(event.altitude) : "—")}
+      ${detailItem(t("detail.label.zhr"), String(shower.zhr))}
+      ${detailItem(t("detail.label.speed"), `${shower.speed} km/s`)}
+      ${detailItem(t("detail.label.parentBody"), wikiLink(shower.parentBody))}
       ${detailSourceItem(event)}
-      ${event.rise ? detailItem("Radiant Rise", fmtTime(event.rise)) : ""}
-      ${event.set ? detailItem("Radiant Set", fmtTime(event.set)) : ""}
-      ${event.transit ? detailItem("Radiant Transit", fmtTime(event.transit)) : ""}
+      ${event.rise ? detailItem(t("detail.label.radiantRise"), fmtTime(event.rise)) : ""}
+      ${event.set ? detailItem(t("detail.label.radiantSet"), fmtTime(event.set)) : ""}
+      ${event.transit ? detailItem(t("detail.label.radiantTransit"), fmtTime(event.transit)) : ""}
     </div>
   `,
   );
 
   // Activity window
   html += detailSection(
-    "Activity Window",
+    t("detail.section.activityWindow"),
     `
     <div class="detail-grid">
-      ${detailItem("Start", `${monthName(shower.startMonth)} ${shower.startDay}`)}
-      ${detailItem("Peak", `${monthName(shower.peakMonth)} ${shower.peakDay}`)}
-      ${detailItem("End", `${monthName(shower.endMonth)} ${shower.endDay}`)}
-      ${detailItem("Duration", `${activityDays(shower)} days`)}
+      ${detailItem(t("detail.label.start"), `${monthName(shower.startMonth)} ${shower.startDay}`)}
+      ${detailItem(t("detail.label.peak"), `${monthName(shower.peakMonth)} ${shower.peakDay}`)}
+      ${detailItem(t("detail.label.end"), `${monthName(shower.endMonth)} ${shower.endDay}`)}
+      ${detailItem(t("detail.label.duration"), t("detail.durationDays", { days: activityDays(shower) }))}
     </div>
   `,
   );
 
   // Observing tips
-  const speedDesc =
+  const speedDescKey =
     shower.speed > 60
-      ? "very fast"
+      ? "detail.meteorSpeed.veryFast"
       : shower.speed > 45
-        ? "fast"
+        ? "detail.meteorSpeed.fast"
         : shower.speed > 30
-          ? "medium-speed"
-          : "slow";
+          ? "detail.meteorSpeed.mediumSpeed"
+          : "detail.meteorSpeed.slow";
+  const speedDesc = t(speedDescKey);
 
   const tips = [
-    `Look away from the radiant point for longer meteor trails.`,
-    `${speedDesc.charAt(0).toUpperCase() + speedDesc.slice(1)} meteors (${shower.speed} km/s) — ${shower.speed > 50 ? "expect bright streaks" : "watch for bright fireballs"}.`,
-    `Best viewing after midnight when the radiant is highest.`,
-    `Allow 20 minutes for your eyes to fully dark-adapt.`,
-    `ZHR ${shower.zhr} is the theoretical maximum under perfect conditions — expect roughly half that in practice.`,
+    t("detail.tipLookAway"),
+    t("detail.tipSpeedMeteors", {
+      speedDesc,
+      speed: shower.speed,
+      expectation:
+        shower.speed > 50
+          ? t("detail.expectBrightStreaks")
+          : t("detail.expectBrightFireballs"),
+    }),
+    t("detail.tipBestViewing"),
+    t("detail.tipDarkAdapt"),
+    t("detail.tipZhrMax", { zhr: shower.zhr }),
   ];
   html += detailSection(
-    "Observing Tips",
+    t("detail.section.observingTips"),
     `
     <div class="meteor-tips">
-      ${tips.map((t) => `<p class="detail-prose" style="margin-bottom:8px">• ${t}</p>`).join("")}
+      ${tips.map((tip) => `<p class="detail-prose" style="margin-bottom:8px">• ${tip}</p>`).join("")}
     </div>
   `,
   );
@@ -785,24 +902,25 @@ function renderMeteorDetailFull(
   appendSkyContext(container, event, ctx);
 }
 
+const MONTH_KEYS = [
+  "",
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+];
+
 function monthName(m: number): string {
-  return (
-    [
-      "",
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ][m] ?? ""
-  );
+  const key = MONTH_KEYS[m];
+  return key ? t(`detail.month.${key}`) : "";
 }
 
 function daysBetween(m1: number, d1: number, m2: number, d2: number): number {
@@ -827,7 +945,7 @@ function appendSkyContext(
   const wrapper = document.createElement("div");
   wrapper.className = "sky-context";
   wrapper.innerHTML = `
-    <h3 class="detail-section-title">Sky Guide</h3>
+    <h3 class="detail-section-title">${t("detail.section.skyGuide")}</h3>
     <div class="sky-context-loading">
       <div class="skeleton" style="height:60px;border-radius:8px"></div>
     </div>
@@ -853,8 +971,8 @@ function renderSkyContextContent(
   dirBox.innerHTML = `
     <div class="sky-direction-compass">${skyCtx.target.compassShort}</div>
     <div class="sky-direction-text">
-      <strong>Face ${skyCtx.target.lookDirection}</strong> — ${skyCtx.target.altDescription}
-      (${Math.round(skyCtx.target.altitude)}° up)
+      <strong>${t("detail.faceDirectionLabel", { direction: skyCtx.target.lookDirection })}</strong> — ${skyCtx.target.altDescription}
+      (${t("detail.altitudeUp", { altitude: Math.round(skyCtx.target.altitude) })})
     </div>
   `;
   wrapper.appendChild(dirBox);
@@ -864,7 +982,7 @@ function renderSkyContextContent(
     const descSection = document.createElement("div");
     descSection.className = "detail-section";
     descSection.innerHTML = `
-      <h3 class="detail-section-title">Where To Look</h3>
+      <h3 class="detail-section-title">${t("detail.section.whereToLook")}</h3>
       <p class="detail-prose">${skyCtx.lookingDescription}</p>
     `;
     wrapper.appendChild(descSection);
@@ -877,27 +995,27 @@ function renderSkyContextContent(
 
     const header = document.createElement("div");
     header.className = "nearby-header";
-    header.innerHTML = `<h3 class="detail-section-title" style="margin:0;border:none;padding:0">Nearby Objects</h3>`;
+    header.innerHTML = `<h3 class="detail-section-title" style="margin:0;border:none;padding:0">${t("detail.section.nearbyObjects")}</h3>`;
 
     // Sort select
     const sortWrap = document.createElement("div");
     sortWrap.className = "ctrl-select-wrap";
     const sortLabel = document.createElement("span");
     sortLabel.className = "ctrl-label";
-    sortLabel.textContent = "Sort";
+    sortLabel.textContent = t("common.sort.label");
     sortWrap.appendChild(sortLabel);
     const sortSel = document.createElement("select");
     sortSel.className = "ctrl-select";
     // Add "Nearest" as default for nearby context
     const nearestOpt = document.createElement("option");
     nearestOpt.value = "nearest";
-    nearestOpt.textContent = "Nearest";
+    nearestOpt.textContent = t("common.sort.nearest");
     nearestOpt.selected = (ctx.prefs.sortBy ?? "brightest") === "brightest";
     sortSel.appendChild(nearestOpt);
     for (const s of SORT_OPTIONS) {
       const opt = document.createElement("option");
       opt.value = s.key;
-      opt.textContent = s.label;
+      opt.textContent = t(s.labelKey);
       sortSel.appendChild(opt);
     }
     sortWrap.appendChild(sortSel);
@@ -922,7 +1040,7 @@ function renderSkyContextContent(
             <span class="nearby-name">${obj.name}</span>
             <span class="nearby-sep">${obj.separation.toFixed(1)}°</span>
           </div>
-          <div class="nearby-type">${obj.type}${obj.magnitude !== null ? ` · mag ${obj.magnitude.toFixed(1)}` : ""}</div>
+          <div class="nearby-type">${obj.type}${obj.magnitude !== null ? ` · ${t("detail.magAbbrev", { mag: obj.magnitude.toFixed(1) })}` : ""}</div>
           <div class="nearby-dir">${obj.direction}${obj.constellation ? ` · ${obj.constellation}` : ""}</div>
         `;
         grid.appendChild(card);
@@ -965,8 +1083,8 @@ function renderSkyContextContent(
     const photoSection = document.createElement("div");
     photoSection.className = "detail-section";
     photoSection.innerHTML = `
-      <h3 class="detail-section-title">Photography</h3>
-      ${skyCtx.photographyTips.map((t) => `<p class="detail-prose" style="margin-bottom:6px">• ${t}</p>`).join("")}
+      <h3 class="detail-section-title">${t("detail.section.photography")}</h3>
+      ${skyCtx.photographyTips.map((tip) => `<p class="detail-prose" style="margin-bottom:6px">• ${tip}</p>`).join("")}
     `;
     wrapper.appendChild(photoSection);
   }
@@ -987,15 +1105,18 @@ function formatLLMDiagnostics(): string {
   const diagnostics = getLLMDiagnostics();
   const parts: string[] = [];
   if (diagnostics.activeModelId)
-    parts.push(`model ${diagnostics.activeModelId}`);
+    parts.push(t("detail.llmDiagModel", { id: diagnostics.activeModelId }));
   if (diagnostics.maxStorageBufferBindingSize !== null) {
     parts.push(
-      `GPU buffer ${Math.round(diagnostics.maxStorageBufferBindingSize / 1_048_576)} MB`,
+      t("detail.llmDiagGpuBuffer", {
+        mb: Math.round(diagnostics.maxStorageBufferBindingSize / 1_048_576),
+      }),
     );
   }
   if (diagnostics.deviceMemoryGB !== null)
-    parts.push(`RAM ${diagnostics.deviceMemoryGB} GB`);
-  if (diagnostics.gpuVendor) parts.push(`GPU ${diagnostics.gpuVendor}`);
+    parts.push(t("detail.llmDiagRam", { gb: diagnostics.deviceMemoryGB }));
+  if (diagnostics.gpuVendor)
+    parts.push(t("detail.llmDiagGpuVendor", { vendor: diagnostics.gpuVendor }));
   return parts.length ? ` (${parts.join("; ")})` : "";
 }
 
@@ -1013,8 +1134,8 @@ function appendLLMSection(
   section.className = "detail-section llm-section";
 
   section.innerHTML = `
-    <h3 class="detail-section-title">AI Sky Guide</h3>
-    <p class="llm-capability-check detail-prose" style="color:#aaa">Checking device compatibility…</p>
+    <h3 class="detail-section-title">${t("detail.section.aiSkyGuide")}</h3>
+    <p class="llm-capability-check detail-prose" style="color:#aaa">${t("detail.checkingDeviceCompatibility")}</p>
     <button class="btn btn-outline btn-block llm-activate-btn" style="display:none"></button>
     <div class="llm-progress" style="display:none">
       <div class="llm-progress-bar"><div class="llm-progress-fill"></div></div>
@@ -1039,7 +1160,7 @@ function appendLLMSection(
     if (!cap.ok) {
       narrative.style.display = "block";
       narrative.textContent =
-        cap.reason ?? "This device cannot run the AI model.";
+        cap.reason ?? t("detail.deviceCannotRunAI");
       return;
     }
 
@@ -1047,12 +1168,14 @@ function appendLLMSection(
     const status = getLLMStatus();
     const sizeMB = getModelSizeMB();
     const sizeLabel =
-      sizeMB >= 1000 ? `~${(sizeMB / 1000).toFixed(1)} GB` : `~${sizeMB} MB`;
+      sizeMB >= 1000
+        ? t("detail.sizeGB", { value: (sizeMB / 1000).toFixed(1) })
+        : t("detail.sizeMB", { value: sizeMB });
     const modelLabel = getModelLabel();
     btn.textContent =
       status === "ready"
-        ? "Load AI Commentary on This Location"
-        : `Load AI Commentary on This Location (${modelLabel}, ${sizeLabel})`;
+        ? t("detail.loadAICommentary")
+        : t("detail.loadAICommentaryWithModel", { modelLabel, sizeLabel });
     btn.style.display = "";
 
     btn.addEventListener("click", () => {
@@ -1062,7 +1185,7 @@ function appendLLMSection(
       const runGeneration = (skyCtx: SkyContext) => {
         if (abort.signal.aborted) return;
         narrative.style.display = "block";
-        narrative.textContent = "Generating...";
+        narrative.textContent = t("detail.generating");
         generateSkyNarrative(
           skyCtx,
           (text) => {
@@ -1073,15 +1196,17 @@ function appendLLMSection(
         )
           .then((result) => {
             if (!abort.signal.aborted && !result) {
-              narrative.textContent =
-                "Model returned an empty response. Try again.";
+              narrative.textContent = t("detail.emptyResponse");
             }
           })
           .catch((err: unknown) => {
             if (!abort.signal.aborted) {
               const msg = err instanceof Error ? err.message : String(err);
               console.error("[LLM generate]", err);
-              narrative.textContent = `Could not generate description: ${msg}${formatLLMDiagnostics()}`;
+              narrative.textContent = t("detail.generateError", {
+                msg,
+                diagnostics: formatLLMDiagnostics(),
+              });
             }
           });
       };
@@ -1089,7 +1214,7 @@ function appendLLMSection(
       if (getLLMStatus() === "ready") {
         // Model already loaded — build context then generate
         progress.style.display = "block";
-        progressText.textContent = "Building sky context...";
+        progressText.textContent = t("detail.buildingSkyContext");
         fill.style.width = "100%";
         buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
           progress.style.display = "none";
@@ -1107,7 +1232,7 @@ function appendLLMSection(
           progress.style.display = "none";
           if (!ok) {
             narrative.style.display = "block";
-            narrative.textContent = `${getLLMError() ?? "Could not load AI model. WebGPU may not be supported."}${formatLLMDiagnostics()}`;
+            narrative.textContent = `${getLLMError() ?? t("detail.couldNotLoadAIModel")}${formatLLMDiagnostics()}`;
             return;
           }
           buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
@@ -1132,8 +1257,7 @@ export function renderDetail(
     container.innerHTML = "";
     renderHeader(container, ctx);
     renderNav("#/");
-    container.innerHTML +=
-      '<p style="padding:20px;color:var(--text-dim)">Event not found.</p>';
+    container.innerHTML += `<p style="padding:20px;color:var(--text-dim)">${t("detail.eventNotFound")}</p>`;
     return;
   }
 
@@ -1172,8 +1296,7 @@ export async function renderDSODetail(
   container.innerHTML = "";
   renderHeader(container, ctx);
   renderNav("#/");
-  container.innerHTML +=
-    '<p style="padding:20px;color:var(--text-dim)">Loading…</p>';
+  container.innerHTML += `<p style="padding:20px;color:var(--text-dim)">${t("detail.loading")}</p>`;
 
   const raw = dsoId.replace("dso-", "");
   const entry = await getDSOById(raw);
@@ -1181,8 +1304,7 @@ export async function renderDSODetail(
     container.innerHTML = "";
     renderHeader(container, ctx);
     renderNav("#/");
-    container.innerHTML +=
-      '<p style="padding:20px;color:var(--text-dim)">Object not found.</p>';
+    container.innerHTML += `<p style="padding:20px;color:var(--text-dim)">${t("detail.objectNotFound")}</p>`;
     return;
   }
   const now = new Date();
@@ -1193,7 +1315,11 @@ export async function renderDSODetail(
     name: entry.commonName || entry.name,
     type: "dso",
     source: "catalog",
-    brief: `${entry.type} · Mag ${entry.magnitude.toFixed(1)} in ${entry.constellation}`,
+    brief: t("detail.dsoBrief", {
+      type: entry.type,
+      magnitude: entry.magnitude.toFixed(1),
+      constellation: entry.constellation,
+    }),
     rise: rs.rise,
     set: rs.set,
     transit: rs.transit,
@@ -1232,8 +1358,7 @@ export async function renderStarDetail(
   container.innerHTML = "";
   renderHeader(container, ctx);
   renderNav("#/");
-  container.innerHTML +=
-    '<p style="padding:20px;color:var(--text-dim)">Loading…</p>';
+  container.innerHTML += `<p style="padding:20px;color:var(--text-dim)">${t("detail.loading")}</p>`;
 
   const raw = starId.replace("star-", "");
   const entry = await getStarById(raw);
@@ -1241,8 +1366,7 @@ export async function renderStarDetail(
     container.innerHTML = "";
     renderHeader(container, ctx);
     renderNav("#/");
-    container.innerHTML +=
-      '<p style="padding:20px;color:var(--text-dim)">Star not found.</p>';
+    container.innerHTML += `<p style="padding:20px;color:var(--text-dim)">${t("detail.starNotFound")}</p>`;
     return;
   }
   const now = new Date();
@@ -1253,7 +1377,11 @@ export async function renderStarDetail(
     name: entry.name,
     type: "dso",
     source: "catalog",
-    brief: `${entry.spectralType} · Mag ${entry.magnitude.toFixed(2)} in ${entry.constellation}`,
+    brief: t("detail.starBrief", {
+      spectralType: entry.spectralType,
+      magnitude: entry.magnitude.toFixed(2),
+      constellation: entry.constellation,
+    }),
     rise: rs.rise,
     set: rs.set,
     transit: rs.transit,
@@ -1316,7 +1444,7 @@ function findEvent(
       name: shower.name,
       type: "meteor-shower",
       source: "catalog",
-      brief: `ZHR ${shower.zhr} · ${shower.speed} km/s`,
+      brief: t("detail.meteorBriefZhrSpeed", { zhr: shower.zhr, speed: shower.speed }),
       rise: rs.rise,
       set: rs.set,
       transit: rs.transit,

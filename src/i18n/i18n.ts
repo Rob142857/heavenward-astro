@@ -16,6 +16,9 @@ let currentLocale: Locale | null = null;
  */
 export function initI18n(): Locale {
 	currentLocale = detectLocale();
+	// Persist the detected locale so it's stable across reloads/tabs and the
+	// language picker + t() always agree on "current locale" from boot.
+	setLocale(currentLocale);
 	return currentLocale;
 }
 

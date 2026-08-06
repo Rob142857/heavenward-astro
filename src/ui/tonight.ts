@@ -28,6 +28,7 @@ import {
   SORT_OPTIONS,
 } from "./filterOptions.js";
 import type { DirectionFilter, SortBy } from "../types.js";
+import { t } from "../i18n/translations.js";
 
 const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
 
@@ -150,12 +151,12 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
       banner.innerHTML = `
         <div class="daylight-icon">☀️</div>
         <p class="daylight-msg">
-          The Sun is ${sunAlt.toFixed(0)}° above the horizon — daylight is hiding everything else.
+          ${t("tonight.daylightSunAbove", { deg: sunAlt.toFixed(0) })}
         </p>
         <p class="daylight-sub">
-          ${visible.length} object${visible.length !== 1 ? "s" : ""} up there, lost in the glare.
+          ${t("tonight.daylightObjectsHidden", { count: visible.length })}
         </p>
-        <button class="daylight-peek">Peek anyway</button>
+        <button class="daylight-peek">${t("tonight.peekAnyway")}</button>
       `;
       banner.querySelector(".daylight-peek")!.addEventListener("click", () => {
         daylightOverride = true;
@@ -164,8 +165,8 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
       container.appendChild(banner);
     } else {
       const sectionLabel = isDaytime
-        ? `Above Horizon (${visible.length}) — daytime peek`
-        : `Visible Now (${visible.length})`;
+        ? t("tonight.aboveHorizonDaytimePeek", { count: visible.length })
+        : t("tonight.visibleNow", { count: visible.length });
 
       const section = document.createElement("h3");
       section.className = "section-title";
@@ -192,7 +193,7 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
     if (below.length) {
       const belowSection = document.createElement("h3");
       belowSection.className = "section-title";
-      belowSection.textContent = `Below Horizon (${below.length})`;
+      belowSection.textContent = t("tonight.belowHorizon", { count: below.length });
       container.appendChild(belowSection);
 
       const belowLimit =
@@ -370,7 +371,25 @@ function directionCentroid(directionFilter: DirectionFilter): number {
   return ((deg % 360) + 360) % 360;
 }
 
-/* ── Controls bar: equipment + categories + sort + limit ── */
+/**
+ * How many of the "set once and forget" filters (equipment, category,
+ * sort, display limit) currently differ from their defaults. Shown as a
+ * small badge on the Filters button so it's obvious at a glance whether
+ * anything non-default is active, without having to open the panel.
+ */
+function countNonDefaultFilters(prefs: AppContext["prefs"]): number {
+  let n = 0;
+  if ((prefs.equipment ?? "naked-eye") !== "naked-eye") n++;
+  const cats = prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
+  if (cats.length !== CATEGORY_OPTIONS.length) n++;
+  if ((prefs.sortBy ?? "brightest") !== "brightest") n++;
+  if ((prefs.displayLimit ?? 50) !== 50) n++;
+  return n;
+}
+
+/* ── Controls bar: direction pills (always visible) + Filters disclosure
+   (equipment/category/sort/limit — set-once-and-forget, tucked away so
+   they cost zero taps on the default "open app, pick a direction" path) ── */
 function renderControls(
   container: HTMLElement,
   ctx: AppContext,
@@ -397,15 +416,92 @@ function renderControls(
     }, 80);
   };
 
-  // Row 1: equipment + category pills
+  // Primary row: direction pills, always visible — this is the golden path.
+  const primaryRow = document.createElement("div");
+  primaryRow.className = "ctrl-primary-row";
+
+  // Direction multi-select pills. Empty selection = all (no filter).
+  const directionPills = document.createElement("div");
+  directionPills.className = "direction-pills";
+  directionPills.setAttribute("role", "group");
+  directionPills.setAttribute(
+    "aria-label",
+    t("tonight.directionFilterAriaLabel"),
+  );
+  const activeDirections = new Set(ctx.prefs.directionFilter ?? []);
+  for (const direction of DIRECTION_OPTIONS) {
+    const pill = document.createElement("button");
+    pill.className = `direction-pill${activeDirections.has(direction.key) ? " active" : ""}`;
+    pill.type = "button";
+    pill.textContent = t(direction.shortLabelKey);
+    pill.title = t("common.direction.quadrantHint", {
+      direction: t(direction.labelKey),
+    });
+    pill.setAttribute("aria-label", t(direction.labelKey));
+    pill.setAttribute(
+      "aria-pressed",
+      activeDirections.has(direction.key) ? "true" : "false",
+    );
+    pill.addEventListener("click", () => {
+      const next = new Set(ctx.prefs.directionFilter ?? []);
+      const willBeActive = !next.has(direction.key);
+      if (next.has(direction.key)) next.delete(direction.key);
+      else next.add(direction.key);
+      // All four ≡ none (both mean "everywhere") — normalise to empty.
+      ctx.prefs.directionFilter = next.size === 4 ? [] : Array.from(next);
+      savePrefs(ctx.prefs);
+      pill.classList.toggle("active", willBeActive);
+      pill.setAttribute("aria-pressed", willBeActive ? "true" : "false");
+      scheduleChange();
+    });
+    directionPills.appendChild(pill);
+  }
+  primaryRow.appendChild(directionPills);
+
+  const countBadge = document.createElement("span");
+  countBadge.className = "ctrl-count";
+  countBadge.textContent =
+    filteredCount < totalCount
+      ? `${filteredCount}/${totalCount}`
+      : `${totalCount}`;
+  countBadge.title = t("tonight.countAfterFilters", {
+    filtered: filteredCount,
+    total: totalCount,
+  });
+
+  // Filters disclosure: equipment, category, sort, display limit — the
+  // controls you set once and rarely touch again. Tucked behind a single
+  // tap so the default view stays uncluttered; defaults already match the
+  // "just open and look" case, so this never costs a tap on the golden path.
+  const filtersMenu = document.createElement("details");
+  filtersMenu.className = "filters-menu";
+
+  const filtersSummary = document.createElement("summary");
+  filtersSummary.className = "filters-toggle";
+  const nonDefaultCount = countNonDefaultFilters(ctx.prefs);
+  filtersSummary.innerHTML = `
+    <span class="filters-icon" aria-hidden="true">⚙</span>
+    <span class="filters-toggle-label">${t("tonight.filtersLabel")}</span>
+    ${nonDefaultCount > 0 ? `<span class="filters-badge">${nonDefaultCount}</span>` : ""}
+  `;
+  filtersMenu.appendChild(filtersSummary);
+  primaryRow.appendChild(filtersMenu);
+  primaryRow.appendChild(countBadge);
+  bar.appendChild(primaryRow);
+
+  const filtersPanel = document.createElement("div");
+  filtersPanel.className = "filters-panel";
+  filtersMenu.appendChild(filtersPanel);
+
+  // Equipment + category pills
   const pillRow = document.createElement("div");
   pillRow.className = "ctrl-pill-row";
 
   for (const eq of EQUIPMENT_OPTIONS) {
     const pill = document.createElement("button");
     pill.className = `ctrl-pill eq-pill${(ctx.prefs.equipment ?? "naked-eye") === eq.key ? " active" : ""}`;
-    pill.setAttribute("title", eq.label);
-    pill.innerHTML = `<span class="eq-icon">${eq.icon}</span><span class="eq-text">${eq.label}</span>`;
+    pill.setAttribute("title", t(eq.labelKey));
+    pill.innerHTML = `<span class="eq-icon">${eq.icon}</span><span class="eq-text">${t(eq.labelKey)}</span>`;
     pill.addEventListener("click", () => {
       ctx.prefs.equipment = eq.key;
       ctx.prefs.magnitudeLimit = EQUIPMENT_LIMITS[eq.key];
@@ -424,8 +520,8 @@ function renderControls(
   for (const cat of CATEGORY_OPTIONS) {
     const pill = document.createElement("button");
     pill.className = `ctrl-pill cat-pill${cats.includes(cat.key) ? " active" : ""}`;
-    pill.setAttribute("title", cat.label);
-    pill.innerHTML = `<span class="eq-icon">${cat.icon}</span><span class="eq-text">${cat.label}</span>`;
+    pill.setAttribute("title", t(cat.labelKey));
+    pill.innerHTML = `<span class="eq-icon">${cat.icon}</span><span class="eq-text">${t(cat.labelKey)}</span>`;
     pill.addEventListener("click", () => {
       const cur =
         ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
@@ -441,21 +537,21 @@ function renderControls(
     });
     pillRow.appendChild(pill);
   }
-  bar.appendChild(pillRow);
+  filtersPanel.appendChild(pillRow);
 
-  // Row 2: sort \u00b7 direction pills \u00b7 limit
+  // Sort \u00b7 display limit
   const metaRow = document.createElement("div");
   metaRow.className = "ctrl-meta-row";
 
   // Sort select (no label \u2014 selected value speaks for itself)
   const sortSel = document.createElement("select");
   sortSel.className = "ctrl-select";
-  sortSel.setAttribute("aria-label", "Sort by");
-  sortSel.title = "Sort";
+  sortSel.setAttribute("aria-label", t("common.sort.label"));
+  sortSel.title = t("common.sort.label");
   for (const s of SORT_OPTIONS) {
     const opt = document.createElement("option");
     opt.value = s.key;
-    opt.textContent = s.label;
+    opt.textContent = t(s.labelKey);
     if ((ctx.prefs.sortBy ?? "brightest") === s.key) opt.selected = true;
     sortSel.appendChild(opt);
   }
@@ -466,48 +562,15 @@ function renderControls(
   });
   metaRow.appendChild(sortSel);
 
-  // Direction multi-select pills. Empty selection = all (no filter).
-  const directionPills = document.createElement("div");
-  directionPills.className = "direction-pills";
-  directionPills.setAttribute("role", "group");
-  directionPills.setAttribute("aria-label", "Direction filter");
-  const active = new Set(ctx.prefs.directionFilter ?? []);
-  for (const direction of DIRECTION_OPTIONS) {
-    const pill = document.createElement("button");
-    pill.className = `direction-pill${active.has(direction.key) ? " active" : ""}`;
-    pill.type = "button";
-    pill.textContent = direction.shortLabel;
-    pill.title = `${direction.label} quadrant \u2014 tap to combine`;
-    pill.setAttribute("aria-label", direction.label);
-    pill.setAttribute(
-      "aria-pressed",
-      active.has(direction.key) ? "true" : "false",
-    );
-    pill.addEventListener("click", () => {
-      const next = new Set(ctx.prefs.directionFilter ?? []);
-      const willBeActive = !next.has(direction.key);
-      if (next.has(direction.key)) next.delete(direction.key);
-      else next.add(direction.key);
-      // All four \u2261 none (both mean \"everywhere\") \u2014 normalise to empty.
-      ctx.prefs.directionFilter = next.size === 4 ? [] : Array.from(next);
-      savePrefs(ctx.prefs);
-      pill.classList.toggle("active", willBeActive);
-      pill.setAttribute("aria-pressed", willBeActive ? "true" : "false");
-      scheduleChange();
-    });
-    directionPills.appendChild(pill);
-  }
-  metaRow.appendChild(directionPills);
-
   // Show-limit select \u2014 trailing count badge replaces \"Show\" label.
   const limitSel = document.createElement("select");
   limitSel.className = "ctrl-select";
-  limitSel.setAttribute("aria-label", "Maximum results");
-  limitSel.title = "Show";
+  limitSel.setAttribute("aria-label", t("tonight.maxResultsAriaLabel"));
+  limitSel.title = t("tonight.showTitle");
   for (const n of LIMIT_OPTIONS) {
     const opt = document.createElement("option");
     opt.value = String(n);
-    opt.textContent = n === 0 ? "All" : String(n);
+    opt.textContent = n === 0 ? t("tonight.allOption") : String(n);
     if ((ctx.prefs.displayLimit ?? 50) === n) opt.selected = true;
     limitSel.appendChild(opt);
   }
@@ -518,16 +581,7 @@ function renderControls(
   });
   metaRow.appendChild(limitSel);
 
-  const countBadge = document.createElement("span");
-  countBadge.className = "ctrl-count";
-  countBadge.textContent =
-    filteredCount < totalCount
-      ? `${filteredCount}/${totalCount}`
-      : `${totalCount}`;
-  countBadge.title = `${filteredCount} of ${totalCount} after filters`;
-  metaRow.appendChild(countBadge);
-
-  bar.appendChild(metaRow);
+  filtersPanel.appendChild(metaRow);
   container.appendChild(bar);
 }
 
@@ -543,7 +597,7 @@ function renderShowMore(
   const remaining = allEvents.length - alreadyShown;
   const btn = document.createElement("button");
   btn.className = "btn btn-ghost show-more-btn";
-  btn.textContent = `Show ${remaining} more`;
+  btn.textContent = t("tonight.showMore", { count: remaining });
   btn.addEventListener("click", () => {
     btn.remove();
     const grid = document.createElement("div");
@@ -777,15 +831,15 @@ async function renderAuroraBanner(
   banner.innerHTML = `
     <div class="aurora-banner-head">
       <span class="aurora-icon" aria-hidden="true">\u{1F30C}</span>
-      <span class="aurora-title">Aurora watch</span>
+      <span class="aurora-title">${t("tonight.auroraTitle")}</span>
       ${status.stormLevel ? `<span class="aurora-storm">${escapeHtml(status.stormLevel)}</span>` : ""}
     </div>
     <div class="aurora-banner-stats">
-      <span><strong>Kp ${status.currentKp.toFixed(1)}</strong> now</span>
+      <span><strong>Kp ${status.currentKp.toFixed(1)}</strong> ${t("tonight.auroraNow")}</span>
       <span class="aurora-sep">\u00b7</span>
-      <span>peak <strong>Kp ${status.forecastPeakKp.toFixed(1)}</strong> ${escapeHtml(peakLocal)}</span>
+      <span>${t("tonight.auroraPeakLabel")} <strong>Kp ${status.forecastPeakKp.toFixed(1)}</strong> ${escapeHtml(peakLocal)}</span>
       <span class="aurora-sep">\u00b7</span>
-      <span><strong>${status.localProbability.toFixed(0)}%</strong> at your latitude</span>
+      <span><strong>${status.localProbability.toFixed(0)}%</strong> ${t("tonight.auroraAtYourLatitude")}</span>
     </div>
     <p class="aurora-banner-hint">${escapeHtml(auroraHint(status, loc.lat))}</p>
   `;
@@ -794,17 +848,13 @@ async function renderAuroraBanner(
 
 function auroraHint(s: AuroraStatus, lat: number): string {
   const absLat = Math.abs(lat);
-  if (s.localProbability >= 25)
-    return "Step outside and look poleward \u2014 the oval is overhead or very close.";
-  if (s.localProbability >= 10)
-    return "Decent chance of low arcs on the poleward horizon if your sky is dark.";
-  if (s.localProbability >= 3)
-    return "Faint glow possible right on the poleward horizon \u2014 worth a look.";
+  if (s.localProbability >= 25) return t("tonight.auroraHintOverhead");
+  if (s.localProbability >= 10) return t("tonight.auroraHintDecent");
+  if (s.localProbability >= 3) return t("tonight.auroraHintFaint");
   if (s.forecastPeakKp >= 7)
-    return `Storm-level Kp forecast \u2014 aurora may reach mid-latitudes near ${absLat.toFixed(0)}\u00b0.`;
-  if (s.forecastPeakKp >= 5)
-    return "Sub-storm conditions building \u2014 keep an eye out toward the poles tonight.";
-  return "Elevated geomagnetic activity \u2014 darker sites toward the pole may catch a glow.";
+    return t("tonight.auroraHintStorm", { lat: absLat.toFixed(0) });
+  if (s.forecastPeakKp >= 5) return t("tonight.auroraHintSubstorm");
+  return t("tonight.auroraHintElevated");
 }
 
 function escapeHtml(s: string): string {
@@ -828,18 +878,18 @@ function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {
         <span class="tw-sep">·</span>
         <span>☀↑ ${fmt(tw.sunrise)}</span>
       </div>
-      <button class="twilight-toggle" aria-label="Show details" aria-expanded="false">▾</button>
+      <button class="twilight-toggle" aria-label="${t("tonight.twilightShowDetails")}" aria-expanded="false">▾</button>
     </div>
     <div class="twilight-details">
       <div class="twilight-grid">
-        <span class="label">Sunset</span><span class="time">${fmt(tw.sunset)}</span>
-        <span class="label">Civil dusk</span><span class="time">${fmt(tw.civilDusk)}</span>
-        <span class="label">Nautical dusk</span><span class="time">${fmt(tw.nauticalDusk)}</span>
-        <span class="label">Astro dusk</span><span class="time">${fmt(tw.astronomicalDusk)}</span>
-        <span class="label">Astro dawn</span><span class="time">${fmt(tw.astronomicalDawn)}</span>
-        <span class="label">Nautical dawn</span><span class="time">${fmt(tw.nauticalDawn)}</span>
-        <span class="label">Civil dawn</span><span class="time">${fmt(tw.civilDawn)}</span>
-        <span class="label">Sunrise</span><span class="time">${fmt(tw.sunrise)}</span>
+        <span class="label">${t("tonight.twilightSunset")}</span><span class="time">${fmt(tw.sunset)}</span>
+        <span class="label">${t("tonight.twilightCivilDusk")}</span><span class="time">${fmt(tw.civilDusk)}</span>
+        <span class="label">${t("tonight.twilightNauticalDusk")}</span><span class="time">${fmt(tw.nauticalDusk)}</span>
+        <span class="label">${t("tonight.twilightAstroDusk")}</span><span class="time">${fmt(tw.astronomicalDusk)}</span>
+        <span class="label">${t("tonight.twilightAstroDawn")}</span><span class="time">${fmt(tw.astronomicalDawn)}</span>
+        <span class="label">${t("tonight.twilightNauticalDawn")}</span><span class="time">${fmt(tw.nauticalDawn)}</span>
+        <span class="label">${t("tonight.twilightCivilDawn")}</span><span class="time">${fmt(tw.civilDawn)}</span>
+        <span class="label">${t("tonight.twilightSunrise")}</span><span class="time">${fmt(tw.sunrise)}</span>
       </div>
     </div>
   `;
@@ -894,12 +944,12 @@ function buildCard(ev: CelestialEvent, index: number): HTMLElement {
   card.innerHTML = `
     <div class="card-header">
       <span class="card-title"><span class="vis-dot ${isUp ? "up" : "down"}"></span>${ev.name}</span>
-      ${ev.magnitude !== null ? `<span class="card-mag">mag ${ev.magnitude.toFixed(1)}</span>` : ""}
+      ${ev.magnitude !== null ? `<span class="card-mag">${t("tonight.cardMag", { value: ev.magnitude.toFixed(1) })}</span>` : ""}
     </div>
     <div class="card-brief">${ev.brief}</div>
     <div class="card-times">
-      ${ev.altitude !== null ? `<span>Alt ${ev.altitude.toFixed(1)}°</span>` : ""}
-      ${ev.azimuth !== null ? `<span>Az ${ev.azimuth.toFixed(0)}°</span>` : ""}
+      ${ev.altitude !== null ? `<span>${t("tonight.cardAlt", { value: ev.altitude.toFixed(1) })}</span>` : ""}
+      ${ev.azimuth !== null ? `<span>${t("tonight.cardAz", { value: ev.azimuth.toFixed(0) })}</span>` : ""}
       ${ev.rise ? `<span>↑${fmtShort(ev.rise)}</span>` : ""}
       ${ev.set ? `<span>↓${fmtShort(ev.set)}</span>` : ""}
     </div>

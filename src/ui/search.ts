@@ -5,6 +5,7 @@ import { METEOR_SHOWERS } from "../catalog/meteors.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
 import { trackEvent } from "../services/analytics.js";
+import { t } from "../i18n/translations.js";
 import {
   getAltAzForRaDec,
   getPlanetEvents,
@@ -73,7 +74,7 @@ async function buildIndex(): Promise<SearchEntry[]> {
         id: `planet-${name.toLowerCase()}`,
         kind: "planet",
         name,
-        brief: `Planet of the Solar System`,
+        brief: t("search.planetBrief"),
         magnitude: null,
         constellation: "",
         catalogType: "planet",
@@ -89,7 +90,7 @@ async function buildIndex(): Promise<SearchEntry[]> {
       id: "moon",
       kind: "moon",
       name: "Moon",
-      brief: "Earth's natural satellite",
+      brief: t("search.moonBrief"),
       magnitude: null,
       constellation: "",
       catalogType: "moon",
@@ -105,7 +106,12 @@ async function buildIndex(): Promise<SearchEntry[]> {
         id: `meteor-${shower.id}`,
         kind: "meteor",
         name: shower.name,
-        brief: `Meteor shower \u00b7 peak ${shower.peakMonth}/${shower.peakDay} \u00b7 ZHR ${shower.zhr} \u00b7 parent ${shower.parentBody}`,
+        brief: t("search.meteorBrief", {
+          peakMonth: shower.peakMonth,
+          peakDay: shower.peakDay,
+          zhr: shower.zhr,
+          parentBody: shower.parentBody,
+        }),
         magnitude: null,
         constellation: "",
         catalogType: "meteor-shower",
@@ -201,7 +207,10 @@ function dsoToEntry(d: DSOEntry): SearchEntry {
 
 interface Chip {
   key: string;
-  label: string;
+  // Translation key, not display text \u2014 call t(chip.labelKey) at render
+  // time so labels stay correct across a locale switch (this array is
+  // built once at module load, before the user can have changed locale).
+  labelKey: string;
   icon: string;
   // An entry matches the chip if any flag is set OR any keyword is found.
   flags?: string[];
@@ -210,28 +219,28 @@ interface Chip {
 
 const CHIPS: Chip[] = [
   // Solar system
-  { key: "planet", label: "Planet", icon: "\ud83e\ude90", flags: ["planet"] },
-  { key: "moon", label: "Moon", icon: "\ud83c\udf11", flags: ["moon"] },
-  { key: "meteor", label: "Meteor shower", icon: "\ud83c\udf20", flags: ["meteor"] },
+  { key: "planet", labelKey: "search.chip.planet", icon: "\ud83e\ude90", flags: ["planet"] },
+  { key: "moon", labelKey: "search.chip.moon", icon: "\ud83c\udf11", flags: ["moon"] },
+  { key: "meteor", labelKey: "search.chip.meteor", icon: "\ud83c\udf20", flags: ["meteor"] },
   // Stars
-  { key: "named-star", label: "Named star", icon: "\u2b50", flags: ["star"] },
-  { key: "double", label: "Double star", icon: "\u2b50\u2b50", flags: ["double"] },
-  { key: "variable", label: "Variable", icon: "\ud83d\udcab", flags: ["variable"] },
-  { key: "exoplanet-host", label: "Exoplanet host", icon: "\ud83d\udd2d", flags: ["exoplanet-host"] },
+  { key: "named-star", labelKey: "search.chip.namedStar", icon: "\u2b50", flags: ["star"] },
+  { key: "double", labelKey: "search.chip.doubleStar", icon: "\u2b50\u2b50", flags: ["double"] },
+  { key: "variable", labelKey: "search.chip.variable", icon: "\ud83d\udcab", flags: ["variable"] },
+  { key: "exoplanet-host", labelKey: "search.chip.exoplanetHost", icon: "\ud83d\udd2d", flags: ["exoplanet-host"] },
   // Deep sky
-  { key: "messier", label: "Messier", icon: "M", flags: ["messier"] },
-  { key: "caldwell", label: "Caldwell", icon: "C", flags: ["caldwell"] },
-  { key: "galaxy", label: "Galaxy", icon: "\ud83c\udf0c", flags: ["galaxy", "galaxy-pair", "galaxy-group"] },
-  { key: "nebula", label: "Nebula", icon: "\ud83c\udf2b", flags: ["nebula", "emission-nebula", "reflection-nebula", "dark-nebula"] },
-  { key: "planetary-nebula", label: "Planetary nebula", icon: "\ud83d\udc8d", flags: ["planetary-nebula"] },
-  { key: "supernova-remnant", label: "Supernova remnant", icon: "\ud83d\udca5", flags: ["supernova-remnant"] },
-  { key: "open-cluster", label: "Open cluster", icon: "\ud83c\udf1f", flags: ["open-cluster"] },
-  { key: "globular-cluster", label: "Globular cluster", icon: "\u26ea", flags: ["globular-cluster"] },
-  { key: "hii-region", label: "HII region", icon: "\u2728", flags: ["hii-region", "star-forming"] },
+  { key: "messier", labelKey: "search.chip.messier", icon: "M", flags: ["messier"] },
+  { key: "caldwell", labelKey: "search.chip.caldwell", icon: "C", flags: ["caldwell"] },
+  { key: "galaxy", labelKey: "search.chip.galaxy", icon: "\ud83c\udf0c", flags: ["galaxy", "galaxy-pair", "galaxy-group"] },
+  { key: "nebula", labelKey: "search.chip.nebula", icon: "\ud83c\udf2b", flags: ["nebula", "emission-nebula", "reflection-nebula", "dark-nebula"] },
+  { key: "planetary-nebula", labelKey: "search.chip.planetaryNebula", icon: "\ud83d\udc8d", flags: ["planetary-nebula"] },
+  { key: "supernova-remnant", labelKey: "search.chip.supernovaRemnant", icon: "\ud83d\udca5", flags: ["supernova-remnant"] },
+  { key: "open-cluster", labelKey: "search.chip.openCluster", icon: "\ud83c\udf1f", flags: ["open-cluster"] },
+  { key: "globular-cluster", labelKey: "search.chip.globularCluster", icon: "\u26ea", flags: ["globular-cluster"] },
+  { key: "hii-region", labelKey: "search.chip.hiiRegion", icon: "\u2728", flags: ["hii-region", "star-forming"] },
   // Phenomenon keywords (full-text)
-  { key: "pulsar", label: "Pulsar", icon: "\ud83d\udd06", flags: ["pulsar"], keywords: ["pulsar"] },
-  { key: "black-hole", label: "Black hole", icon: "\u26ab", flags: ["black-hole"], keywords: ["black hole", "supermassive"] },
-  { key: "quasar", label: "Quasar", icon: "\ud83d\udca0", flags: ["quasar"], keywords: ["quasar"] },
+  { key: "pulsar", labelKey: "search.chip.pulsar", icon: "\ud83d\udd06", flags: ["pulsar"], keywords: ["pulsar"] },
+  { key: "black-hole", labelKey: "search.chip.blackHole", icon: "\u26ab", flags: ["black-hole"], keywords: ["black hole", "supermassive"] },
+  { key: "quasar", labelKey: "search.chip.quasar", icon: "\ud83d\udca0", flags: ["quasar"], keywords: ["quasar"] },
 ];
 
 function entryMatchesChip(e: SearchEntry, chip: Chip): boolean {
@@ -272,8 +281,8 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
   const input = document.createElement("input");
   input.type = "search";
   input.className = "search-input";
-  input.placeholder = "Search the sky\u2026 (e.g. pulsar, Andromeda, Orion)";
-  input.setAttribute("aria-label", "Search the sky");
+  input.placeholder = t("search.inputPlaceholder");
+  input.setAttribute("aria-label", t("search.inputAriaLabel"));
   input.autocomplete = "off";
   input.autocapitalize = "off";
   input.spellcheck = false;
@@ -282,13 +291,13 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
   const palette = document.createElement("div");
   palette.className = "search-palette";
   palette.setAttribute("role", "group");
-  palette.setAttribute("aria-label", "Suggested filters");
+  palette.setAttribute("aria-label", t("search.suggestedFiltersAriaLabel"));
   for (const chip of CHIPS) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "search-chip-suggest";
     btn.dataset.key = chip.key;
-    btn.innerHTML = `<span class="chip-icon" aria-hidden="true">${chip.icon}</span><span class="chip-label">${chip.label}</span>`;
+    btn.innerHTML = `<span class="chip-icon" aria-hidden="true">${chip.icon}</span><span class="chip-label">${escape(t(chip.labelKey))}</span>`;
     btn.addEventListener("click", () => {
       if (state.activeChips.has(chip.key)) state.activeChips.delete(chip.key);
       else state.activeChips.add(chip.key);
@@ -301,8 +310,7 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
   // Hint / empty state
   const hint = document.createElement("p");
   hint.className = "search-hint";
-  hint.textContent =
-    "Tap a chip below or type a name. Combine chips and free text \u2014 they narrow together.";
+  hint.textContent = t("search.hint");
   page.appendChild(hint);
   page.appendChild(field);
   page.appendChild(palette);
@@ -320,11 +328,14 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
       if (!chip) continue;
       const token = document.createElement("span");
       token.className = "search-token";
-      token.innerHTML = `<span class="chip-icon" aria-hidden="true">${chip.icon}</span><span class="chip-label">${chip.label}</span>`;
+      token.innerHTML = `<span class="chip-icon" aria-hidden="true">${chip.icon}</span><span class="chip-label">${escape(t(chip.labelKey))}</span>`;
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "search-token-x";
-      remove.setAttribute("aria-label", `Remove ${chip.label}`);
+      remove.setAttribute(
+        "aria-label",
+        t("search.removeChip", { label: t(chip.labelKey) }),
+      );
       remove.textContent = "\u00d7";
       remove.addEventListener("click", () => {
         state.activeChips.delete(key);
@@ -354,7 +365,7 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
 
     const myToken = ++queryToken;
     if (!state.query && state.activeChips.size === 0) {
-      results.innerHTML = `<p class="search-empty">Start typing or pick a chip. The whole catalog \u2014 stars, galaxies, clusters, planets, meteor showers \u2014 is one tap away.</p>`;
+      results.innerHTML = `<p class="search-empty">${escape(t("search.emptyStatePrompt"))}</p>`;
       return;
     }
 
@@ -400,13 +411,18 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
     const meta = document.createElement("p");
     meta.className = "search-meta";
     if (matches.length === 0) {
-      results.innerHTML = `<p class="search-empty">No matches. Try removing a chip or shortening the text.</p>`;
+      results.innerHTML = `<p class="search-empty">${escape(t("search.noMatches"))}</p>`;
       return;
     }
     meta.textContent =
       matches.length > RESULT_LIMIT
-        ? `Showing ${RESULT_LIMIT} of ${matches.length} matches`
-        : `${matches.length} match${matches.length === 1 ? "" : "es"}`;
+        ? t("search.showingLimitedMatches", {
+            limit: RESULT_LIMIT,
+            total: matches.length,
+          })
+        : matches.length === 1
+          ? t("search.matchSingular", { count: matches.length })
+          : t("search.matchPlural", { count: matches.length });
     results.appendChild(meta);
 
     const grid = document.createElement("div");
@@ -441,7 +457,10 @@ function buildResultCard(
     navigate(`#/detail/${e.id}`);
   });
 
-  const magStr = e.magnitude !== null ? `mag ${e.magnitude.toFixed(1)}` : "";
+  const magStr =
+    e.magnitude !== null
+      ? t("search.magnitude", { value: e.magnitude.toFixed(1) })
+      : "";
   const sub = [
     e.constellation,
     e.catalogType ? e.catalogType.replace(/-/g, " ") : "",
@@ -508,8 +527,8 @@ async function hydrateAltAz(
   slot.innerHTML = `
     ${sub ? `<span>${escape(sub)}</span>` : ""}
     <span class="vis-dot ${isUp ? "up" : "down"}" aria-hidden="true"></span>
-    <span>Alt ${alt.toFixed(0)}\u00b0</span>
-    ${az !== null ? `<span>Az ${az.toFixed(0)}\u00b0</span>` : ""}
+    <span>${escape(t("search.altValue", { value: alt.toFixed(0) }))}</span>
+    ${az !== null ? `<span>${escape(t("search.azValue", { value: az.toFixed(0) }))}</span>` : ""}
   `;
 }
 

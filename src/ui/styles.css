@@ -1042,6 +1042,89 @@ body {
   background: var(--bg-hover);
   border-radius: 8px;
 }
+
+/* ── Primary controls row: direction pills + Filters disclosure ──────
+   This is the always-visible golden path — everything else (equipment,
+   category, sort, limit) lives behind the Filters button so it costs zero
+   extra taps to go from "open app" to "pick a direction, see what's up." */
+.ctrl-primary-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filters-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+.filters-toggle {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--text-dim);
+  background: transparent;
+  font-size: 0.7rem;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.filters-toggle::-webkit-details-marker {
+  display: none;
+}
+.filters-toggle::marker {
+  content: "";
+}
+.filters-toggle:hover,
+.filters-menu[open] .filters-toggle {
+  border-color: var(--gold);
+  color: var(--text);
+}
+.filters-icon {
+  font-size: 0.82rem;
+  line-height: 1;
+}
+.filters-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--bg);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+.filters-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 220;
+  width: min(320px, calc(100vw - 32px));
+  padding: 12px;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.98);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+/* Explicit display so it wins over the plain `.filters-panel` rule above,
+   but only once <details> is open — otherwise the browser's native
+   details:not([open]) > *:not(summary) { display: none } UA rule must be
+   the one deciding visibility, or the panel renders even while closed. */
+.filters-menu[open] .filters-panel {
+  display: flex;
+}
 .show-more-btn {
   display: block;
   margin: 8px auto 0;

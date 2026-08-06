@@ -3,40 +3,36 @@ import { navigate } from "./router.js";
 import { bindInstallPrompt } from "../services/pwa.js";
 import { openObservationsModal } from "./observations.js";
 import { isSocialInAppBrowser } from "../services/browser.js";
+import { t } from "../i18n/translations.js";
 
 let currentCtx: AppContext | null = null;
 
 const SHARE_URL = "https://sky.incitat.io/about";
-const SHARE_TITLE = "Heavenward";
-const SHARE_TEXT =
-  "Heavenward shows what is worth seeing in tonight's sky, right where you are.";
-const SHARE_COPY = `${SHARE_TEXT}\n${SHARE_URL}`;
 const DESK_EMAIL = "desk@incitat.io";
 
-const FEEDBACK_MAILTO = buildMailto(
-  "Heavenward feedback",
-  `Hello team at the desk,
+function getShareText(): string {
+  return t("layout.shareText");
+}
 
-I have a question or feedback about Heavenward. Any questions and feedback are responded to and appreciated.
+function getShareCopy(): string {
+  return `${getShareText()}\n${SHARE_URL}`;
+}
 
-My note:
-`,
-);
+function getFeedbackMailto(): string {
+  return buildMailto(t("layout.feedbackSubject"), t("layout.feedbackBody"));
+}
 
-const SUPPORT_MAILTO = buildMailto(
-  "Heavenward support request",
-  `Hello team at the desk,
+function getSupportMailto(): string {
+  return buildMailto(t("layout.supportSubject"), t("layout.supportBody"));
+}
 
-I need support with Heavenward.
+function getFacebookShareUrl(): string {
+  return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE_URL)}&quote=${encodeURIComponent(getShareText())}`;
+}
 
-What happened:
-
-Device and browser:
-`,
-);
-
-const FACEBOOK_SHARE_URL = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE_URL)}&quote=${encodeURIComponent(SHARE_TEXT)}`;
-const SMS_SHARE_URL = `sms:?&body=${encodeURIComponent(SHARE_COPY)}`;
+function getSmsShareUrl(): string {
+  return `sms:?&body=${encodeURIComponent(getShareCopy())}`;
+}
 
 /* ── Seba hieroglyph SVG (animated gold shimmer) ──── */
 export const SEBA_SVG = `<svg class="seba-logo" viewBox="0 0 100 100" width="38" height="38" aria-hidden="true">
@@ -67,27 +63,27 @@ export const SEBA_SVG = `<svg class="seba-logo" viewBox="0 0 100 100" width="38"
 const NAV_ITEMS = [
   {
     hash: "#/",
-    label: "Tonight",
+    labelKey: "nav.tonight",
     icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l2.5 7.5h7.9l-6.4 4.6 2.4 7.5-6.4-4.7-6.4 4.7 2.4-7.5L2 8.5h7.9z"/></svg>`,
   },
   {
     hash: "#/search",
-    label: "Search",
+    labelKey: "nav.search",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>`,
   },
   {
     hash: "#/sources",
-    label: "Settings",
+    labelKey: "nav.settings",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>`,
   },
   {
     hash: "#/location",
-    label: "Location",
+    labelKey: "nav.location",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/></svg>`,
   },
   {
     hash: "#/account",
-    label: "Account",
+    labelKey: "nav.account",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>`,
   },
 ];
@@ -99,7 +95,7 @@ export function renderHeader(container: HTMLElement, ctx: AppContext): void {
 
   const logoContainer = document.createElement("div");
   logoContainer.className = "logo-container";
-  logoContainer.innerHTML = `${SEBA_SVG}<span class="logo-text">Heavenward</span>`;
+  logoContainer.innerHTML = `${SEBA_SVG}<span class="logo-text">${t("layout.appName")}</span>`;
 
   const loc = document.createElement("span");
   loc.className = "location-pill";
@@ -126,12 +122,12 @@ function renderInstallPrompt(): HTMLElement {
   prompt.hidden = true;
   prompt.innerHTML = `
     <div class="install-prompt-copy">
-      <strong>Install Heavenward</strong>
-      <span>Keep tonight's sky one tap away.</span>
+      <strong>${t("layout.installHeading")}</strong>
+      <span>${t("layout.installTagline")}</span>
     </div>
     <div class="install-prompt-actions">
-      <button type="button" class="install-prompt-dismiss">Not now</button>
-      <button type="button" class="install-prompt-action">Install</button>
+      <button type="button" class="install-prompt-dismiss">${t("layout.installDismiss")}</button>
+      <button type="button" class="install-prompt-action">${t("layout.installAction")}</button>
     </div>
   `;
   const install = prompt.querySelector<HTMLButtonElement>(
@@ -152,12 +148,12 @@ function renderInAppBrowserNotice(): HTMLElement {
   notice.className = "browser-notice";
   notice.innerHTML = `
     <div class="browser-notice-copy">
-      <strong>Open in your browser for best results</strong>
-      <span>Facebook and Instagram in-app browsers can block location and sky-time calculations.</span>
+      <strong>${t("layout.browserNoticeHeading")}</strong>
+      <span>${t("layout.browserNoticeBody")}</span>
     </div>
     <div class="browser-notice-actions">
-      <button type="button" data-open-browser>Open</button>
-      <button type="button" data-copy-link>Copy link</button>
+      <button type="button" data-open-browser>${t("layout.browserNoticeOpen")}</button>
+      <button type="button" data-copy-link>${t("layout.copyLink")}</button>
     </div>
   `;
 
@@ -170,10 +166,10 @@ function renderInAppBrowserNotice(): HTMLElement {
     void navigator.clipboard
       ?.writeText(window.location.href)
       .then(() => {
-        copy.textContent = "Copied";
+        copy.textContent = t("layout.copied");
       })
       .catch(() => {
-        copy.textContent = "Use menu → browser";
+        copy.textContent = t("layout.useMenuBrowser");
       });
   });
   return notice;
@@ -200,7 +196,7 @@ export function renderNav(active: string): void {
     (item) =>
       `<a href="${item.hash}" class="${active === item.hash ? "active" : ""}">
         <span class="nav-icon">${item.icon}</span>
-        <span class="nav-label">${item.label}</span>
+        <span class="nav-label">${t(item.labelKey)}</span>
       </a>`,
   ).join("");
 }
@@ -211,33 +207,46 @@ function renderStuffMenu(): HTMLElement {
 
   const summary = document.createElement("summary");
   summary.className = "stuff-toggle";
-  summary.setAttribute("aria-label", "Open Stuff menu");
+  summary.setAttribute("aria-label", t("layout.stuffMenuAriaLabel"));
   summary.innerHTML = `
     <span class="stuff-toggle-icon" aria-hidden="true">${gearIcon()}</span>
-    <span class="stuff-toggle-label">Stuff</span>
+    <span class="stuff-toggle-label">${t("stuff.toggleLabel")}</span>
   `;
   menu.appendChild(summary);
+
+  // The bottom nav already has a Settings tab one tap away, so the Stuff
+  // menu doesn't need to repeat it — a second path to the same place is
+  // exactly the kind of ambiguity ("which one do I use?") we're trying to
+  // remove. Likewise, on devices with the Web Share API, the native share
+  // sheet already covers Facebook/Instagram/SMS/etc. and does it better
+  // (more targets, OS-native UI) — showing four manual deep-link buttons
+  // next to it is pure redundant clutter, so those only appear as a
+  // fallback where there's no native share to defer to.
+  const hasNativeShare = typeof navigator.share === "function";
+  const shareButtonsHTML = hasNativeShare
+    ? `<button type="button" data-native-share>${t("stuff.share")}</button>
+       <button type="button" data-copy-share>${t("layout.copyLink")}</button>`
+    : `<button type="button" data-native-share>${t("stuff.share")}</button>
+       <a href="${getFacebookShareUrl()}" target="_blank" rel="noopener">${t("layout.facebook")}</a>
+       <button type="button" data-instagram-share>${t("layout.instagram")}</button>
+       <a href="${getSmsShareUrl()}">${t("layout.text")}</a>
+       <button type="button" data-copy-share>${t("layout.copyLink")}</button>`;
 
   const panel = document.createElement("div");
   panel.className = "stuff-panel";
   panel.innerHTML = `
-    <div class="stuff-panel-title">Stuff</div>
-    <nav class="stuff-list" aria-label="Stuff">
-      <a href="#/about" data-stuff-nav>${infoIcon()}<span>About</span></a>
-      <button type="button" data-observations class="stuff-action">${journalIcon()}<span>Observations</span></button>
+    <div class="stuff-panel-title">${t("stuff.panelTitle")}</div>
+    <nav class="stuff-list" aria-label="${t("stuff.panelTitle")}">
+      <a href="#/about" data-stuff-nav>${infoIcon()}<span>${t("about.title")}</span></a>
+      <button type="button" data-observations class="stuff-action">${journalIcon()}<span>${t("observations.title")}</span></button>
       <div class="stuff-social">
-        <div class="stuff-social-label">${shareIcon()}<span>Be social</span></div>
+        <div class="stuff-social-label">${shareIcon()}<span>${t("stuff.beSocial")}</span></div>
         <div class="stuff-social-grid">
-          <button type="button" data-native-share>Share</button>
-          <a href="${FACEBOOK_SHARE_URL}" target="_blank" rel="noopener">Facebook</a>
-          <button type="button" data-instagram-share>Instagram</button>
-          <a href="${SMS_SHARE_URL}">Text</a>
-          <button type="button" data-copy-share>Copy link</button>
+          ${shareButtonsHTML}
         </div>
       </div>
-      <a href="${FEEDBACK_MAILTO}">${mailIcon()}<span>Feedback</span></a>
-      <a href="${SUPPORT_MAILTO}">${supportIcon()}<span>Support</span></a>
-      <a href="#/sources" data-stuff-nav>${slidersIcon()}<span>Settings</span></a>
+      <a href="${getFeedbackMailto()}">${mailIcon()}<span>${t("stuff.feedback")}</span></a>
+      <a href="${getSupportMailto()}">${supportIcon()}<span>${t("stuff.support")}</span></a>
     </nav>
     <div class="stuff-status" aria-live="polite"></div>
   `;
@@ -263,26 +272,26 @@ function renderStuffMenu(): HTMLElement {
       if (typeof navigator.share === "function") {
         try {
           await navigator.share({
-            title: SHARE_TITLE,
-            text: SHARE_TEXT,
+            title: t("layout.appName"),
+            text: getShareText(),
             url: SHARE_URL,
           });
           menu.removeAttribute("open");
         } catch (error: unknown) {
           if (!isAbortError(error)) {
-            await copyShare(status, "Share text copied");
+            await copyShare(status, t("layout.shareTextCopied"));
           }
         }
         return;
       }
 
-      await copyShare(status, "Share text copied");
+      await copyShare(status, t("layout.shareTextCopied"));
     });
 
   panel
     .querySelector<HTMLButtonElement>("[data-copy-share]")
     ?.addEventListener("click", async () => {
-      await copyShare(status, "Share text copied");
+      await copyShare(status, t("layout.shareTextCopied"));
     });
 
   panel
@@ -295,7 +304,7 @@ function renderStuffMenu(): HTMLElement {
   panel
     .querySelector<HTMLButtonElement>("[data-instagram-share]")
     ?.addEventListener("click", async () => {
-      await copyShare(status, "Copied for Instagram");
+      await copyShare(status, t("layout.copiedForInstagram"));
       window.open(
         "https://www.instagram.com/",
         "_blank",
@@ -320,8 +329,8 @@ async function copyShare(
   status: HTMLElement | null,
   successMessage: string,
 ): Promise<void> {
-  const copied = await writeClipboard(SHARE_COPY);
-  setStuffStatus(status, copied ? successMessage : "Copy unavailable");
+  const copied = await writeClipboard(getShareCopy());
+  setStuffStatus(status, copied ? successMessage : t("layout.copyUnavailable"));
 }
 
 async function writeClipboard(text: string): Promise<boolean> {
@@ -381,10 +390,6 @@ function supportIcon(): string {
 
 function journalIcon(): string {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2Z"/><path d="M18 2v18"/><path d="M8 7h6"/><path d="M8 11h6"/><path d="M8 15h4"/></svg>`;
-}
-
-function slidersIcon(): string {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/></svg>`;
 }
 
 function formatLocation(loc: GeoLocation): string {

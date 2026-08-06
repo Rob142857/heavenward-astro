@@ -1,4 +1,5 @@
 import type { AppContext } from "../types.js";
+import { t } from "../i18n/translations.js";
 import { renderHeader, renderNav } from "./layout.js";
 import {
   exportSessionMarkdown,
@@ -28,13 +29,13 @@ export function openObservationsModal(ctx: AppContext): void {
 
   modal.innerHTML = `
     <header class="obs-modal-head">
-      <h3>Tonight's observations</h3>
-      <button type="button" class="obs-close" aria-label="Close">×</button>
+      <h3>${t("observations.modalTitle")}</h3>
+      <button type="button" class="obs-close" aria-label="${t("observations.close")}">×</button>
     </header>
     <div class="obs-modal-body">
       ${
         isEmpty
-          ? `<p class="obs-empty">Open a few sky objects and they will appear here — a quiet diary of your evening.</p>`
+          ? `<p class="obs-empty">${t("observations.emptyState")}</p>`
           : renderSessionPreview(session!)
       }
       ${
@@ -42,18 +43,18 @@ export function openObservationsModal(ctx: AppContext): void {
           ? `
         <label class="obs-checkbox">
           <input type="checkbox" data-include-gps />
-          <span>Include exact GPS coordinates in the export</span>
+          <span>${t("observations.includeGpsLabel")}</span>
         </label>
-        <textarea class="obs-notes" placeholder="A short note about the evening (optional)…"></textarea>
+        <textarea class="obs-notes" placeholder="${t("observations.notesPlaceholder")}"></textarea>
         <pre class="obs-export" aria-live="polite"></pre>
         <div class="obs-actions">
-          <button type="button" class="btn btn-primary" data-copy>Copy</button>
+          <button type="button" class="btn btn-primary" data-copy>${t("observations.copyButton")}</button>
           ${
             ctx.user
-              ? `<button type="button" class="btn btn-outline" data-save>Save to account</button>`
-              : `<a class="btn btn-outline" href="#/account" data-stuff-nav>Sign in to save</a>`
+              ? `<button type="button" class="btn btn-outline" data-save>${t("observations.saveToAccount")}</button>`
+              : `<a class="btn btn-outline" href="#/account" data-stuff-nav>${t("observations.signInToSave")}</a>`
           }
-          <button type="button" class="btn btn-ghost" data-clear>Start new</button>
+          <button type="button" class="btn btn-ghost" data-clear>${t("observations.startNew")}</button>
         </div>
         <div class="obs-status" aria-live="polite"></div>
       `
@@ -61,7 +62,7 @@ export function openObservationsModal(ctx: AppContext): void {
       }
       ${
         ctx.user
-          ? `<a class="obs-history-link" href="#/observations">View saved observations →</a>`
+          ? `<a class="obs-history-link" href="#/observations">${t("observations.viewSavedObservations")}</a>`
           : ""
       }
     </div>
@@ -97,22 +98,24 @@ export function openObservationsModal(ctx: AppContext): void {
   modal.querySelector("[data-copy]")?.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(preview.textContent ?? "");
-      status.textContent = "Copied — paste into your notes app.";
+      status.textContent = t("observations.copiedStatus");
     } catch {
-      status.textContent = "Could not copy — long-press to select instead.";
+      status.textContent = t("observations.copyFailedStatus");
     }
   });
 
   modal.querySelector("[data-save]")?.addEventListener("click", async () => {
-    status.textContent = "Saving…";
+    status.textContent = t("observations.savingStatus");
     const result = await saveSessionToAccount(session!);
     status.textContent = result.ok
-      ? "Saved to your account."
-      : `Could not save${result.error ? `: ${result.error}` : ""}.`;
+      ? t("observations.savedStatus")
+      : result.error
+        ? t("observations.saveFailedWithError", { error: result.error })
+        : t("observations.saveFailedStatus");
   });
 
   modal.querySelector("[data-clear]")?.addEventListener("click", () => {
-    if (!confirm("Start a fresh observing session?")) return;
+    if (!confirm(t("observations.confirmStartNew"))) return;
     clearCurrentSession();
     close();
   });
@@ -128,15 +131,18 @@ export function openObservationsModal(ctx: AppContext): void {
 
 function renderSessionPreview(session: ObservationSession): string {
   const count = session.entries.length;
-  const place = session.region ?? "your location";
+  const place = session.region ?? t("observations.yourLocation");
   const start = new Date(session.startedAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+  const objectLabel =
+    count === 1
+      ? t("observations.objectSingular")
+      : t("observations.objectPlural");
   return `
     <p class="obs-summary">
-      <strong>${count}</strong> object${count === 1 ? "" : "s"} viewed since ${start}
-      from ${place}.
+      <strong>${count}</strong> ${t("observations.viewedSince", { objectLabel, start, place })}
     </p>
   `;
 }
@@ -153,20 +159,20 @@ export async function renderObservations(
 
   const title = document.createElement("h3");
   title.className = "section-title";
-  title.textContent = "Saved observations";
+  title.textContent = t("observations.historyTitle");
   container.appendChild(title);
 
   if (!ctx.user) {
     const note = document.createElement("p");
     note.className = "muted-prose";
-    note.innerHTML = `Sign in to keep a quiet record of your evenings across devices. <a href="#/account" class="wiki-link">Sign in →</a>`;
+    note.innerHTML = `${t("observations.signInPrompt")} <a href="#/account" class="wiki-link">${t("observations.signInLink")}</a>`;
     container.appendChild(note);
     return;
   }
 
   const loading = document.createElement("p");
   loading.className = "muted-prose";
-  loading.textContent = "Loading…";
+  loading.textContent = t("observations.loading");
   container.appendChild(loading);
 
   const history = await fetchObservationHistory();
@@ -175,8 +181,7 @@ export async function renderObservations(
   if (history.length === 0) {
     const empty = document.createElement("p");
     empty.className = "muted-prose";
-    empty.textContent =
-      "Nothing saved yet. Open Observations from the Stuff menu after an evening's browsing to keep a record.";
+    empty.textContent = t("observations.noHistory");
     container.appendChild(empty);
     return;
   }
@@ -211,13 +216,18 @@ function renderHistoryItem(
     hour: "2-digit",
     minute: "2-digit",
   });
+  const region = item.region ?? t("observations.locationNotRecorded");
+  const objectLabel =
+    item.entryCount === 1
+      ? t("observations.objectSingular")
+      : t("observations.objectPlural");
   card.innerHTML = `
     <header class="obs-history-head">
       <div>
         <div class="obs-history-date">${date}</div>
-        <div class="obs-history-meta">${start}–${end} · ${item.region ?? "location not recorded"} · ${item.entryCount} object${item.entryCount === 1 ? "" : "s"}</div>
+        <div class="obs-history-meta">${start}–${end} · ${region} · ${item.entryCount} ${objectLabel}</div>
       </div>
-      <button type="button" class="obs-history-del" aria-label="Delete">×</button>
+      <button type="button" class="obs-history-del" aria-label="${t("observations.delete")}">×</button>
     </header>
     <ul class="obs-history-list">
       ${item.entries
@@ -227,13 +237,13 @@ function renderHistoryItem(
             `<li><a href="#/detail/${e.id}" class="wiki-link">${e.name}</a></li>`,
         )
         .join("")}
-      ${item.entries.length > 12 ? `<li class="obs-history-more">+${item.entries.length - 12} more</li>` : ""}
+      ${item.entries.length > 12 ? `<li class="obs-history-more">${t("observations.moreCount", { count: item.entries.length - 12 })}</li>` : ""}
     </ul>
   `;
   card
     .querySelector(".obs-history-del")
     ?.addEventListener("click", async () => {
-      if (!confirm("Delete this observation?")) return;
+      if (!confirm(t("observations.confirmDelete"))) return;
       const ok = await deleteObservation(item.id);
       if (ok) onChange();
     });

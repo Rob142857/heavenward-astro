@@ -11,22 +11,22 @@ export function renderLocation(container: HTMLElement, ctx: AppContext): void {
 
   const title = document.createElement("h3");
   title.className = "section-title";
-  title.textContent = t("location");
+  title.textContent = t("nav.location");
   container.appendChild(title);
 
   // GPS button
   const gpsBtn = document.createElement("button");
   gpsBtn.className = "btn btn-primary btn-block";
-  gpsBtn.textContent = "📍 Use GPS Location";
+  gpsBtn.textContent = t("location.useGPS");
   gpsBtn.addEventListener("click", async () => {
-    gpsBtn.textContent = "Locating…";
+    gpsBtn.textContent = t("location.locating");
     gpsBtn.disabled = true;
     try {
       const loc = await requestGPS();
       ctx.location = loc;
       navigate("#/");
     } catch {
-      gpsBtn.textContent = "GPS failed — try manual entry";
+      gpsBtn.textContent = t("location.gpsFailed");
       gpsBtn.disabled = false;
     }
   });
@@ -35,7 +35,7 @@ export function renderLocation(container: HTMLElement, ctx: AppContext): void {
   // Manual entry
   const manualSection = document.createElement("h3");
   manualSection.className = "section-title";
-  manualSection.textContent = "Manual Entry";
+  manualSection.textContent = t("location.manualEntry");
   container.appendChild(manualSection);
 
   const form = document.createElement("div");
@@ -43,10 +43,10 @@ export function renderLocation(container: HTMLElement, ctx: AppContext): void {
   form.style.flexDirection = "column";
   form.style.gap = "8px";
   form.innerHTML = `
-    <input class="input" type="number" id="lat" placeholder="Latitude" value="${ctx.location.lat}" step="0.01" min="-90" max="90">
-    <input class="input" type="number" id="lon" placeholder="Longitude" value="${ctx.location.lon}" step="0.01" min="-180" max="180">
-    <input class="input" type="number" id="elev" placeholder="Elevation (m)" value="${ctx.location.elev}" step="1" min="0">
-    <button class="btn btn-outline btn-block" id="save-loc">${t("location")}</button>
+    <input class="input" type="number" id="lat" placeholder="${t("location.latitude")}" value="${ctx.location.lat}" step="0.01" min="-90" max="90">
+    <input class="input" type="number" id="lon" placeholder="${t("location.longitude")}" value="${ctx.location.lon}" step="0.01" min="-180" max="180">
+    <input class="input" type="number" id="elev" placeholder="${t("location.elevation")}" value="${ctx.location.elev}" step="1" min="0">
+    <button class="btn btn-outline btn-block" id="save-loc">${t("location.save")}</button>
   `;
   container.appendChild(form);
 

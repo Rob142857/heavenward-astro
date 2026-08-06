@@ -1,5 +1,10 @@
 import type { Equipment, SortBy } from "../types.js";
 
+// label/desc are translation KEYS, not display text — call t(opt.labelKey)
+// / t(opt.descKey) at render time so these stay correct across a locale
+// switch (these arrays are built once at module load, before the user can
+// have changed locale).
+
 export const EQUIPMENT_LIMITS: Record<Equipment, number> = {
   "naked-eye": 6.0,
   "personal-telescope": 13.0,
@@ -8,55 +13,58 @@ export const EQUIPMENT_LIMITS: Record<Equipment, number> = {
 
 export const EQUIPMENT_OPTIONS: {
   key: Equipment;
-  label: string;
+  labelKey: string;
   icon: string;
   mag: number;
-  desc: string;
+  descKey: string;
 }[] = [
   {
     key: "naked-eye",
-    label: "Naked Eye",
+    labelKey: "common.equipment.nakedEye",
     icon: "👁",
     mag: 6.0,
-    desc: "Objects visible without any optical aid — bright planets, the Moon, named stars, and a handful of the brightest deep-sky showpieces like the Pleiades and Andromeda Galaxy.",
+    descKey: "common.equipment.nakedEyeDesc",
   },
   {
     key: "personal-telescope",
-    label: "Personal Telescope",
+    labelKey: "common.equipment.personalTelescope",
     icon: "🔭",
     mag: 13.0,
-    desc: "A home telescope opens up galaxies, planetary nebula detail, resolved globular clusters, and fainter comets well beyond naked-eye range.",
+    descKey: "common.equipment.personalTelescopeDesc",
   },
   {
     key: "observatory",
-    label: "Observatory",
+    labelKey: "common.equipment.observatory",
     icon: "🛰",
     mag: 99,
-    desc: "Observatory-class gear or long-exposure imaging shows the full catalog with no practical brightness cutoff applied.",
+    descKey: "common.equipment.observatoryDesc",
   },
 ];
 
-export const CATEGORY_OPTIONS: { key: string; label: string; icon: string }[] =
-  [
-    { key: "solar-system", label: "Solar System", icon: "🪐" },
-    { key: "milky-way", label: "Milky Way", icon: "⭐" },
-    { key: "beyond", label: "Beyond", icon: "🌌" },
-  ];
+export const CATEGORY_OPTIONS: {
+  key: string;
+  labelKey: string;
+  icon: string;
+}[] = [
+  { key: "solar-system", labelKey: "common.category.solarSystem", icon: "🪐" },
+  { key: "milky-way", labelKey: "common.category.milkyWay", icon: "⭐" },
+  { key: "beyond", labelKey: "common.category.beyond", icon: "🌌" },
+];
 
-export const SORT_OPTIONS: { key: SortBy; label: string }[] = [
-  { key: "brightest", label: "Brightest" },
-  { key: "closest", label: "Closest" },
-  { key: "farthest", label: "Farthest" },
-  { key: "direction", label: "Direction" },
+export const SORT_OPTIONS: { key: SortBy; labelKey: string }[] = [
+  { key: "brightest", labelKey: "common.sort.brightest" },
+  { key: "closest", labelKey: "common.sort.closest" },
+  { key: "farthest", labelKey: "common.sort.farthest" },
+  { key: "direction", labelKey: "common.sort.direction" },
 ];
 
 export const DIRECTION_OPTIONS: {
   key: "north" | "east" | "south" | "west";
-  label: string;
-  shortLabel: string;
+  labelKey: string;
+  shortLabelKey: string;
 }[] = [
-  { key: "north", label: "North", shortLabel: "N" },
-  { key: "east", label: "East", shortLabel: "E" },
-  { key: "south", label: "South", shortLabel: "S" },
-  { key: "west", label: "West", shortLabel: "W" },
+  { key: "north", labelKey: "common.direction.north", shortLabelKey: "common.direction.n" },
+  { key: "east", labelKey: "common.direction.east", shortLabelKey: "common.direction.e" },
+  { key: "south", labelKey: "common.direction.south", shortLabelKey: "common.direction.s" },
+  { key: "west", labelKey: "common.direction.west", shortLabelKey: "common.direction.w" },
 ];
