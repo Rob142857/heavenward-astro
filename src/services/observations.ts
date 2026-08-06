@@ -197,14 +197,23 @@ function saveRegionCache(cache: RegionCache): void {
 }
 
 async function resolveRegion(loc: GeoLocation): Promise<string | null> {
-  const key = `${round1(loc.lat)},${round1(loc.lon)}`;
+  // Coarsen BEFORE the request, not just for the cache key. This is the only
+  // point in the app where a user's coordinates leave the device, and the
+  // recipient's privacy policy does not say what it does with them, so the
+  // precision is reduced to ~11 km rather than trusted away. That is ample to
+  // name a town and far too coarse to place a home, and it matches the
+  // precision observations are already stored at (latCoarse/lonCoarse above),
+  // so the cache key and the request now describe the same place.
+  const lat = round1(loc.lat);
+  const lon = round1(loc.lon);
+  const key = `${lat},${lon}`;
   const cache = loadRegionCache();
   const hit = cache[key];
   if (hit && Date.now() - hit.ts < 30 * 24 * 60 * 60 * 1000) {
     return hit.label;
   }
   try {
-    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${loc.lat}&longitude=${loc.lon}&localityLanguage=en`;
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = (await res.json()) as {
