@@ -12,6 +12,17 @@ import { translations, type Locale } from "../src/i18n/translations.ts";
 
 const SOURCE: Locale = "en";
 
+/**
+ * Keys that are legitimately empty in some locales. Listed explicitly so a
+ * blank stays a deliberate decision someone wrote down, rather than the
+ * check being loosened until it stops catching real omissions.
+ *
+ * quote.langNote: notes that Campbell's epigraphs are shown in their original
+ * English. An English reader needs no such note, so the string is empty for
+ * them and the element is not rendered at all.
+ */
+const INTENTIONALLY_BLANK = new Set(["quote.langNote"]);
+
 function main(): void {
   const sourceKeys = Object.keys(translations[SOURCE]).sort();
   const problems: string[] = [];
@@ -28,7 +39,11 @@ function main(): void {
       );
     }
 
-    const extra = [...keys].filter((k) => !translations[SOURCE][k]).sort();
+    // Presence, not truthiness: an intentionally empty English value is still
+    // a defined key, and testing the value would flag it as missing.
+    const extra = [...keys]
+      .filter((k) => !Object.hasOwn(translations[SOURCE], k))
+      .sort();
     if (extra.length) {
       problems.push(
         `  ${locale}: defines ${extra.length} key(s) absent from ${SOURCE} (dead or misspelt):\n` +
@@ -39,7 +54,10 @@ function main(): void {
     // An empty value falls through to English at runtime, which reads as an
     // untranslated string rather than an obvious error — worth catching here.
     const blank = sourceKeys.filter(
-      (k) => keys.has(k) && translations[locale][k].trim() === "",
+      (k) =>
+        keys.has(k) &&
+        !INTENTIONALLY_BLANK.has(k) &&
+        translations[locale][k].trim() === "",
     );
     if (blank.length) {
       problems.push(

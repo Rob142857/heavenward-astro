@@ -1,4 +1,9 @@
 import type { GeoLocation } from "../types.js";
+import { t } from "../i18n/translations.js";
+import {
+  EXPORT_FOOTER_QUOTE,
+  renderQuoteMarkdown,
+} from "../catalog/quotes.js";
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -283,18 +288,21 @@ export function exportSessionMarkdown(
   opts: ExportOptions,
 ): string {
   const lines: string[] = [];
-  lines.push(`# Observing notes — ${fmtDate(session.startedAt)}`);
+  lines.push(`# ${t("export.title", { date: fmtDate(session.startedAt) })}`);
   lines.push("");
-  lines.push(`Location: ${formatLocation(session, opts)}`);
+  lines.push(t("export.location", { place: formatLocation(session, opts) }));
   lines.push(
-    `From ${fmtTime(session.startedAt)} to ${fmtTime(session.endedAt)}`,
+    t("export.timeRange", {
+      from: fmtTime(session.startedAt),
+      to: fmtTime(session.endedAt),
+    }),
   );
   lines.push("");
 
   if (session.entries.length === 0) {
-    lines.push("_No objects visited this session yet._");
+    lines.push(`_${t("export.noObjects")}_`);
   } else {
-    lines.push(`## Objects (${session.entries.length})`);
+    lines.push(`## ${t("export.objects", { count: session.entries.length })}`);
     lines.push("");
     // Chronological order so the notes read like a diary.
     const ordered = [...session.entries].sort((a, b) =>
@@ -302,7 +310,8 @@ export function exportSessionMarkdown(
     );
     for (const e of ordered) {
       const url = `${SHARE_BASE}${e.id}`;
-      const repeat = e.views > 1 ? ` (viewed ×${e.views})` : "";
+      const repeat =
+        e.views > 1 ? ` ${t("export.viewedTimes", { count: e.views })}` : "";
       lines.push(
         `- **${fmtTime(e.firstViewedAt)}** — [${e.name}](${url})${repeat}`,
       );
@@ -312,13 +321,18 @@ export function exportSessionMarkdown(
 
   if (opts.notes && opts.notes.trim()) {
     lines.push("");
-    lines.push("## Notes");
+    lines.push(`## ${t("export.notes")}`);
     lines.push("");
     lines.push(opts.notes.trim());
   }
 
   lines.push("");
-  lines.push("_Recorded with Heavenward — sky.incitat.io_");
+  lines.push(`_${t("export.recordedWith")}_`);
+  // Costs no screen space and lands where someone is looking back over their
+  // own evening. Fixed, never rotating: a diary comparing two nights should
+  // not show textual churn.
+  lines.push("");
+  lines.push(renderQuoteMarkdown(EXPORT_FOOTER_QUOTE));
   return lines.join("\n");
 }
 

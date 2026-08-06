@@ -5,6 +5,11 @@ import {
 } from "../catalog/provenance.js";
 import { renderHeader, renderNav, SEBA_SVG } from "./layout.js";
 import { t } from "../i18n/translations.js";
+import {
+  ABOUT_CLOSING_QUOTE,
+  ABOUT_SOURCES_QUOTE,
+  renderQuoteFigure,
+} from "../catalog/quotes.js";
 
 export function renderAbout(
   container: HTMLElement,
@@ -98,6 +103,7 @@ export function renderAbout(
     </div>
 
     <div class="about-section about-closing">
+      ${renderQuoteFigure(ABOUT_CLOSING_QUOTE, t("quote.langNote"))}
       <p class="about-prose about-personal">
         ${t("about.closing.message")}
       </p>
@@ -123,6 +129,7 @@ function renderDataAcknowledgements(): string {
   return `
     <div class="about-section" id="about-sources">
       <h3 class="about-heading">${t("about.sources.heading")}</h3>
+      ${renderQuoteFigure(ABOUT_SOURCES_QUOTE, t("quote.langNote"))}
       <p class="about-prose">
         ${t("about.sources.intro")}
       </p>
