@@ -23,6 +23,10 @@ interface ModelProfile {
   id: string;
   label: string;
   sizeMB: number;
+  /** WebLLM's own vram_required_MB for this build. Checked against what the
+   *  adapter actually reports so we never offer a device a model it has no
+   *  chance of holding — see fitsDeviceBudget(). */
+  vramMB: number;
   minDeviceMemoryGB: number;
   /** WebGPU adapter features this model's compiled library needs (e.g. "shader-f16"). */
   requiredFeatures?: string[];
@@ -56,7 +60,12 @@ const MOBILE_MODEL: ModelProfile = {
   id: "gemma3-1b-it-q4f16_1-MLC",
   label: "Gemma 3 1B",
   sizeMB: 711,
+  vramMB: 711,
   minDeviceMemoryGB: 2,
+  // Deliberately no requiredFeatures: despite being a q4f16 build, WebLLM's
+  // own config declares no required_features for this model (unlike Gemma 2,
+  // which does demand shader-f16). Adding a guess here would hide the best
+  // model from phones that can actually run it.
   // WebLLM's own default config for this model sets context_window_size
   // while Gemma 3's native (sliding-window-attention) chat config also
   // carries a positive sliding_window_size — WebLLM refuses to start with
@@ -67,26 +76,24 @@ const MOBILE_MODEL: ModelProfile = {
   stream: true,
 };
 
-// Graceful degradation for phones whose GPU can't hold the preferred model
-// steady. These are q4f32 builds on purpose: they don't need the shader-f16
-// feature and are numerically better behaved on Adreno/Mali parts, where f16
-// kernels are the usual suspect in "device lost"/buffer-mapping failures.
-// Without this chain a single WebGPU hiccup left mobile users with a dead end
-// and no commentary at all.
+// Graceful degradation for phones that can't hold the preferred model steady.
+// Two hard-won rules are encoded here:
+//   1. Every entry must FIT — a Galaxy S25 Ultra reports a 1024 MB buffer, and
+//      an earlier version of this chain offered it 1889 MB and 1060 MB models
+//      as "fallbacks". They were larger than the model that had just failed
+//      and could never have run; the phone burned a ~1.9 GB download to find
+//      that out. fitsDeviceBudget() now filters against what the adapter
+//      actually reports.
+//   2. These are q4f32 builds on purpose: they don't need the shader-f16
+//      feature and are numerically better behaved on the Adreno/Mali parts
+//      where f16 kernels are the usual suspect in device-lost failures. That
+//      makes them a genuinely different thing to try, not just a smaller one.
 const MOBILE_FALLBACK_MODELS: ModelProfile[] = [
   {
-    id: "Qwen2.5-1.5B-Instruct-q4f32_1-MLC",
-    label: "Qwen2.5 1.5B",
-    sizeMB: 1900,
-    minDeviceMemoryGB: 4,
-    chatOpts: { context_window_size: 1024 },
-    maxTokens: 320,
-    stream: false,
-  },
-  {
-    id: "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
-    label: "Qwen2.5 0.5B",
-    sizeMB: 1100,
+    id: "TinyLlama-1.1B-Chat-v1.0-q4f32_1-MLC",
+    label: "TinyLlama 1.1B",
+    sizeMB: 840,
+    vramMB: 840,
     minDeviceMemoryGB: 3,
     chatOpts: { context_window_size: 1024 },
     maxTokens: 280,
@@ -96,6 +103,7 @@ const MOBILE_FALLBACK_MODELS: ModelProfile[] = [
     id: "SmolLM2-360M-Instruct-q4f32_1-MLC",
     label: "SmolLM2 360M",
     sizeMB: 580,
+    vramMB: 580,
     minDeviceMemoryGB: 2,
     chatOpts: { context_window_size: 1024 },
     maxTokens: 240,
@@ -111,6 +119,7 @@ const DESKTOP_MODEL: ModelProfile = {
   id: "gemma-2-9b-it-q4f16_1-MLC",
   label: "Gemma 2 9B",
   sizeMB: 6400,
+  vramMB: 6422,
   minDeviceMemoryGB: 6,
   requiredFeatures: ["shader-f16"],
   chatOpts: { context_window_size: 4096 },
@@ -119,6 +128,8 @@ const DESKTOP_MODEL: ModelProfile = {
 };
 
 let shaderF16Supported = false;
+/** What the adapter reported, in MB. Null until checkGPUCapability() runs. */
+let gpuBufferBudgetMB: number | null = null;
 
 let engine: LLMEngine | null = null;
 let llmWorker: Worker | null = null;
@@ -146,16 +157,53 @@ function getDeviceMemoryGB(): number | null {
 }
 
 /**
- * Ordered load attempts for this device, largest first. loadLLM() and
+ * Can this device plausibly hold the model? Compares against the adapter's
+ * reported maxStorageBufferBindingSize. That limit is per-binding rather than
+ * a total-VRAM cap, so it's a heuristic — but on the constrained mobile parts
+ * that actually fail, the two track each other closely enough, and a model
+ * needing ~2x the reported budget is never worth a multi-hundred-MB download
+ * to discover. Desktop keeps a laxer multiplier because a discrete GPU with a
+ * 2 GB binding limit genuinely does run much larger models by splitting them.
+ */
+function fitsDeviceBudget(model: ModelProfile): boolean {
+  if (gpuBufferBudgetMB === null) return true; // not probed yet — don't pre-filter
+  const multiplier = isMobile() ? 1 : 4;
+  return model.vramMB <= gpuBufferBudgetMB * multiplier;
+}
+
+/** Does the adapter expose every feature this model's compiled library needs? */
+function hasRequiredFeatures(model: ModelProfile): boolean {
+  if (!model.requiredFeatures?.length) return true;
+  return model.requiredFeatures.every((f) =>
+    f === "shader-f16" ? shaderF16Supported : true,
+  );
+}
+
+/**
+ * Ordered load attempts for this device, best-quality first. loadLLM() and
  * fallBackToSmallerModel() walk this array in order, so a device that can't
- * hold one model steady degrades to a smaller one instead of dead-ending.
- * Desktop only gets the big model when the adapter actually reports the
- * shader-f16 feature it needs; otherwise it starts from the mobile model.
+ * hold one model steady degrades to the next instead of dead-ending.
+ * Anything the device can't run — wrong features, or too big for its reported
+ * buffer budget — is dropped BEFORE it costs the user a wasted download.
  */
 function getModelCandidates(): ModelProfile[] {
-  const smaller = [MOBILE_MODEL, ...MOBILE_FALLBACK_MODELS];
-  if (isMobile()) return smaller;
-  return shaderF16Supported ? [DESKTOP_MODEL, ...smaller] : smaller;
+  const all = isMobile()
+    ? [MOBILE_MODEL, ...MOBILE_FALLBACK_MODELS]
+    : [DESKTOP_MODEL, MOBILE_MODEL, ...MOBILE_FALLBACK_MODELS];
+
+  const viable = all.filter(
+    (m) => hasRequiredFeatures(m) && fitsDeviceBudget(m),
+  );
+
+  // Never return nothing: if the probe rules everything out, keep the
+  // smallest candidate so the user gets a real attempt and a real error
+  // rather than a silently missing feature.
+  if (viable.length === 0) {
+    return [
+      all.reduce((min, m) => (m.vramMB < min.vramMB ? m : min), all[0]),
+    ];
+  }
+  return viable;
 }
 
 function getInitialModel(): ModelProfile {
@@ -205,32 +253,38 @@ export async function checkGPUCapability(): Promise<{ ok: boolean; reason?: stri
       return capabilityResult;
     }
 
-    // Must run before getModelCandidates()/getFallbackModel() below — they
-    // read this flag to decide whether DESKTOP_MODEL is even in the running.
+    // These two probes must land before any getModelCandidates() call below —
+    // the candidate list is filtered on both, so reading them late would let
+    // a model the device can't run reach the top of the chain.
     shaderF16Supported = adapter.features?.has("shader-f16") ?? false;
-
-    const fallbackModel = getFallbackModel();
-    const deviceMemGB = getDeviceMemoryGB();
-    if (deviceMemGB !== null && deviceMemGB < fallbackModel.minDeviceMemoryGB) {
-      capabilityResult = {
-        ok: false,
-        reason: `This device reports ${deviceMemGB} GB RAM. ${fallbackModel.label} needs at least ${fallbackModel.minDeviceMemoryGB} GB.`,
-      };
-      return capabilityResult;
-    }
-
     const maxBuffer = adapter.limits?.maxStorageBufferBindingSize ?? 0;
+    gpuBufferBudgetMB = maxBuffer > 0 ? maxBuffer / (1024 * 1024) : null;
+
+    const deviceMemGB = getDeviceMemoryGB();
     lastDiagnostics = {
       ...lastDiagnostics,
       deviceMemoryGB: deviceMemGB,
       maxStorageBufferBindingSize: maxBuffer || null,
       gpuVendor: getAdapterLabel(adapter),
     };
+
     const minRequired = isMobile() ? 128 * 1024 * 1024 : 256 * 1024 * 1024;
     if (maxBuffer > 0 && maxBuffer < minRequired) {
       capabilityResult = {
         ok: false,
         reason: "This device's GPU does not support large enough buffers for local AI commentary.",
+      };
+      return capabilityResult;
+    }
+
+    // Gate on the most forgiving candidate that survived filtering, not the
+    // most demanding — the chain falls back to it anyway, so judging by the
+    // big model would hide the feature from devices that could run a small one.
+    const fallbackModel = getFallbackModel();
+    if (deviceMemGB !== null && deviceMemGB < fallbackModel.minDeviceMemoryGB) {
+      capabilityResult = {
+        ok: false,
+        reason: `This device reports ${deviceMemGB} GB RAM. ${fallbackModel.label} needs at least ${fallbackModel.minDeviceMemoryGB} GB.`,
       };
       return capabilityResult;
     }
