@@ -20,6 +20,8 @@
  */
 
 import type { Conversation, Engine } from "@litert-lm/core";
+import { downloadModel, getPartialBytes } from "./model-download.js";
+import type { DownloadProgress } from "./model-download.js";
 
 /** Web-optimised Gemma 4 builds published by litert-community. Only these two
  *  are supported by the JS runtime today — general .litertlm support is still
@@ -54,6 +56,12 @@ export function isLiteRTLoaded(): boolean {
   return engine !== null;
 }
 
+/** Bytes of this model already on disk from an interrupted attempt, so the
+ *  UI can offer "Resume" instead of implying a fresh 2 GB download. */
+export function getGemma4PartialBytes(): Promise<number> {
+  return getPartialBytes(GEMMA4_E2B.url);
+}
+
 /** WebGPU is required. The runtime advertises a CPU WASM fallback, but a 2 GB
  *  model on CPU is not a usable experience, so we don't offer it. */
 export function isLiteRTSupported(): boolean {
@@ -67,6 +75,7 @@ export function isLiteRTSupported(): boolean {
 export async function loadLiteRT(
   profile: LiteRTModelProfile,
   onProgress?: (text: string, pct: number) => void,
+  signal?: AbortSignal,
 ): Promise<boolean> {
   if (engine && activeProfile?.id === profile.id) return true;
   if (loading) return false;
@@ -74,23 +83,56 @@ export async function loadLiteRT(
 
   loading = true;
   try {
-    onProgress?.(`Loading ${profile.label}…`, 0);
+    // Fetch the weights ourselves rather than handing Engine.create a URL.
+    // The runtime reports no progress at all, so a URL means two gigabytes
+    // downloaded in silence behind a frozen bar — and nothing kept if the
+    // user leaves partway through.
+    const blob = await downloadModel(
+      profile.url,
+      (p) => {
+        const pct = p.fraction ?? 0;
+        onProgress?.(describeDownload(profile.label, p), pct);
+      },
+      signal,
+      profile.sizeMB * 1024 * 1024,
+    );
+
+    onProgress?.(`${profile.label}: preparing…`, 1);
     // Dynamic import keeps the runtime out of the main bundle for the large
     // majority of sessions that never open the AI guide.
     const { Engine } = await import("@litert-lm/core");
     engine = await Engine.create({
-      model: profile.url,
+      model: blob,
       mainExecutorSettings: { maxNumTokens: profile.maxNumTokens },
     });
     activeProfile = profile;
     loading = false;
     return true;
   } catch (err: unknown) {
+    // An abort is the user choosing to stop, not a fault — the partial
+    // download stays on disk and resumes next time.
+    if (err instanceof DOMException && err.name === "AbortError") {
+      loading = false;
+      return false;
+    }
     console.warn("[LiteRT] load failed, falling back", err);
     await unloadLiteRT();
     loading = false;
     return false;
   }
+}
+
+function formatMB(bytes: number): string {
+  return (bytes / (1024 * 1024)).toFixed(0);
+}
+
+function describeDownload(label: string, p: DownloadProgress): string {
+  if (!p.totalBytes) {
+    return `${label}: ${formatMB(p.receivedBytes)} MB downloaded…`;
+  }
+  const pct = Math.round((p.fraction ?? 0) * 100);
+  const resumedNote = p.resumed ? " (resumed)" : "";
+  return `${label}: ${formatMB(p.receivedBytes)} / ${formatMB(p.totalBytes)} MB — ${pct}%${resumedNote}`;
 }
 
 export async function unloadLiteRT(): Promise<void> {

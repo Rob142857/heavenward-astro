@@ -503,6 +503,7 @@ export function isGemma4Available(): boolean {
 
 export async function loadLLM(
   onProgress?: (text: string, pct: number) => void,
+  signal?: AbortSignal,
 ): Promise<boolean> {
   if (isLiteRTLoaded()) return true;
   if (engine && activeModel) return true;
@@ -517,8 +518,11 @@ export async function loadLLM(
   // that chain is kept while LiteRT is still an early preview.
   if (getAIQuality() === "best" && isLiteRTSupported()) {
     loadError = null;
-    const ok = await loadLiteRT(GEMMA4_E2B, onProgress);
+    const ok = await loadLiteRT(GEMMA4_E2B, onProgress, signal);
     if (ok) return true;
+    // An abort means the user asked for the smaller model mid-download; their
+    // partial Gemma 4 download is kept, so falling through to the small model
+    // costs them nothing later.
     onProgress?.(t("llm.didNotFitTryingSmaller", { label: GEMMA4_E2B.label }), 0);
   }
 

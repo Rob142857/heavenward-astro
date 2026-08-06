@@ -32,6 +32,7 @@ import {
   getModelLabel,
   getLLMDiagnostics,
   checkGPUCapability,
+  setAIQuality,
 } from "../services/llm.js";
 import type { SkyConversation } from "../services/llm.js";
 import { navigate } from "./router.js";
@@ -1256,6 +1257,7 @@ function appendLLMSection(
     <div class="llm-progress" style="display:none">
       <div class="llm-progress-bar"><div class="llm-progress-fill"></div></div>
       <p class="llm-progress-text detail-prose"></p>
+      <button type="button" class="llm-use-smaller" style="display:none">${t("detail.useSmallerModel")}</button>
     </div>
     <p class="llm-narrative detail-prose" style="display:none"></p>
     <div class="llm-conversation" style="display:none"></div>
@@ -1283,6 +1285,9 @@ function appendLLMSection(
   const followupInput = section.querySelector(
     ".llm-followup-input",
   ) as HTMLInputElement;
+  const useSmaller = section.querySelector(
+    ".llm-use-smaller",
+  ) as HTMLButtonElement;
   const followupSend = section.querySelector(
     ".llm-followup-send",
   ) as HTMLButtonElement;
@@ -1407,13 +1412,34 @@ function appendLLMSection(
       } else {
         // Need to load model first
         progress.style.display = "block";
+
+        // A separate controller from `abort`: this one only gives up on the
+        // large model. Navigating away must still cancel everything, but
+        // choosing the smaller model should fall through to it rather than
+        // abandoning the whole request.
+        const downloadAbort = new AbortController();
+        useSmaller.style.display = "";
+        useSmaller.disabled = false;
+        useSmaller.addEventListener(
+          "click",
+          () => {
+            useSmaller.disabled = true;
+            // Downgrades the preference too, so the choice sticks rather than
+            // asking again on the next object.
+            setAIQuality("standard");
+            downloadAbort.abort();
+          },
+          { once: true },
+        );
+
         loadLLM((text, pct) => {
           if (abort.signal.aborted) return;
           progressText.textContent = text;
           fill.style.width = `${(pct * 100).toFixed(0)}%`;
-        }).then((ok) => {
+        }, downloadAbort.signal).then((ok) => {
           if (abort.signal.aborted) return;
           progress.style.display = "none";
+          useSmaller.style.display = "none";
           if (!ok) {
             narrative.style.display = "block";
             narrative.textContent = `${getLLMError() ?? t("detail.couldNotLoadAIModel")}${formatLLMDiagnostics()}`;

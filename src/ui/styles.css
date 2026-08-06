@@ -2821,3 +2821,20 @@ body {
   background: rgba(212, 175, 55, 0.12);
   font-weight: 600;
 }
+
+/* Escape hatch during a long model download — a 2 GB fetch on a slow
+   connection should never feel like a trap. */
+.llm-use-smaller {
+  margin-top: 10px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.llm-use-smaller:hover { border-color: var(--gold); color: var(--text); }
+.llm-use-smaller:disabled { opacity: 0.5; cursor: default; }
