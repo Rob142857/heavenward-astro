@@ -75,6 +75,29 @@
         #boot-splash svg { animation: none; }
         #boot-splash .boot-label { animation: none; opacity: 0.9; }
       }
+      #boot-recovery {
+        text-align: center;
+        max-width: 30ch;
+        animation: none;
+      }
+      #boot-recovery p {
+        margin: 0 0 14px;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: #9aa4b8;
+      }
+      #boot-recovery button {
+        min-height: 44px;
+        padding: 10px 22px;
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        border-radius: 10px;
+        background: rgba(212, 175, 55, 0.1);
+        color: #d4af37;
+        font-size: 0.9rem;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      #boot-recovery button:disabled { opacity: 0.6; cursor: default; }
     </style>
   </head>
   <body>
@@ -97,8 +120,61 @@
         </g>
       </svg>
       <div class="boot-label">Heavenward</div>
+      <div id="boot-recovery" hidden>
+        <p>The sky is taking longer than it should.</p>
+        <button type="button" id="boot-recovery-btn">Reset and try again</button>
+      </div>
     </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
+    <script>
+      /*
+       * Boot watchdog. Deliberately a classic (non-module) inline script: if
+       * the module bundle 404s — which is exactly what a half-updated service
+       * worker causes after a deploy — then no application code runs at all,
+       * and anything living in main.ts could never recover from it. Without
+       * this the splash spins forever and the app looks dead, with no route
+       * back short of knowing to clear site data or open a private window.
+       */
+      (function () {
+        var GRACE_MS = 12000;
+        window.setTimeout(function () {
+          var app = document.getElementById("app");
+          if (app && app.children.length > 0) return; // booted fine
+          var recovery = document.getElementById("boot-recovery");
+          if (recovery) recovery.hidden = false;
+        }, GRACE_MS);
+
+        var btn = document.getElementById("boot-recovery-btn");
+        if (!btn) return;
+        btn.addEventListener("click", function () {
+          btn.disabled = true;
+          btn.textContent = "Resetting…";
+          // Tear down the two things that can pin a browser to a broken
+          // build: the service worker and its caches. User data lives in
+          // localStorage and is deliberately left untouched.
+          var jobs = [];
+          if (window.caches && caches.keys) {
+            jobs.push(
+              caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+              })
+            );
+          }
+          if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+            jobs.push(
+              navigator.serviceWorker.getRegistrations().then(function (regs) {
+                return Promise.all(regs.map(function (r) { return r.unregister(); }));
+              })
+            );
+          }
+          Promise.all(jobs)["catch"](function () {})["then"](function () {
+            // Cache-busting param so the reload cannot be answered from the
+            // HTTP cache with the same broken document.
+            location.replace(location.pathname + "?reset=" + Date.now());
+          });
+        });
+      })();
+    </script>
   </body>
 </html>
