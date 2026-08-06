@@ -399,8 +399,15 @@ body {
 
 /* ── Location pill ───────────────────────────────────── */
 .location-pill {
+  /* Now the only route to the Location screen, so it needs a real tap
+     target — it was ~26px tall, well under the 44px minimum. */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-family: inherit;
   font-size: 0.72rem;
   color: var(--text-dim);
+  background: transparent;
   cursor: pointer;
   padding: 5px 12px;
   border-radius: 20px;

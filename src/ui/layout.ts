@@ -77,9 +77,14 @@ const NAV_ITEMS = [
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>`,
   },
   {
-    hash: "#/location",
-    labelKey: "nav.location",
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/></svg>`,
+    // Replaces Location, which was a rarely-used transactional screen holding
+    // a top-level slot while the app's entire documentation had no route at
+    // all except a gear menu most people never open. Location is still one
+    // tap away via the header pill, which shows the current coordinates and
+    // is therefore where someone looks for it anyway.
+    hash: "#/about",
+    labelKey: "about.title",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`,
   },
   {
     hash: "#/account",
@@ -97,9 +102,14 @@ export function renderHeader(container: HTMLElement, ctx: AppContext): void {
   logoContainer.className = "logo-container";
   logoContainer.innerHTML = `${SEBA_SVG}<span class="logo-text">${t("layout.appName")}</span>`;
 
-  const loc = document.createElement("span");
+  // A real <button>, not a clickable <span>: this is now the only route to
+  // the Location screen, so it has to be reachable by keyboard and announced
+  // as a control rather than as decorative text.
+  const loc = document.createElement("button");
+  loc.type = "button";
   loc.className = "location-pill";
   loc.textContent = formatLocation(ctx.location);
+  loc.setAttribute("aria-label", t("layout.changeLocation"));
   loc.addEventListener("click", () => navigate("#/location"));
 
   const actions = document.createElement("div");

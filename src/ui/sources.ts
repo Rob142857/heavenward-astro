@@ -173,15 +173,16 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
 
   const hint = document.createElement("p");
   hint.className = "hint";
-  hint.textContent = t("settings.appVersion", { version: "1.0.1" });
+  hint.textContent = t("settings.appVersion", { version: __APP_VERSION__ });
   container.appendChild(hint);
 
-  container.appendChild(
-    createLink(t("settings.privacy"), "https://sky.incitat.io/about/terms"),
-  );
-  container.appendChild(
-    createLink(t("settings.terms"), "https://sky.incitat.io/about/privacy"),
-  );
+  // Privacy pointed at /about/terms and Terms at /about/privacy — crossed,
+  // and both were absolute URLs to routes that do not exist, so either one
+  // left the app entirely and landed the user back on Tonight. Privacy now
+  // links in-app to About, which actually contains the privacy section.
+  // Terms is dropped rather than linked to nothing: there is no terms
+  // document to link to, and a link that goes nowhere is worse than no link.
+  container.appendChild(createLink(t("settings.privacy"), "#/about"));
   container.appendChild(
     createLink("GitHub", "https://github.com/Rob142857/heavenward"),
   );
@@ -191,8 +192,12 @@ function createLink(text: string, href: string): HTMLElement {
   const a = document.createElement("a");
   a.className = "settings-link";
   a.href = href;
-  a.target = "_blank";
-  a.rel = "noopener noreferrer";
+  // In-app hash routes must stay in this tab; only genuinely external
+  // destinations get a new one.
+  if (!href.startsWith("#")) {
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+  }
   a.textContent = text;
   return a;
 }
