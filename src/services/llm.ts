@@ -442,13 +442,55 @@ async function loadModel(
 
 const AI_QUALITY_KEY = "heavenward-ai-quality";
 
-/** "best" opts into Gemma 4 via LiteRT (~2 GB). Deliberately not the default:
- *  that is a large download to start without being asked, especially on
- *  cellular data. Standard is Gemma 3 1B at 711 MB. */
+/** "best" is Gemma 4 via LiteRT (~2 GB); "standard" is Gemma 3 1B (711 MB). */
 export type AIQuality = "standard" | "best";
 
+interface NetworkInformation {
+  type?: string;
+  saveData?: boolean;
+}
+
+/**
+ * Would a 2 GB download plausibly cost this user money? Deliberately
+ * pessimistic: guessing "wifi" wrongly spends someone's data allowance, while
+ * guessing "cellular" wrongly only means a smaller model they can override in
+ * Settings. Those costs are not symmetric, so anything we can't confirm is
+ * treated as metered. iOS exposes no Network Information API at all, so it
+ * lands here and defaults to Standard.
+ */
+function isMeteredConnection(): boolean {
+  const conn = (navigator as unknown as { connection?: NetworkInformation })
+    .connection;
+  if (!conn) return true;
+  if (conn.saveData) return true;
+  if (typeof conn.type === "string") return conn.type === "cellular";
+  return true;
+}
+
+/** The quality to use when the user hasn't chosen one. */
+function defaultAIQuality(): AIQuality {
+  if (!isLiteRTSupported()) return "standard";
+  if (!isMobile()) return "best"; // desktop: bandwidth is rarely metered
+  return isMeteredConnection() ? "standard" : "best";
+}
+
+/**
+ * An explicit choice always wins and is the only thing persisted. The
+ * connection-derived default is recomputed every call rather than written to
+ * storage, so a phone that was on cellular once isn't pinned to Standard
+ * forever — the same mistake that pinned a device's language.
+ */
 export function getAIQuality(): AIQuality {
-  return localStorage.getItem(AI_QUALITY_KEY) === "best" ? "best" : "standard";
+  const stored = localStorage.getItem(AI_QUALITY_KEY);
+  if (stored === "best" || stored === "standard") return stored;
+  return defaultAIQuality();
+}
+
+/** True when the current quality came from the connection heuristic rather
+ *  than from the user, so the UI can say so instead of implying they chose. */
+export function isAIQualityAutomatic(): boolean {
+  const stored = localStorage.getItem(AI_QUALITY_KEY);
+  return stored !== "best" && stored !== "standard";
 }
 
 export function setAIQuality(quality: AIQuality): void {

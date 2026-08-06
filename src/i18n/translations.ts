@@ -377,6 +377,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 
 		"settings.aiQuality.heading": "AI sky guide",
 		"settings.aiQuality.note": "Standard runs Gemma 3 1B (711 MB) and works on most devices. Best runs Google's Gemma 4 (about 2 GB) for richer commentary — worth it on Wi-Fi and a capable device. If Best cannot run, the app quietly falls back to Standard.",
+		"settings.aiQuality.autoNote": "Chosen automatically for this device and connection — tap either option to decide for yourself.",
 		"settings.aiQuality.standard": "Standard · 711 MB",
 		"settings.aiQuality.best": "Best · 2 GB",
 		"settings.language.heading": "Language",
@@ -754,6 +755,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 
 		"settings.aiQuality.heading": "Guide du ciel par IA",
 		"settings.aiQuality.note": "Standard utilise Gemma 3 1B (711 Mo) et fonctionne sur la plupart des appareils. Meilleur utilise Gemma 4 de Google (environ 2 Go) pour un commentaire plus riche — intéressant en Wi-Fi sur un appareil performant. Si Meilleur ne peut pas fonctionner, l'application revient discrètement à Standard.",
+		"settings.aiQuality.autoNote": "Choisi automatiquement selon cet appareil et cette connexion — touchez l'une des options pour décider vous-même.",
 		"settings.aiQuality.standard": "Standard · 711 Mo",
 		"settings.aiQuality.best": "Meilleur · 2 Go",
 		"settings.language.heading": "Langue",
@@ -1131,6 +1133,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 
 		"settings.aiQuality.heading": "AI空ガイド",
 		"settings.aiQuality.note": "「標準」はGemma 3 1B（711 MB）を使用し、ほとんどの端末で動作します。「最高品質」はGoogleのGemma 4（約2 GB）を使用し、より豊かな解説が得られます — Wi-Fi接続と高性能な端末での利用がおすすめです。動作できない場合は自動的に「標準」に戻ります。",
+		"settings.aiQuality.autoNote": "この端末と通信環境に合わせて自動的に選ばれています — どちらかをタップすればご自身で選択できます。",
 		"settings.aiQuality.standard": "標準 · 711 MB",
 		"settings.aiQuality.best": "最高品質 · 2 GB",
 		"settings.language.heading": "言語",
@@ -1508,6 +1511,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 
 		"settings.aiQuality.heading": "AI观星向导",
 		"settings.aiQuality.note": "“标准”使用 Gemma 3 1B（711 MB），适用于大多数设备。“最佳”使用谷歌 Gemma 4（约 2 GB），解说更丰富——建议在 Wi-Fi 和高性能设备上使用。若无法运行，应用会自动回退到“标准”。",
+		"settings.aiQuality.autoNote": "已根据你的设备和网络自动选择——点击任一选项即可自行决定。",
 		"settings.aiQuality.standard": "标准 · 711 MB",
 		"settings.aiQuality.best": "最佳 · 2 GB",
 		"settings.language.heading": "语言",

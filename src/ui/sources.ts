@@ -11,6 +11,7 @@ import { t, LOCALES, type Locale } from "../i18n/translations.js";
 import { setUILocale, getLocale } from "../i18n/i18n.js";
 import {
   getAIQuality,
+  isAIQualityAutomatic,
   isGemma4Available,
   setAIQuality,
   type AIQuality,
@@ -71,7 +72,11 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
 
     const aiNote = document.createElement("p");
     aiNote.className = "source-note";
-    aiNote.textContent = t("settings.aiQuality.note");
+    // Say plainly when the highlighted pill reflects our guess rather than
+    // their decision — otherwise the UI implies a choice they never made.
+    aiNote.textContent = isAIQualityAutomatic()
+      ? `${t("settings.aiQuality.note")} ${t("settings.aiQuality.autoNote")}`
+      : t("settings.aiQuality.note");
     container.appendChild(aiNote);
 
     const aiPills = document.createElement("div");
