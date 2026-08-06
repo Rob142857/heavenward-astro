@@ -188,18 +188,25 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
           now,
         );
       }
-    }
 
-    if (below.length) {
-      const belowSection = document.createElement("h3");
-      belowSection.className = "section-title";
-      belowSection.textContent = t("tonight.belowHorizon", { count: below.length });
-      container.appendChild(belowSection);
+      // Below-horizon objects belong to the same "what's up tonight" answer,
+      // so they stay inside this branch. Rendering them under the daylight
+      // banner made the page contradict itself — telling the user nothing is
+      // visible, then listing objects immediately underneath.
+      if (below.length) {
+        const belowSection = document.createElement("h3");
+        belowSection.className = "section-title";
+        belowSection.textContent = t("tonight.belowHorizon", {
+          count: below.length,
+        });
+        container.appendChild(belowSection);
 
-      const belowLimit =
-        limit > 0 ? Math.max(0, limit - visible.length) : below.length;
-      const belowSlice = belowLimit > 0 ? below.slice(0, belowLimit) : [];
-      if (belowSlice.length > 0) {
+        // Each section gets its own budget. Sharing one — `limit -
+        // visible.length` — silently clamped to zero whenever the visible
+        // list filled the limit, which is the normal case at night, so the
+        // heading rendered over no cards at all with only a "Show more"
+        // button beneath it.
+        const belowSlice = limit > 0 ? below.slice(0, limit) : below;
         renderEventCards(
           container,
           belowSlice,
@@ -207,18 +214,17 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
           ctx.location,
           now,
         );
-      }
 
-      const belowRemaining = below.length - belowSlice.length;
-      if (belowRemaining > 0) {
-        renderShowMore(
-          container,
-          below,
-          belowSlice.length,
-          visibleRendered,
-          ctx.location,
-          now,
-        );
+        if (below.length > belowSlice.length) {
+          renderShowMore(
+            container,
+            below,
+            belowSlice.length,
+            visibleRendered,
+            ctx.location,
+            now,
+          );
+        }
       }
     }
   });

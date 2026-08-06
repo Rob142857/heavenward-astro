@@ -906,6 +906,12 @@ body {
   flex-direction: column;
   gap: 6px;
   margin-bottom: 12px;
+  /* Positioning context for .filters-panel. Anchoring the panel to the
+     Filters button instead put it half off-screen on a phone: the button
+     sits partway across the row, so a 320px panel overflowed right when
+     left-anchored and left when right-anchored. Spanning the controls bar
+     always fits and reads as deliberate. */
+  position: relative;
 }
 .ctrl-pill-row {
   display: flex;
@@ -1054,7 +1060,8 @@ body {
   flex-wrap: wrap;
 }
 .filters-menu {
-  position: relative;
+  /* Intentionally NOT position:relative — the panel anchors to
+     .tonight-controls so it can span the full row. */
   flex: 0 0 auto;
 }
 .filters-toggle {
@@ -1108,8 +1115,10 @@ body {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
+  right: 0;
   z-index: 220;
-  width: min(320px, calc(100vw - 32px));
+  width: auto;
+  max-width: 420px;
   padding: 12px;
   flex-direction: column;
   gap: 10px;
