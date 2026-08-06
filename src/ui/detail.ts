@@ -964,6 +964,68 @@ function appendSkyContext(
   });
 }
 
+/**
+ * Renders the sourced mythology and historical-astronomy entries for this
+ * constellation. Until now this data existed only to seed the AI prompt, so
+ * the cited Campbell and primary-source material was invisible to anyone who
+ * didn't have WebGPU and several hundred megabytes to spare — which is most
+ * visitors.
+ *
+ * Deliberately prose, not the centred italic epigraph style: these summaries
+ * run 37–82 words, and at 32ch centred italic that is roughly sixteen ragged
+ * lines. A quotation and a paragraph want different typography.
+ */
+function appendLoreSection(wrapper: HTMLElement, skyCtx: SkyContext): void {
+  const myth = skyCtx.target.mythology;
+  const history = skyCtx.target.history;
+
+  // Coverage is honestly partial. Saying nothing is correct when nothing is
+  // sourced — an empty section would imply the sky has no story here.
+  if (!myth && history.length === 0) return;
+
+  const section = document.createElement("div");
+  section.className = "detail-section lore-section";
+
+  const parts: string[] = [
+    `<h3 class="detail-section-title">${t("detail.section.lore")}</h3>`,
+  ];
+
+  if (myth) {
+    // "thin" entries are ones where Campbell discusses the figure but not the
+    // constellation — the Aries summary literally opens "Campbell doesn't
+    // discuss how the ram itself became a constellation". Presented plainly
+    // that reads as a disclaimer dressed up as a revelation, so it gets a
+    // quieter framing rather than being dropped or oversold.
+    const framingKey =
+      myth.connectionStrength === "thin"
+        ? "detail.lore.mythThin"
+        : "detail.lore.myth";
+    parts.push(`
+      <p class="detail-prose lore-body">${myth.summary}</p>
+      <p class="lore-citation">${t(framingKey, {
+        figure: myth.figure,
+        source: myth.source,
+        detail: myth.sourceDetail,
+      })}</p>
+    `);
+  }
+
+  for (const entry of history) {
+    parts.push(`
+      <h4 class="lore-subheading">${entry.topic}</h4>
+      <p class="detail-prose lore-body">${entry.summary}</p>
+      <p class="lore-citation">${t("detail.lore.history", {
+        source: entry.source,
+        detail: entry.sourceDetail,
+      })}</p>
+    `);
+  }
+
+  parts.push(`<p class="lore-coverage">${t("detail.lore.coverage")}</p>`);
+  section.innerHTML = parts.join("");
+  wrapper.appendChild(section);
+}
+
 function renderSkyContextContent(
   wrapper: HTMLElement,
   skyCtx: SkyContext,
@@ -992,6 +1054,8 @@ function renderSkyContextContent(
     `;
     wrapper.appendChild(descSection);
   }
+
+  appendLoreSection(wrapper, skyCtx);
 
   // Nearby objects
   if (skyCtx.nearby.length) {
