@@ -15,10 +15,10 @@ let currentLocale: Locale | null = null;
  * Detects locale from browser or localStorage and starts using it.
  */
 export function initI18n(): Locale {
+	// Deliberately does NOT persist: an auto-detected locale must stay
+	// auto-detected, so a device whose language later changes (or that once
+	// loaded a ?locale= link) isn't stuck forever. Only setUILocale() writes.
 	currentLocale = detectLocale();
-	// Persist the detected locale so it's stable across reloads/tabs and the
-	// language picker + t() always agree on "current locale" from boot.
-	setLocale(currentLocale);
 	return currentLocale;
 }
 

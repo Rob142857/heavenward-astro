@@ -1503,27 +1503,45 @@ export const translations: Record<Locale, Record<string, string>> = {
 	},
 };
 
+const KNOWN_LOCALES: string[] = ["en", "fr", "ja", "zh-Hans"];
+
+function isKnownLocale(value: string | null): value is Locale {
+	return value !== null && KNOWN_LOCALES.includes(value);
+}
+
+/** Cached so t() doesn't hit localStorage on every single lookup. Cleared by
+ *  setLocale() when the user explicitly picks a different language. */
+let resolvedLocale: Locale | null = null;
+
 /**
- * Get locale from URL query parameter first, then browser, then localStorage.
- * Matches the full BCP-47 tag first (so "zh-Hant" isn't silently treated as
- * "zh-Hans"), then falls back to a language-only prefix match.
+ * Resolve the locale to display, in priority order:
+ *   1. An explicit user choice from the language picker (the ONLY thing we
+ *      persist). This must win over everything, including a shared link.
+ *   2. A ?locale= URL parameter — a one-shot override for shared/preview
+ *      links. Deliberately NOT persisted: persisting it would let one stray
+ *      link permanently pin a device to the wrong language.
+ *   3. The device's own language, re-read on every load so that a phone set
+ *      to English keeps showing English unless the user says otherwise.
+ * Matches the full BCP-47 tag (so "zh-Hant" isn't silently treated as
+ * "zh-Hans") rather than a blind two-letter slice.
  */
 export function detectLocale(): Locale {
-	const known: Locale[] = ["en", "fr", "ja", "zh-Hans"];
-
-	const urlLocale = new URLSearchParams(window.location.search).get(
-		"locale",
-	);
-	if (urlLocale && (known as string[]).includes(urlLocale)) {
-		return urlLocale as Locale;
-	}
+	if (resolvedLocale) return resolvedLocale;
 
 	const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
-	if (stored && (known as string[]).includes(stored)) {
-		return stored as Locale;
+	if (isKnownLocale(stored)) {
+		resolvedLocale = stored;
+		return stored;
 	}
 
-	return localeFromTag(navigator.language) ?? "en";
+	const urlLocale = new URLSearchParams(window.location.search).get("locale");
+	if (isKnownLocale(urlLocale)) {
+		resolvedLocale = urlLocale;
+		return urlLocale;
+	}
+
+	resolvedLocale = localeFromTag(navigator.language) ?? "en";
+	return resolvedLocale;
 }
 
 /**
@@ -1546,14 +1564,19 @@ function localeFromTag(tag: string): Locale | null {
 }
 
 /**
- * Set the current locale and save to localStorage.
+ * Persist an explicit language choice. Only ever called from the language
+ * picker — auto-detection must NOT persist, or one stray ?locale= link would
+ * pin a device to the wrong language permanently.
  */
 export function setLocale(locale: Locale): void {
 	localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-	const urlParams = new URLSearchParams(window.location.search);
-	urlParams.set("locale", locale);
-	const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-	window.history.replaceState({}, "", newUrl);
+	resolvedLocale = locale;
+	// Rebuild from the full href, not pathname — this is a hash-routed app,
+	// so dropping the fragment here would silently throw the user back to
+	// the Tonight view from whatever page they were on.
+	const url = new URL(window.location.href);
+	url.searchParams.set("locale", locale);
+	window.history.replaceState({}, "", url.toString());
 }
 
 /**
@@ -1567,10 +1590,10 @@ export function t(
 	params?: Record<string, string | number>,
 	locale?: Locale,
 ): string {
-	const targetLocale =
-		locale ||
-		(localStorage.getItem(LOCALE_STORAGE_KEY) as Locale | null) ||
-		detectLocale();
+	// Always route through detectLocale() — reading localStorage directly here
+	// would skip validation and happily pass an unknown/corrupt value through
+	// as a table key.
+	const targetLocale = locale ?? detectLocale();
 
 	const raw =
 		translations[targetLocale]?.[key] ?? translations.en[key] ?? key;
