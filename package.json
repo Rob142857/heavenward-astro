@@ -10,12 +10,13 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "pnpm run typecheck && vite build",
     "preview": "wrangler pages dev dist",
     "deploy": "pnpm run deploy:production",
     "deploy:production": "pnpm run build && wrangler pages deploy dist --branch production",
     "deploy:preview": "pnpm run build && wrangler pages deploy dist --branch preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && pnpm run check:i18n",
+    "check:i18n": "node --experimental-strip-types scripts/check-i18n.ts",
     "audit": "pnpm audit --audit-level=moderate",
     "refresh": "node --experimental-strip-types scripts/refresh-catalog.ts",
     "catalog:plan": "node --experimental-strip-types scripts/refresh-catalog.ts --plan"
