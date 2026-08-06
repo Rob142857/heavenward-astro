@@ -246,6 +246,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"detail.meteorBriefZhrSpeed": "ZHR {zhr} · {speed} km/s",
 		"detail.followUpPlaceholder": "Ask a follow-up…",
 		"detail.followUpSend": "Send",
+		"llm.tryingSmallerModel": "This device's GPU could not hold {previous} steady. Trying {next}…",
+		"llm.didNotFitTryingSmaller": "{label} did not fit this GPU. Trying a smaller model…",
 
 		"search.chip.planet": "Planet",
 		"search.chip.moon": "Moon",
@@ -617,6 +619,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"detail.meteorBriefZhrSpeed": "ZHR {zhr} · {speed} km/s",
 		"detail.followUpPlaceholder": "Posez une question…",
 		"detail.followUpSend": "Envoyer",
+		"llm.tryingSmallerModel": "Le GPU de cet appareil n'a pas pu faire tourner {previous} de façon stable. Essai de {next}…",
+		"llm.didNotFitTryingSmaller": "{label} ne tient pas sur ce GPU. Essai d'un modèle plus petit…",
 
 		"search.chip.planet": "Planète",
 		"search.chip.moon": "Lune",
@@ -988,6 +992,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"detail.meteorBriefZhrSpeed": "ZHR {zhr} · 秒速{speed} km",
 		"detail.followUpPlaceholder": "質問を入力…",
 		"detail.followUpSend": "送信",
+		"llm.tryingSmallerModel": "このデバイスのGPUでは{previous}を安定して動かせませんでした。{next}を試します…",
+		"llm.didNotFitTryingSmaller": "{label}はこのGPUに収まりませんでした。より小さいモデルを試します…",
 
 		"search.chip.planet": "惑星",
 		"search.chip.moon": "月",
@@ -1359,6 +1365,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"detail.meteorBriefZhrSpeed": "ZHR {zhr} · 每秒{speed}公里",
 		"detail.followUpPlaceholder": "输入你的问题…",
 		"detail.followUpSend": "发送",
+		"llm.tryingSmallerModel": "此设备的GPU无法稳定运行{previous}。正在尝试{next}…",
+		"llm.didNotFitTryingSmaller": "{label}超出了此GPU的承载能力。正在尝试更小的模型…",
 
 		"search.chip.planet": "行星",
 		"search.chip.moon": "月球",

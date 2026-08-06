@@ -5,6 +5,7 @@
  */
 
 import type { SkyContext } from "../engine/nearby.js";
+import { t } from "../i18n/translations.js";
 import type {
   ChatCompletion,
   ChatCompletionChunk,
@@ -39,11 +40,18 @@ interface LLMDiagnostics {
   lastError: string | null;
 }
 
-// One model per tier instead of a five-chain device-detection maze. Both are
-// Gemma builds that MLC has actually compiled a WebGPU library for — verified
-// directly against mlc-ai/binary-mlc-llm-libs rather than assumed from the
-// HuggingFace weights existing (Gemma 3 4B/12B weights exist there but have
-// no browser-compatible build yet, so they're not usable options today).
+// Every model here is one MLC has actually compiled a WebGPU library for —
+// verified directly against mlc-ai/binary-mlc-llm-libs rather than assumed
+// from HuggingFace weights existing (Gemma 3 4B/12B weights exist there but
+// have no browser-compatible build yet, so they're not usable options today).
+//
+// Context windows are kept deliberately modest on mobile. The KV cache scales
+// with the context window, and a phone's WebGPU runtime reports a hard
+// maxStorageBufferBindingSize (1 GB on a Snapdragon/Adreno flagship) that the
+// cache has to live inside alongside the weights. A 4096-token window on a 1B
+// model was enough to destabilise the buffers on a Galaxy S25 Ultra in
+// production ("could not keep the AI model's GPU buffers stable"), so mobile
+// runs at 2048 and only desktop takes the full window.
 const MOBILE_MODEL: ModelProfile = {
   id: "gemma3-1b-it-q4f16_1-MLC",
   label: "Gemma 3 1B",
@@ -54,21 +62,58 @@ const MOBILE_MODEL: ModelProfile = {
   // carries a positive sliding_window_size — WebLLM refuses to start with
   // both set (WindowSizeConfigurationError). Explicitly disabling the
   // sliding window is the documented way to resolve the conflict.
-  chatOpts: { context_window_size: 4096, sliding_window_size: -1 },
-  maxTokens: 512,
+  chatOpts: { context_window_size: 2048, sliding_window_size: -1 },
+  maxTokens: 400,
   stream: true,
 };
+
+// Graceful degradation for phones whose GPU can't hold the preferred model
+// steady. These are q4f32 builds on purpose: they don't need the shader-f16
+// feature and are numerically better behaved on Adreno/Mali parts, where f16
+// kernels are the usual suspect in "device lost"/buffer-mapping failures.
+// Without this chain a single WebGPU hiccup left mobile users with a dead end
+// and no commentary at all.
+const MOBILE_FALLBACK_MODELS: ModelProfile[] = [
+  {
+    id: "Qwen2.5-1.5B-Instruct-q4f32_1-MLC",
+    label: "Qwen2.5 1.5B",
+    sizeMB: 1900,
+    minDeviceMemoryGB: 4,
+    chatOpts: { context_window_size: 1024 },
+    maxTokens: 320,
+    stream: false,
+  },
+  {
+    id: "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
+    label: "Qwen2.5 0.5B",
+    sizeMB: 1100,
+    minDeviceMemoryGB: 3,
+    chatOpts: { context_window_size: 1024 },
+    maxTokens: 280,
+    stream: false,
+  },
+  {
+    id: "SmolLM2-360M-Instruct-q4f32_1-MLC",
+    label: "SmolLM2 360M",
+    sizeMB: 580,
+    minDeviceMemoryGB: 2,
+    chatOpts: { context_window_size: 1024 },
+    maxTokens: 240,
+    stream: false,
+  },
+];
 
 // Biggest Gemma with a confirmed-working WebGPU build today. Requires the
 // shader-f16 adapter feature — checkGPUCapability() detects support and
 // getModelCandidates() drops this tier entirely on adapters without it, so
-// desktop always falls through to MOBILE_MODEL rather than a hard failure.
+// desktop always falls through to the smaller models rather than hard-failing.
 const DESKTOP_MODEL: ModelProfile = {
   id: "gemma-2-9b-it-q4f16_1-MLC",
   label: "Gemma 2 9B",
   sizeMB: 6400,
   minDeviceMemoryGB: 6,
   requiredFeatures: ["shader-f16"],
+  chatOpts: { context_window_size: 4096 },
   maxTokens: 768,
   stream: true,
 };
@@ -101,14 +146,16 @@ function getDeviceMemoryGB(): number | null {
 }
 
 /**
- * Ordered load attempts for this device. Desktop tries the big model first
- * and falls through to the mobile model on a resource error (existing retry
- * logic in loadLLM()/fallBackToSmallerModel() already walks this array in
- * order) or when the adapter lacks a feature DESKTOP_MODEL needs.
+ * Ordered load attempts for this device, largest first. loadLLM() and
+ * fallBackToSmallerModel() walk this array in order, so a device that can't
+ * hold one model steady degrades to a smaller one instead of dead-ending.
+ * Desktop only gets the big model when the adapter actually reports the
+ * shader-f16 feature it needs; otherwise it starts from the mobile model.
  */
 function getModelCandidates(): ModelProfile[] {
-  if (isMobile()) return [MOBILE_MODEL];
-  return shaderF16Supported ? [DESKTOP_MODEL, MOBILE_MODEL] : [MOBILE_MODEL];
+  const smaller = [MOBILE_MODEL, ...MOBILE_FALLBACK_MODELS];
+  if (isMobile()) return smaller;
+  return shaderF16Supported ? [DESKTOP_MODEL, ...smaller] : smaller;
 }
 
 function getInitialModel(): ModelProfile {
@@ -337,7 +384,7 @@ export async function loadLLM(
         const msg = err instanceof Error ? err.message : String(err);
         lastDiagnostics = { ...lastDiagnostics, activeModelId: candidate.id, lastError: msg };
         if (index === candidates.length - 1) throw err;
-        onProgress?.(`${candidate.label} did not fit this GPU. Trying a smaller model...`, 0);
+        onProgress?.(t("llm.didNotFitTryingSmaller", { label: candidate.label }), 0);
         if (!isResourceError(msg)) throw err;
       }
     }
@@ -483,7 +530,12 @@ async function fallBackToSmallerModel(onChunk: (text: string) => void): Promise<
 
   const nextModel = candidates[nextIndex];
   activeModelIndex = nextIndex;
-  onChunk(`This phone's GPU rejected ${activeModel?.label ?? "the current model"}. Trying ${nextModel.label}...`);
+  onChunk(
+    t("llm.tryingSmallerModel", {
+      previous: activeModel?.label ?? "",
+      next: nextModel.label,
+    }),
+  );
   await loadModel(nextModel);
   return true;
 }
@@ -536,7 +588,11 @@ async function completeWithRetry(
 ): Promise<string> {
   if (!engine || !activeModel) throw new Error("LLM not loaded");
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  // One attempt per candidate, plus one: a failure consumes an attempt AND
+  // steps down a model, so a shorter loop would strand the smallest models
+  // in the chain permanently unreachable.
+  const maxAttempts = getModelCandidates().length + 1;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       return await completeOnce(messages, onChunk, signal);
     } catch (err: unknown) {
