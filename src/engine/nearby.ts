@@ -50,6 +50,22 @@ export interface NearbyObject extends CatalogRichDetails {
 }
 
 export interface SkyContext {
+  /**
+   * Where the user is standing. Without this the language model had no idea
+   * which hemisphere it was describing and fell back on the northern-sky
+   * assumptions that dominate its training data — telling a viewer in
+   * Australia that Crux was not visible to them, when from that latitude it
+   * is circumpolar and never sets. All of this stays on the device.
+   */
+  observer: {
+    latitude: number;
+    longitude: number;
+    hemisphere: "northern" | "southern";
+    /** Highest declination that never sets from here, and lowest that never
+     *  rises — the two facts that decide what this observer can ever see. */
+    circumpolarBelowDec: number;
+    neverRisesAboveDec: number;
+  };
   target: CatalogRichDetails & {
     name: string;
     lookDirection: string;
@@ -183,7 +199,7 @@ export async function buildSkyContext(
   const targetDec = event.dec;
 
   if (targetRA === null || targetDec === null) {
-    return emptyContext(event);
+    return emptyContext(event, loc);
   }
 
   // Normalise first: the star/DSO catalogs store the IAU code ("UMa") while
@@ -340,6 +356,7 @@ export async function buildSkyContext(
   const photographyTips = getPhotoTips(event, nearby);
 
   return {
+    observer: describeObserver(loc),
     target: {
       name: event.name,
       lookDirection: compass,
@@ -356,6 +373,25 @@ export async function buildSkyContext(
     constellationObjects,
     photographyTips,
     lookingDescription,
+  };
+}
+
+/**
+ * What this observer's latitude means for what they can ever see. A star is
+ * permanently above the horizon when its declination exceeds 90° − |latitude|
+ * on the observer's own side of the sky, and permanently below when it
+ * exceeds that on the far side. From Wagga Wagga (−35°) that makes anything
+ * south of −55° circumpolar, which is why Crux never sets there.
+ */
+function describeObserver(loc: GeoLocation): SkyContext["observer"] {
+  const limit = 90 - Math.abs(loc.lat);
+  const southern = loc.lat < 0;
+  return {
+    latitude: loc.lat,
+    longitude: loc.lon,
+    hemisphere: southern ? "southern" : "northern",
+    circumpolarBelowDec: southern ? -limit : limit,
+    neverRisesAboveDec: southern ? limit : -limit,
   };
 }
 
@@ -440,8 +476,9 @@ function findRichDetails(
   return {};
 }
 
-function emptyContext(event: CelestialEvent): SkyContext {
+function emptyContext(event: CelestialEvent, loc: GeoLocation): SkyContext {
   return {
+    observer: describeObserver(loc),
     target: {
       name: event.name,
       lookDirection: "unknown",

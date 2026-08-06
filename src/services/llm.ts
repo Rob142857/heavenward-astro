@@ -578,7 +578,8 @@ Rules that apply to every message:
 - Do NOT use markdown headers or bullet lists. Use flowing prose with HTML links where appropriate.
 - The user prompt may include a "Known facts about this object" and/or a "Sourced mythology/history" section, each citing an exact source. Only use historical or mythological claims that appear there, and only when that section is actually present — if it says no sourced material is available, do not mention any myth, legend, or historical claim about that constellation, even if you think you know one. When you do share sourced mythology or history, keep it brief (a sentence or two) and natural, and you may mention which book/source it comes from if it fits the flow.
 - Never write astrology content: no zodiac signs, horoscopes, "personality traits," or "what this means for you" framing. Constellations are physical patterns of stars and, where sourced, carry historical or mythological stories — nothing more.
-- If no "Known facts" or sourced mythology/history is given for something, rely only on well-established, uncontroversial astronomy — don't invent discoverers, dates, or stories.`;
+- If no "Known facts" or sourced mythology/history is given for something, rely only on well-established, uncontroversial astronomy — don't invent discoverers, dates, or stories.
+- The user's latitude and hemisphere are stated at the top of their message. Every claim about what is or isn't visible must follow from THAT latitude. Most astronomy writing assumes a northern viewpoint; do not carry that assumption over. A southern observer genuinely cannot see Polaris and genuinely can see Crux year-round, and telling them otherwise about their own sky is the worst mistake you can make here. If you are not certain whether something is visible from their latitude, say so rather than guessing.`;
 
 // The full prompt costs ~694 tokens — a third of a 2048-token window. On the
 // small fallback models that is budget stolen directly from the grounding
@@ -588,7 +589,9 @@ Rules that apply to every message:
 // survives here; only the stylistic guidance is cut.
 const SYSTEM_PROMPT_COMPACT = `You are a friendly expert astronomer guiding someone looking at tonight's sky. Write 2 short paragraphs of flowing prose — where to look, what is worth seeing nearby, and one photography tip. No markdown, no bullet lists, no headings.
 
-Ground everything in the facts given in the user message. If a "Sourced mythology/history" section is present you may share it briefly and name its source; if the message says no sourced material is available, do not mention any myth, legend, or historical claim at all. Never invent discoverers, dates, or stories. Never write astrology — no star signs, horoscopes, or personality readings.`;
+Ground everything in the facts given in the user message. If a "Sourced mythology/history" section is present you may share it briefly and name its source; if the message says no sourced material is available, do not mention any myth, legend, or historical claim at all. Never invent discoverers, dates, or stories. Never write astrology — no star signs, horoscopes, or personality readings.
+
+The user's latitude and hemisphere are stated at the top of their message. Judge what is visible from THAT latitude, never from a default northern viewpoint — a southern observer cannot see Polaris and can see Crux all year.`;
 
 /** Small-context models get the compact instructions so the grounding facts
  *  keep their share of the window. 4096 is the threshold because that is what
@@ -717,7 +720,12 @@ function assemblePrompt(
       ? ""
       : `Photography tips available: ${ctx.photographyTips.join(" ")}\n`;
 
-  return `The user is looking at "${ctx.target.name}" in the constellation ${ctx.target.constellation ?? "unknown"}.
+  const obs = ctx.observer;
+  const observerLine = `The user is at latitude ${obs.latitude.toFixed(1)}°, in the ${obs.hemisphere} hemisphere. From here, anything with declination beyond ${obs.circumpolarBelowDec.toFixed(0)}° never sets, and anything beyond ${obs.neverRisesAboveDec.toFixed(0)}° never rises. Reason about what they can see from THIS latitude, not from a default northern viewpoint.`;
+
+  return `${observerLine}
+
+The user is looking at "${ctx.target.name}" in the constellation ${ctx.target.constellation ?? "unknown"}.
 
 Current position: azimuth ${ctx.target.azimuth.toFixed(0)} deg (${ctx.target.compassShort}), altitude ${ctx.target.altitude.toFixed(0)} deg - ${ctx.target.altDescription}.
 ${ctx.lookingDescription ? `\n${ctx.lookingDescription}\n` : ""}

@@ -3,6 +3,7 @@ import { navigate } from "./router.js";
 import { bindInstallPrompt } from "../services/pwa.js";
 import { openObservationsModal } from "./observations.js";
 import { isSocialInAppBrowser } from "../services/browser.js";
+import { isLocationConfirmed } from "../services/geolocation.js";
 import { t } from "../i18n/translations.js";
 
 let currentCtx: AppContext | null = null;
@@ -107,9 +108,19 @@ export function renderHeader(container: HTMLElement, ctx: AppContext): void {
   // as a control rather than as decorative text.
   const loc = document.createElement("button");
   loc.type = "button";
-  loc.className = "location-pill";
-  loc.textContent = formatLocation(ctx.location);
-  loc.setAttribute("aria-label", t("layout.changeLocation"));
+  // An unconfirmed location is the Greenwich fallback, not the user's. Since
+  // every altitude, direction and visible-object list on screen is computed
+  // from it, saying so plainly matters more than looking tidy — a viewer in
+  // Australia silently given a +51° sky sees entirely the wrong stars.
+  const confirmed = isLocationConfirmed();
+  loc.className = confirmed ? "location-pill" : "location-pill is-unconfirmed";
+  loc.textContent = confirmed
+    ? formatLocation(ctx.location)
+    : t("layout.locationUnknown");
+  loc.setAttribute(
+    "aria-label",
+    confirmed ? t("layout.changeLocation") : t("layout.locationUnknownAria"),
+  );
   loc.addEventListener("click", () => navigate("#/location"));
 
   const actions = document.createElement("div");

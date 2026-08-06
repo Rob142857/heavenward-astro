@@ -2811,3 +2811,13 @@ body {
   color: rgba(224, 230, 240, 0.75);
   line-height: 1.4;
 }
+
+/* An unconfirmed location means the sky on screen is computed for the
+   Greenwich fallback rather than the user's own place — worth being
+   conspicuous about, since every position shown depends on it. */
+.location-pill.is-unconfirmed {
+  color: var(--gold);
+  border-color: var(--gold-dark);
+  background: rgba(212, 175, 55, 0.12);
+  font-weight: 600;
+}

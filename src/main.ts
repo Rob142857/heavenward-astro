@@ -1,6 +1,10 @@
 import "./ui/styles.css";
 import type { AppContext } from "./types.js";
-import { requestGPS, getSavedLocation } from "./services/geolocation.js";
+import {
+  requestGPS,
+  getSavedLocation,
+  markLocationConfirmed,
+} from "./services/geolocation.js";
 import { loadPrefs } from "./services/prefs.js";
 import { navigate, reroute, route, startRouter } from "./ui/router.js";
 import { renderTonight } from "./ui/tonight.js";
@@ -72,6 +76,9 @@ async function boot(): Promise<void> {
   // which otherwise prevents the twilight bar from appearing at all.
   const savedLocation = getSavedLocation();
   const location = savedLocation ?? DEFAULT_LOCATION;
+  // A previously saved location is the user's own; only the Greenwich
+  // fallback leaves this unconfirmed, and the UI says so when it is.
+  if (savedLocation) markLocationConfirmed();
 
   const ctx: AppContext = {
     location,
