@@ -149,6 +149,19 @@ function wikiLink(name: string, display?: string): string {
   return `<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(slug)}" target="_blank" rel="noopener" class="wiki-link">${display ?? name}</a>`;
 }
 
+/**
+ * The catalog's description field is a machine-generated stub for all but a
+ * handful of objects — "GCl in Aqr. Magnitude 6.3." on 4,998 of 5,019 DSOs
+ * and 5,043 of 5,054 stars. Every fact in it (type, constellation,
+ * magnitude) already appears in the grid immediately below, so rendering it
+ * repeated the same three values twice on ~10,000 pages. Only the genuinely
+ * written descriptions survive the length test.
+ */
+function curatedBrief(description: string): string {
+  if (!description || description.length <= 80) return "";
+  return `<p class="detail-brief">${description}</p>`;
+}
+
 function detailItem(label: string, value: string): string {
   return `<div class="detail-item"><div class="label">${label}</div><div class="value">${value}</div></div>`;
 }
@@ -231,9 +244,14 @@ function renderEventDetail(
   container.appendChild(content);
   attachBreadcrumbHandlers(container);
 
-  appendLLMSection(container, event, ctx);
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
+  // AI guide last: it is opt-in, costs a large download, and is the one
+  // section a reader cannot act on without tapping. The chart, image and
+  // where-to-look material are what someone came for, so they should not sit
+  // below a button most visitors never press. This also makes the AI
+  // conversation genuinely the end of the page.
+  appendLLMSection(container, event, ctx);
 }
 
 // ── DSO detail (rich) ──────────────────────────────────────────────
@@ -260,7 +278,7 @@ function renderDSODetailFull(
     ${renderBreadcrumb(displayName)}
     <h2 class="detail-title">${displayName}</h2>
     ${catalogId ? `<div class="detail-catalog-id">${catalogId}${caldwellText ? ` \u00b7 ${caldwellText}` : ""}</div>` : caldwellText ? `<div class="detail-catalog-id">${caldwellText}</div>` : ""}
-    <p class="detail-brief">${entry.description}</p>
+    ${curatedBrief(entry.description)}
   `;
 
   // Position & Visibility
@@ -348,9 +366,14 @@ function renderDSODetailFull(
   container.appendChild(content);
   attachBreadcrumbHandlers(container);
 
-  appendLLMSection(container, event, ctx);
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
+  // AI guide last: it is opt-in, costs a large download, and is the one
+  // section a reader cannot act on without tapping. The chart, image and
+  // where-to-look material are what someone came for, so they should not sit
+  // below a button most visitors never press. This also makes the AI
+  // conversation genuinely the end of the page.
+  appendLLMSection(container, event, ctx);
 }
 
 // ── Star detail (rich) ─────────────────────────────────────────────
@@ -378,7 +401,7 @@ function renderStarDetailFull(
     ${renderBreadcrumb(entry.name)}
     <h2 class="detail-title">${entry.name}</h2>
     ${designation ? `<div class="detail-catalog-id">${designation}</div>` : ""}
-    <p class="detail-brief">${entry.description}</p>
+    ${curatedBrief(entry.description)}
   `;
 
   // Position & Visibility
@@ -499,9 +522,14 @@ function renderStarDetailFull(
   content.innerHTML = html;
   container.appendChild(content);
   attachBreadcrumbHandlers(container);
-  appendLLMSection(container, event, ctx);
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
+  // AI guide last: it is opt-in, costs a large download, and is the one
+  // section a reader cannot act on without tapping. The chart, image and
+  // where-to-look material are what someone came for, so they should not sit
+  // below a button most visitors never press. This also makes the AI
+  // conversation genuinely the end of the page.
+  appendLLMSection(container, event, ctx);
 }
 
 // ── Shared chart + imagery ─────────────────────────────────────────
@@ -902,9 +930,14 @@ function renderMeteorDetailFull(
   container.appendChild(content);
   attachBreadcrumbHandlers(container);
 
-  appendLLMSection(container, event, ctx);
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
+  // AI guide last: it is opt-in, costs a large download, and is the one
+  // section a reader cannot act on without tapping. The chart, image and
+  // where-to-look material are what someone came for, so they should not sit
+  // below a button most visitors never press. This also makes the AI
+  // conversation genuinely the end of the page.
+  appendLLMSection(container, event, ctx);
 }
 
 const MONTH_KEYS = [
