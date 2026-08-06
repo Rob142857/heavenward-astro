@@ -95,7 +95,11 @@ const MOBILE_FALLBACK_MODELS: ModelProfile[] = [
     sizeMB: 840,
     vramMB: 840,
     minDeviceMemoryGB: 3,
-    chatOpts: { context_window_size: 1024 },
+    // 2048 is this build's own default. An earlier 1024 here was throttling
+    // it below its real capacity and rejected a 1115-token grounded prompt
+    // outright (ContextWindowSizeExceededError) — the prompt had outgrown a
+    // budget that never needed to be that small.
+    chatOpts: { context_window_size: 2048 },
     maxTokens: 280,
     stream: false,
   },
@@ -105,7 +109,7 @@ const MOBILE_FALLBACK_MODELS: ModelProfile[] = [
     sizeMB: 580,
     vramMB: 580,
     minDeviceMemoryGB: 2,
-    chatOpts: { context_window_size: 1024 },
+    chatOpts: { context_window_size: 4096 },
     maxTokens: 240,
     stream: false,
   },
@@ -478,7 +482,22 @@ Rules that apply to every message:
 - Never write astrology content: no zodiac signs, horoscopes, "personality traits," or "what this means for you" framing. Constellations are physical patterns of stars and, where sourced, carry historical or mythological stories — nothing more.
 - If no "Known facts" or sourced mythology/history is given for something, rely only on well-established, uncontroversial astronomy — don't invent discoverers, dates, or stories.`;
 
+// The full prompt costs ~694 tokens — a third of a 2048-token window. On the
+// small fallback models that is budget stolen directly from the grounding
+// facts, which is backwards: the instructions are what we can afford to
+// shorten, the sourced facts are the whole reason the output is trustworthy.
+// Every non-negotiable guardrail (don't invent, no astrology, stay grounded)
+// survives here; only the stylistic guidance is cut.
+const SYSTEM_PROMPT_COMPACT = `You are a friendly expert astronomer guiding someone looking at tonight's sky. Write 2 short paragraphs of flowing prose — where to look, what is worth seeing nearby, and one photography tip. No markdown, no bullet lists, no headings.
+
+Ground everything in the facts given in the user message. If a "Sourced mythology/history" section is present you may share it briefly and name its source; if the message says no sourced material is available, do not mention any myth, legend, or historical claim at all. Never invent discoverers, dates, or stories. Never write astrology — no star signs, horoscopes, or personality readings.`;
+
+/** Small-context models get the compact instructions so the grounding facts
+ *  keep their share of the window. 4096 is the threshold because that is what
+ *  the roomy models (Gemma 3 1B, Gemma 2 9B) actually run at. */
 function getSystemPrompt(): string {
+  const contextWindow = activeModel?.chatOpts?.context_window_size;
+  if (contextWindow && contextWindow < 4096) return SYSTEM_PROMPT_COMPACT;
   return SYSTEM_PROMPT;
 }
 
@@ -521,8 +540,35 @@ function buildMythHistorySection(ctx: SkyContext): string {
   return parts.join("\n");
 }
 
+/** Rough token estimate. English prose runs ~4 chars/token; 3.5 is
+ *  deliberately pessimistic so the guard errs toward trimming. */
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 3.5);
+}
+
+/**
+ * How many tokens the user turn may occupy on the active model, leaving room
+ * for the system prompt, the reply, and a little slack. Returns null when no
+ * model is loaded yet (nothing to budget against).
+ */
+function promptTokenBudget(): number | null {
+  if (!activeModel) return null;
+  const contextWindow = activeModel.chatOpts?.context_window_size;
+  if (!contextWindow || contextWindow <= 0) return null;
+  const reserved =
+    estimateTokens(getSystemPrompt()) + activeModel.maxTokens + 128;
+  return Math.max(256, contextWindow - reserved);
+}
+
 export function buildPrompt(ctx: SkyContext): string {
-  const nearbyLimit = isMobile() ? 5 : 10;
+  const budget = promptTokenBudget();
+
+  // Nearby objects are the cheapest thing to give up — they're supporting
+  // colour, whereas the target's own facts and sourced mythology are the
+  // whole point of grounding. On a tight budget, trim this list first.
+  let nearbyLimit = isMobile() ? 5 : 10;
+  if (budget !== null && budget < 700) nearbyLimit = 3;
+
   const nearby = ctx.nearby
     .slice(0, nearbyLimit)
     .map((n) => {
@@ -539,6 +585,40 @@ export function buildPrompt(ctx: SkyContext): string {
   const targetFacts = buildTargetFacts(ctx);
   const mythHistory = buildMythHistorySection(ctx);
 
+  const prompt = assemblePrompt(
+    ctx,
+    nearby,
+    sameConstellation,
+    targetFacts,
+    mythHistory,
+  );
+  if (budget === null || estimateTokens(prompt) <= budget) return prompt;
+
+  // Still over after the cheap trim. Drop supporting sections in increasing
+  // order of value — nearby list, then constellation neighbours, then photo
+  // tips — but never the target's facts or the sourced mythology, which are
+  // the reason the model can say anything true at all. A model too small to
+  // hold even that is better off with a short prompt than a rejected one.
+  const trimmedNearby = ctx.nearby
+    .slice(0, 2)
+    .map((n) => `- ${n.name} (${n.type}, ${n.separation.toFixed(1)} deg ${n.direction})`)
+    .join("\n");
+  return assemblePrompt(ctx, trimmedNearby, "", targetFacts, mythHistory, true);
+}
+
+function assemblePrompt(
+  ctx: SkyContext,
+  nearby: string,
+  sameConstellation: string,
+  targetFacts: string,
+  mythHistory: string,
+  omitPhotoTips = false,
+): string {
+  const photoTips =
+    omitPhotoTips || !ctx.photographyTips.length
+      ? ""
+      : `Photography tips available: ${ctx.photographyTips.join(" ")}\n`;
+
   return `The user is looking at "${ctx.target.name}" in the constellation ${ctx.target.constellation ?? "unknown"}.
 
 Current position: azimuth ${ctx.target.azimuth.toFixed(0)} deg (${ctx.target.compassShort}), altitude ${ctx.target.altitude.toFixed(0)} deg - ${ctx.target.altDescription}.
@@ -548,8 +628,7 @@ ${mythHistory ? `Sourced mythology/history for this constellation — you may sh
 Nearby objects within about 20 deg:
 ${nearby || "(none found)"}
 ${sameConstellation ? `\nAlso sharing this constellation: ${sameConstellation}.\n` : ""}
-Photography tips available: ${ctx.photographyTips.join(" ")}
-
+${photoTips}
 Generate a rich, concise sky guide for this region of sky. Describe where to look, what is interesting nearby, photography opportunities, and any fascinating facts. Reference the nearby objects naturally.`;
 }
 
