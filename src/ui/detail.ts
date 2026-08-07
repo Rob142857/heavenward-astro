@@ -649,8 +649,47 @@ function significantTokens(text: string): string[] {
 // as its own token (e.g. "NGC 2244" in "NGC 2244 Rosette Nebula.jpg"). This
 // is a safety net, not a guarantee — see loadBestImage() for how bare
 // catalog IDs prefer the astrometrically-correct SkyView cutout instead.
+/**
+ * Things humans build and name after the sky. A celestial object's photograph
+ * does not depict hardware, so any of these in a filename means the match is
+ * about the namesake rather than the object — the failure that put a picture
+ * of the ANTARES neutrino telescope on the star Antares' page.
+ */
+const NAMESAKE_ARTEFACT_TOKENS = new Set([
+  "telescope",
+  "detector",
+  "experiment",
+  "laboratory",
+  "spacecraft",
+  "satellite",
+  "rocket",
+  "launcher",
+  "probe",
+  "mission",
+  "module",
+  "submarine",
+  "ship",
+  "aircraft",
+  "logo",
+  "emblem",
+  "map",
+  "flag",
+  "stamp",
+  "coin",
+  "building",
+  "hotel",
+  "station",
+]);
+
 function isRelevantTitle(title: string, event: CelestialEvent): boolean {
   const titleTokens = new Set(title.toLowerCase().split(/[^a-z0-9]+/));
+
+  // Reject namesakes before anything else — they otherwise sail through the
+  // name check below, because they genuinely do carry the object's name.
+  for (const tok of titleTokens) {
+    if (NAMESAKE_ARTEFACT_TOKENS.has(tok)) return false;
+  }
+
   const catalogCode = event.name.trim().toLowerCase();
   if (catalogCode && titleTokens.has(catalogCode.replace(/\s+/g, ""))) {
     return true;
@@ -727,12 +766,25 @@ function loadBestImage(event: CelestialEvent, wrap: HTMLElement): void {
   const wikiPageUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(wikiSlug)}`;
   const searchQuery = buildImageSearchQuery(event);
 
-  // Bare catalog IDs (the ~98% of DSOs with no common name) are ambiguous
-  // text-search terms, but SkyView's DSS2 cutout is queried by RA/Dec, so
-  // it's astrometrically guaranteed to show the right patch of sky. Try
-  // that first for these, and only fall back to a Commons text search if
-  // the positional image itself fails to load.
-  if (isBareCatalogId(objectName) && event.ra !== null && event.dec !== null) {
+  // Prefer the positional image — SkyView's DSS2 cutout is queried by RA/Dec,
+  // so it is astrometrically guaranteed to show the right patch of sky —
+  // wherever a name search is untrustworthy. Two cases qualify:
+  //
+  //   • Bare catalog IDs ("M2", "NGC 2244"), which collide with unrelated
+  //     content of every kind.
+  //   • STARS, whose names are borrowed constantly by the things humans
+  //     build. Searching Commons for "Antares" returned the ANTARES neutrino
+  //     telescope on the Mediterranean seabed — a photograph that passes
+  //     every relevance test, because it really is named Antares and really
+  //     is astronomy. A star is a point of light in any case, so a survey
+  //     plate of its actual position is both truer and more useful than
+  //     whatever shares its name.
+  //
+  // Named deep-sky objects keep Commons first: "Orion Nebula" and "Andromeda
+  // Galaxy" have superb astrophotography and almost no naming collisions.
+  const preferPositional =
+    isBareCatalogId(objectName) || event.id.startsWith("star-");
+  if (preferPositional && event.ra !== null && event.dec !== null) {
     renderSkyView(event, wrap, wikiPageUrl, () => {
       searchWikimediaCommons(searchQuery, event).then((result) => {
         if (result) {
@@ -1040,11 +1092,11 @@ function appendLoreSection(wrapper: HTMLElement, skyCtx: SkyContext): void {
         : "detail.lore.myth";
     parts.push(`
       <p class="detail-prose lore-body">${mythologySummary(myth, locale)}</p>
-      <p class="lore-citation">${t(framingKey, {
-        figure: myth.figure,
-        source: myth.source,
-        detail: myth.sourceDetail,
-      })}</p>
+      <p class="lore-citation">
+        <span class="lore-cite-lead">${t(framingKey, { figure: myth.figure })}</span>
+        <cite class="lore-cite-work">${myth.source}</cite>
+        <span class="lore-cite-detail">${myth.sourceDetail}</span>
+      </p>
     `);
   }
 
@@ -1052,10 +1104,11 @@ function appendLoreSection(wrapper: HTMLElement, skyCtx: SkyContext): void {
     parts.push(`
       <h4 class="lore-subheading">${historyTopic(entry, locale)}</h4>
       <p class="detail-prose lore-body">${historySummary(entry, locale)}</p>
-      <p class="lore-citation">${t("detail.lore.history", {
-        source: entry.source,
-        detail: entry.sourceDetail,
-      })}</p>
+      <p class="lore-citation">
+        <span class="lore-cite-lead">${t("detail.lore.sourceLabel")}</span>
+        <cite class="lore-cite-work">${entry.source}</cite>
+        <span class="lore-cite-detail">${entry.sourceDetail}</span>
+      </p>
     `);
   }
 

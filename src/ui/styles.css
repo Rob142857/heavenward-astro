@@ -1967,11 +1967,29 @@ body {
 .lore-body {
   margin: 0 0 6px;
 }
+/* A citation is three things, and they should not read as one sentence:
+   what it is ("Source:"), the work itself, and the scholarship that makes it
+   readable. Only the work title is italic — a blanket italic left nothing to
+   distinguish a book from the words around it. */
 .lore-citation {
   margin: 0 0 4px;
-  font-size: 0.75rem;
+  font-size: 0.74rem;
+  line-height: 1.55;
   color: var(--text-dim);
+}
+.lore-cite-lead {
+  opacity: 0.85;
+}
+.lore-cite-work {
   font-style: italic;
+  color: var(--text);
+  opacity: 0.9;
+}
+/* On its own line: the translation or scholarship is a separate citation
+   from the primary text, not a continuation of it. */
+.lore-cite-detail {
+  display: block;
+  opacity: 0.8;
 }
 .lore-coverage {
   margin: 14px 0 0;
