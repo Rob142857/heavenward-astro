@@ -6,7 +6,17 @@
     "summary": "Ancient Egyptians called Sirius \"Sopdet\" (Sothis to the Greeks). After about 70 days invisible below the horizon, its first pre-dawn reappearance — its heliacal rising — fell close to the Nile's annual flood and marked the start of the Egyptian civil year. Because that 365-day calendar had no leap day, the rising slowly drifted against it, realigning only once every roughly 1,460 years — the \"Sothic cycle,\" recorded by the Roman writer Censorinus in 238 CE.",
     "sourceType": "primary",
     "source": "Censorinus, De Die Natali (238 CE)",
-    "sourceDetail": "Corroborated in R.A. Parker, The Calendars of Ancient Egypt (1950), and J.A. Belmonte, Trabajos de Egiptología 2 (2003)"
+    "sourceDetail": "Corroborated in R.A. Parker, The Calendars of Ancient Egypt (1950), and J.A. Belmonte, Trabajos de Egiptología 2 (2003)",
+    "topicI18n": {
+      "fr": "L'étoile qui annonçait la crue du Nil",
+      "ja": "ナイルの氾濫を告げた星",
+      "zh-Hans": "预告尼罗河泛滥的那颗星"
+    },
+    "summaryI18n": {
+      "fr": "Les anciens Égyptiens appelaient Sirius « Sopdet » (Sothis pour les Grecs). Après quelque soixante-dix jours d'invisibilité sous l'horizon, sa première réapparition avant l'aube — son lever héliaque — coïncidait à peu près avec la crue annuelle du Nil et marquait le début de l'année civile égyptienne. Comme ce calendrier de 365 jours ne comportait aucun jour bissextile, ce lever s'en décalait lentement, ne se réalignant qu'une fois tous les 1 460 ans environ — le « cycle sothiaque », consigné par l'écrivain romain Censorinus en 238 apr. J.-C.",
+      "ja": "古代エジプトの人々は、シリウスを「Sopdet」と呼びました(ギリシア人には Sothis)。地平線の下に隠れておよそ70日を過ごしたのち、夜明け前の空にふたたび姿を現すその最初の日——ヘリアカル・ライジング——は、ナイル川の年ごとの氾濫とほぼ重なり、エジプトの民用暦の年の始まりを画していました。この365日の暦には閏日がなかったため、その出現は暦に対してゆっくりとずれてゆき、ふたたび一致するのはおよそ1,460年に一度だけでした——ローマの著述家ケンソリヌスが西暦238年に書き記した「Sothic cycle(ソティス周期)」です。",
+      "zh-Hans": "古埃及人称天狼星为“Sopdet”（希腊人称之为 Sothis）。在地平线下隐没约70天之后，它于黎明前首度重现——即偕日升——的时刻恰与尼罗河一年一度的泛滥相近，也标志着埃及民用年的开端。由于那部365天的历法没有闰日，这一升起便相对历法缓缓漂移，约每1460年才重新对齐一次——这就是“天狼周期”（Sothic cycle），罗马作家琴索里努斯于公元238年将它记录下来。"
+    }
   },
   {
     "constellation": "Ori",
@@ -14,7 +24,17 @@
     "summary": "The Babylonian astronomical compendium MUL.APIN (compiled by around 1000 BCE from older material) names the stars we call Orion \"SIPA.ZI.AN.NA\" — the True Shepherd of Anu — and places it in its list of the sky's northern \"Path of Anu.\"",
     "sourceType": "primary",
     "source": "MUL.APIN, Tablet I, \"Path of Anu\" star list",
-    "sourceDetail": "Critical translation: Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989)"
+    "sourceDetail": "Critical translation: Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989)",
+    "topicI18n": {
+      "fr": "« Le Vrai Berger d'Anu »",
+      "ja": "「アヌの正しき羊飼い」",
+      "zh-Hans": "“安努的忠实牧人”"
+    },
+    "summaryI18n": {
+      "fr": "Le recueil astronomique babylonien MUL.APIN (compilé vers 1000 av. J.-C. à partir de matériaux plus anciens) nomme « SIPA.ZI.AN.NA » les étoiles que nous appelons Orion — le Vrai Berger d'Anu — et le range dans sa liste du « Chemin d'Anu », au nord du ciel.",
+      "ja": "バビロニアの天文集成 MUL.APIN(より古い資料をもとに紀元前1000年ごろまでに編まれました)は、私たちがオリオン座と呼ぶ星々を「SIPA.ZI.AN.NA」——アヌの正しき羊飼い——と名づけ、天の北寄りの「アヌの道」の一覧に位置づけています。",
+      "zh-Hans": "巴比伦天文汇编 MUL.APIN（约在公元前1000年之前由更早的材料编成）把我们称作猎户座的那群星称为“SIPA.ZI.AN.NA”——安努的忠实牧人——并将它列入天空北部“安努之路”的星表之中。"
+    }
   },
   {
     "constellation": "Ori",
@@ -22,7 +42,17 @@
     "summary": "Egyptian sky-watchers identified a constellation called \"Sah\" — covering the stars of Orion and part of Lepus — with the god Osiris. A Pyramid Text inscribed for King Pepi I states plainly: \"Lo, he has come as Orion, Lo, Osiris has come as Orion.\" Scholars identified Sah with Orion using Egypt's decan star lists and surviving temple/tomb ceiling star charts.",
     "sourceType": "primary",
     "source": "Pyramid Texts, Utterance 442 (Pepi I), trans. R.O. Faulkner",
-    "sourceDetail": "Identification established in O. Neugebauer & R.A. Parker, Egyptian Astronomical Texts (1960–1969)"
+    "sourceDetail": "Identification established in O. Neugebauer & R.A. Parker, Egyptian Astronomical Texts (1960–1969)",
+    "topicI18n": {
+      "fr": "Orion sous les traits d'Osiris",
+      "ja": "オシリスとしてのオリオン",
+      "zh-Hans": "作为俄西里斯的猎户座"
+    },
+    "summaryI18n": {
+      "fr": "Les observateurs du ciel égyptiens identifiaient au dieu Osiris une constellation nommée « Sah » — qui couvrait les étoiles d'Orion et une partie du Lièvre. Un Texte des Pyramides gravé pour le roi Pépi Ier le dit sans détour : « Voici qu'il est venu en Orion, voici qu'Osiris est venu en Orion. » Les spécialistes ont identifié Sah à Orion grâce aux listes égyptiennes d'étoiles décanales et aux plafonds astronomiques conservés dans les temples et les tombes.",
+      "ja": "エジプトで天を見つめた人々は、「Sah」と呼ばれる星座——オリオン座の星々とうさぎ座の一部にまたがります——を神オシリスと同一視していました。ペピ1世のために刻まれたピラミッド・テキストは、はっきりとこう述べています。「見よ、彼はオリオンとして来た。見よ、オシリスはオリオンとして来た。」学者たちは、エジプトのデカン星表と、神殿や墓の天井に残る星図とを手がかりに、Sah をオリオン座と同定しました。",
+      "zh-Hans": "埃及的观天者把一个名为“Sah”的星座——它涵盖猎户座诸星以及天兔座的一部分——与俄西里斯神相认同。为佩皮一世铭刻的一段金字塔铭文说得明白：“看啊，他已作为猎户而来；看啊，俄西里斯已作为猎户而来。”学者们凭借埃及的旬星表，以及神庙与陵墓天花板上留存下来的星图，确认了 Sah 即猎户座。"
+    }
   },
   {
     "constellation": "Tau",
@@ -30,7 +60,17 @@
     "summary": "The Greek poet Hesiod's farming manual, written around 700 BCE, times the whole agricultural year by the Pleiades star cluster: \"When the Pleiades... are rising, begin your harvest, and your ploughing when they are going to set.\" Later in the same poem he warns sailors to pull their ships ashore once the Pleiades \"plunge into the misty sea to escape Orion's rude strength,\" and till the land instead.",
     "sourceType": "primary",
     "source": "Hesiod, Works and Days, lines 383–387 and 618–623",
-    "sourceDetail": "Trans. Hugh G. Evelyn-White, Loeb Classical Library (1914)"
+    "sourceDetail": "Trans. Hugh G. Evelyn-White, Loeb Classical Library (1914)",
+    "topicI18n": {
+      "fr": "Un calendrier paysan inscrit dans les étoiles",
+      "ja": "星に刻まれた農事暦",
+      "zh-Hans": "写在星辰里的农人历"
+    },
+    "summaryI18n": {
+      "fr": "Le manuel d'agriculture du poète grec Hésiode, composé vers 700 av. J.-C., règle toute l'année agricole sur l'amas des Pléiades : « Quand les Pléiades… se lèvent, commence ta moisson, et ton labour quand elles vont se coucher. » Plus loin dans le même poème, il avertit les marins de tirer leurs navires au sec dès que les Pléiades « plongent dans la mer brumeuse pour fuir la rude force d'Orion », et de travailler la terre à la place.",
+      "ja": "紀元前700年ごろに書かれたギリシアの詩人ヘシオドスの農事の手引きは、農作業の一年をまるごとプレアデス星団に合わせて定めています。「プレアデスが……昇るときに刈り入れを始め、沈もうとするときに耕せ。」同じ詩の後段では、プレアデスが「オリオンの荒々しい力を逃れて霧深い海へ沈む」ならば、船を陸へ引き上げ、代わりに土を耕すようにと船乗りたちを戒めています。",
+      "zh-Hans": "希腊诗人赫西俄德写于约公元前700年的农事手册，用昴星团为整个农业年计时：“当昴星团……升起时，开始你的收割；当它们将要沉落时，开始你的耕耘。”同一首诗的后段，他又告诫水手：一旦昴星团“为躲避猎户粗暴的力量而扎进雾气弥漫的大海”，就该把船拖上岸，转而去耕种土地。"
+    }
   },
   {
     "constellation": "Tau",
@@ -38,7 +78,17 @@
     "summary": "Across Polynesia the Pleiades mark the turn of the year — Matariki to the Māori, Makaliʻi in Hawaiʻi, Matariʻi in Tahiti. In Māori tradition the cluster's heliacal rising in late June sets the start of the maramataka, the traditional lunar calendar, a practice documented from 19th-century Māori manuscript sources.",
     "sourceType": "academic",
     "source": "R. Matamua, Matariki: The Star of the Year (Huia Publishers, 2017)",
-    "sourceDetail": "Also W. Orchiston, \"A Polynesian Astronomical Perspective: The Maori of New Zealand,\" in Astronomy Across Cultures (2000)"
+    "sourceDetail": "Also W. Orchiston, \"A Polynesian Astronomical Perspective: The Maori of New Zealand,\" in Astronomy Across Cultures (2000)",
+    "topicI18n": {
+      "fr": "Matariki, le nouvel an māori",
+      "ja": "Matariki——マオリの新年",
+      "zh-Hans": "Matariki，毛利人的新年"
+    },
+    "summaryI18n": {
+      "fr": "Dans toute la Polynésie, les Pléiades marquent le passage de l'année — Matariki chez les Māori, Makaliʻi à Hawaiʻi, Matariʻi à Tahiti. Dans la tradition māorie, le lever héliaque de l'amas, à la fin de juin, fixe le début du maramataka, le calendrier lunaire traditionnel, un usage documenté par des sources manuscrites māories du XIXe siècle.",
+      "ja": "ポリネシア各地で、プレアデスは年の変わり目を告げます——マオリの人々には Matariki、ハワイでは Makaliʻi、タヒチでは Matariʻi。マオリの伝統では、6月下旬にこの星団がヘリアカル・ライジングを迎えることが、伝統的な太陰暦 maramataka の始まりを定めます。19世紀のマオリの写本資料に記録されている慣行です。",
+      "zh-Hans": "在整个波利尼西亚，昴星团都标示着一年的更替——毛利人称之为 Matariki，夏威夷称 Makaliʻi，塔希提称 Matariʻi。在毛利传统中，这个星团于6月下旬的偕日升定下了 maramataka（传统阴历）的开端，这一做法见于19世纪毛利人的手稿文献。"
+    }
   },
   {
     "constellation": "Tau",
@@ -46,7 +96,17 @@
     "summary": "MUL.APIN names the constellation behind Taurus \"GU4.AN.NA,\" the Bull of Heaven, and lists the Pleiades separately as \"MUL.MUL\" — literally \"the Stars.\" The cluster heads MUL.APIN's whole star list and turns up in agricultural omen texts, including one reading that an elongated appearance of the Pleiades foretold a good harvest.",
     "sourceType": "primary",
     "source": "MUL.APIN, Tablet I star lists",
-    "sourceDetail": "Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989); J.H. Rogers, Journal of the British Astronomical Association 108 (1998)"
+    "sourceDetail": "Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989); J.H. Rogers, Journal of the British Astronomical Association 108 (1998)",
+    "topicI18n": {
+      "fr": "« Le Taureau du Ciel » et « les Étoiles »",
+      "ja": "「天の牡牛」と「星々」",
+      "zh-Hans": "“天牛”与“群星”"
+    },
+    "summaryI18n": {
+      "fr": "MUL.APIN nomme « GU4.AN.NA », le Taureau du Ciel, la constellation qui se tient derrière notre Taureau, et inscrit les Pléiades à part sous le nom de « MUL.MUL » — littéralement « les Étoiles ». L'amas ouvre toute la liste d'étoiles de MUL.APIN et revient dans les textes de présages agricoles, dont l'un veut qu'une apparence allongée des Pléiades annonce une bonne récolte.",
+      "ja": "MUL.APIN は、おうし座のもとになった星座を「GU4.AN.NA」、すなわち天の牡牛と名づけ、プレアデスはそれとは別に「MUL.MUL」——文字どおり「星々」——として挙げています。この星団は MUL.APIN の星表全体の冒頭を飾り、農事の予兆文書にも登場します。そのなかには、プレアデスが引き伸ばされたように見えるのは豊作の前触れだと読む一節もあります。",
+      "zh-Hans": "MUL.APIN 把金牛座背后的那个星座称为“GU4.AN.NA”，即天之公牛；又把昴星团单独列为“MUL.MUL”——字面意思就是“群星”。这个星团位居 MUL.APIN 整份星表之首，也出现在农业占验文书之中，其中一条判读说，昴星团显得拉长，预示着好收成。"
+    }
   },
   {
     "constellation": "Sco",
@@ -54,7 +114,17 @@
     "summary": "MUL.APIN calls the constellation we know as Scorpius \"GIR.TAB,\" the Scorpion, and gives it a fixed place in the Babylonian calendar — its ideal rising date falls on day 5 of the eighth month in the text's scheme, with Antares serving as a seasonal marker star.",
     "sourceType": "primary",
     "source": "MUL.APIN, Tablets I–II",
-    "sourceDetail": "Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989)"
+    "sourceDetail": "Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989)",
+    "topicI18n": {
+      "fr": "« Le Scorpion »",
+      "ja": "「蠍」",
+      "zh-Hans": "“蝎子”"
+    },
+    "summaryI18n": {
+      "fr": "MUL.APIN donne à la constellation que nous appelons le Scorpion le nom de « GIR.TAB », le Scorpion, et lui assigne une place fixe dans le calendrier babylonien — sa date de lever idéale tombe le 5 du huitième mois dans le schéma du texte, Antarès servant d'étoile repère pour les saisons.",
+      "ja": "MUL.APIN は、私たちがさそり座として知る星座を「GIR.TAB」、すなわち蠍と呼び、バビロニアの暦のなかに定まった位置を与えています——この書の体系では、その理想的な出現の日は第八の月の5日にあたり、アンタレスが季節を示す目印の星の役目を果たしていました。",
+      "zh-Hans": "MUL.APIN 把我们所知的天蝎座称为“GIR.TAB”，即蝎子，并在巴比伦历法中给了它固定的位置——按该书的体系，它理想的升起之日落在第八个月的第5日，而心宿二则充当标记时节的星。"
+    }
   },
   {
     "constellation": "Lib",
@@ -62,7 +132,17 @@
     "summary": "For most of antiquity, the stars of Libra weren't their own constellation at all — Greek astronomers, including Aratus in his 3rd-century-BCE poem the Phaenomena, counted them as the Claws (Chelae) of Scorpius. Rome introduced the separate \"Scales\" figure around the 1st century BCE, but the old name held on in technical astronomy — Ptolemy's Almagest, written some two centuries later, still calls it the Claws. Two of its brightest stars keep the memory alive: Zubenelgenubi (\"southern claw\") and Zubeneschamali (\"northern claw\").",
     "sourceType": "primary",
     "source": "Aratus, Phaenomena; Ptolemy, Almagest",
-    "sourceDetail": "Classical sourcing synthesized in I. Ridpath, Star Tales (1988)"
+    "sourceDetail": "Classical sourcing synthesized in I. Ridpath, Star Tales (1988)",
+    "topicI18n": {
+      "fr": "Jadis les pinces du scorpion",
+      "ja": "かつては蠍の鋏",
+      "zh-Hans": "它曾是蝎子的钳"
+    },
+    "summaryI18n": {
+      "fr": "Pendant presque toute l'Antiquité, les étoiles de la Balance n'ont pas formé de constellation propre — les astronomes grecs, dont Aratos dans son poème Phaenomena du IIIe siècle av. J.-C., les comptaient comme les Pinces (Chelae) du Scorpion. Rome a introduit la figure distincte de la « Balance » vers le Ier siècle av. J.-C., mais l'ancien nom s'est maintenu dans l'astronomie savante — l'Almagest de Ptolémée, rédigé quelque deux siècles plus tard, les appelle encore les Pinces. Deux de ses étoiles les plus brillantes en gardent la mémoire : Zubenelgenubi (« pince du sud ») et Zubeneschamali (« pince du nord »).",
+      "ja": "古代の大半を通じて、てんびん座の星々はそもそも独立した星座ではありませんでした——紀元前3世紀の詩『Phaenomena』を著したアラトスをはじめとするギリシアの天文学者たちは、それをさそり座の鋏(Chelae)として数えていたのです。ローマが独立した「天秤」の像を持ち込んだのは紀元前1世紀ごろですが、古い呼び名は専門的な天文学のなかに生き続けました——その二世紀ほどのちに書かれたプトレマイオスの『Almagest』は、なおこれを「鋏」と呼んでいます。もっとも明るい二つの星が、その記憶を今に伝えています。ズベンエルゲヌビ(「南の鋏」)とズベンエシャマリ(「北の鋏」)です。",
+      "zh-Hans": "在古代的大部分时间里，天秤座的这些星根本不算一个独立的星座——希腊天文学家把它们算作天蝎的钳（Chelae），阿拉托斯在其公元前3世纪的诗作《Phaenomena》中也是如此。罗马人在公元前1世纪前后引入了独立的“天秤”形象，但旧名在专业天文学里一直沿用——约两个世纪之后成书的托勒密《Almagest》仍称它为钳。它最亮的两颗星至今留存着这段记忆：Zubenelgenubi（“南钳”）与 Zubeneschamali（“北钳”）。"
+    }
   },
   {
     "constellation": "Vir",
@@ -70,7 +150,17 @@
     "summary": "MUL.APIN calls the stretch of sky around Spica \"AB.SIN,\" the Furrow — picturing that part of the ecliptic as a ploughed field with Spica as its ripened ear of grain. Its heliacal rising in early autumn lined up with the Mesopotamian sowing season, giving it a direct, practical role in the farming calendar.",
     "sourceType": "primary",
     "source": "MUL.APIN, Tablet I star list",
-    "sourceDetail": "Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989)"
+    "sourceDetail": "Hunger & Pingree, MUL.APIN: An Astronomical Compendium in Cuneiform (1989)",
+    "topicI18n": {
+      "fr": "« Le Sillon »",
+      "ja": "「畝」",
+      "zh-Hans": "“犁沟”"
+    },
+    "summaryI18n": {
+      "fr": "MUL.APIN nomme « AB.SIN », le Sillon, la portion de ciel qui entoure Spica — imaginant cette part de l'écliptique comme un champ labouré dont Spica serait l'épi mûr. Son lever héliaque, au début de l'automne, coïncidait avec la saison des semailles en Mésopotamie, ce qui lui donnait un rôle direct et pratique dans le calendrier agricole.",
+      "ja": "MUL.APIN は、スピカのまわりに広がる天の一帯を「AB.SIN」、すなわち畝と呼びます——黄道のその部分を耕された畑に見立て、スピカをそこに実った穀物の穂と見なしたのです。初秋のヘリアカル・ライジングはメソポタミアの種まきの季節と重なり、この星座に農事暦のなかで直接的で実用的な役割を与えていました。",
+      "zh-Hans": "MUL.APIN 把角宿一周围的那片天区称为“AB.SIN”，即犁沟——把黄道的那一段想象成一片耕过的田，角宿一便是其中饱满的谷穗。它在初秋的偕日升与美索不达米亚的播种时节相合，使它在农事历中有着直接而实用的角色。"
+    }
   },
   {
     "constellation": "UMa",
@@ -78,6 +168,16 @@
     "summary": "Han-dynasty Chinese astronomers read the season directly off the Big Dipper's handle. The Huainanzi (139 BCE) states it outright: \"When the handle of the Dipper points East, all under heaven is spring; when it points south, all under heaven is summer; when it points west, all under heaven is autumn; when it points north, all under heaven is winter.\" Sima Qian's Shiji, written a few decades later, likewise treats the Dipper as central to fixing the calendar.",
     "sourceType": "primary",
     "source": "Huainanzi, \"Tianwen xun\" (139 BCE); Sima Qian, Shiji, \"Tianguan shu\" (c. 91 BCE)",
-    "sourceDetail": "Trans. in D.W. Pankenier, Astrology and Cosmology in Early China (Cambridge University Press, 2013)"
+    "sourceDetail": "Trans. in D.W. Pankenier, Astrology and Cosmology in Early China (Cambridge University Press, 2013)",
+    "topicI18n": {
+      "fr": "Le Chariot qui disait les saisons",
+      "ja": "季節を告げた北斗",
+      "zh-Hans": "指示时令的北斗"
+    },
+    "summaryI18n": {
+      "fr": "Les astronomes chinois de la dynastie Han lisaient la saison directement sur le timon du Grand Chariot. Le Huainanzi (139 av. J.-C.) le dit sans détour : « Quand le timon du Chariot pointe vers l'est, tout sous le ciel est printemps ; quand il pointe vers le sud, tout sous le ciel est été ; quand il pointe vers l'ouest, tout sous le ciel est automne ; quand il pointe vers le nord, tout sous le ciel est hiver. » Le Shiji de Sima Qian, rédigé quelques décennies plus tard, accorde lui aussi au Chariot un rôle central dans la fixation du calendrier.",
+      "ja": "漢代の中国の天文家たちは、北斗の柄の向きから季節をそのまま読み取っていました。『淮南子』(紀元前139年)は、はっきりとこう述べています。「斗の柄が東を指せば、天下はみな春である。南を指せば、天下はみな夏である。西を指せば、天下はみな秋である。北を指せば、天下はみな冬である。」その数十年のちに書かれた司馬遷の『史記』も同じく、暦を定めるうえで北斗を中心に据えて論じています。",
+      "zh-Hans": "汉代的中国天文家直接从北斗的斗柄读出时令。《淮南子》（公元前139年）说得明白：“斗柄东指，天下皆春；斗柄南指，天下皆夏；斗柄西指，天下皆秋；斗柄北指，天下皆冬。”数十年后成书的司马迁《史记》，同样把北斗视为厘定历法的枢要。"
+    }
   }
 ]
