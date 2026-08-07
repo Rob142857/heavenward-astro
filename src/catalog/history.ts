@@ -18,9 +18,21 @@ export interface HistoryEntry {
   starName?: string;
   topic: string;
   summary: string;
+  /** Translations of `topic`/`summary` by locale — our prose, so translated.
+   *  Falls back to English when a locale is missing. */
+  topicI18n?: Record<string, string>;
+  summaryI18n?: Record<string, string>;
   sourceType: HistorySourceType;
   source: string;
   sourceDetail: string;
+}
+
+export function historyTopic(entry: HistoryEntry, locale: string): string {
+  return entry.topicI18n?.[locale] ?? entry.topic;
+}
+
+export function historySummary(entry: HistoryEntry, locale: string): string {
+  return entry.summaryI18n?.[locale] ?? entry.summary;
 }
 
 let cache: HistoryEntry[] | null = null;

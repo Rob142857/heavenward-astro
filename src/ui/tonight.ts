@@ -521,6 +521,26 @@ function renderControls(
     pillRow.appendChild(pill);
   }
 
+  // Explains what the selected preset actually does. The twelve sentences
+  // behind descKey were written and translated into all four locales but
+  // rendered nowhere, leaving "Naked Eye / Personal Telescope / Observatory"
+  // as three unexplained words. Costs no new strings, and lives inside the
+  // collapsed Filters panel so it can't clutter the default view.
+  const eqDesc = document.createElement("p");
+  eqDesc.className = "eq-description";
+  const describeEquipment = (): void => {
+    const active =
+      EQUIPMENT_OPTIONS.find(
+        (e) => e.key === (ctx.prefs.equipment ?? "naked-eye"),
+      ) ?? EQUIPMENT_OPTIONS[0];
+    eqDesc.textContent = t(active.descKey);
+  };
+  describeEquipment();
+  pillRow.addEventListener("click", () => {
+    // Runs after the click handlers above have updated the preference.
+    requestAnimationFrame(describeEquipment);
+  });
+
   const cats =
     ctx.prefs.enabledCategories ?? CATEGORY_OPTIONS.map((c) => c.key);
   for (const cat of CATEGORY_OPTIONS) {
@@ -544,6 +564,7 @@ function renderControls(
     pillRow.appendChild(pill);
   }
   filtersPanel.appendChild(pillRow);
+  filtersPanel.appendChild(eqDesc);
 
   // Sort \u00b7 display limit
   const metaRow = document.createElement("div");

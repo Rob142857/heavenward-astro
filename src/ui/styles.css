@@ -2838,3 +2838,32 @@ body {
 }
 .llm-use-smaller:hover { border-color: var(--gold); color: var(--text); }
 .llm-use-smaller:disabled { opacity: 0.5; cursor: default; }
+
+/* Per-source provenance detail. Collapsed by default so the About page's
+   default length is unchanged — this revives .about-list, .about-credit-label
+   and .about-gratitude, which were left as dead rules when an earlier, richer
+   version of this page was trimmed. */
+.about-source-detail {
+  margin-top: 8px;
+}
+.about-source-detail > summary {
+  cursor: pointer;
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  letter-spacing: 0.03em;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+.about-source-detail > summary:hover {
+  color: var(--gold-light);
+}
+
+/* Explains the selected equipment preset, inside the collapsed Filters
+   panel so it never competes with the default view. */
+.eq-description {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}

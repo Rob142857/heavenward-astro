@@ -21,8 +21,21 @@ export interface MythologyEntry {
   figure: string;
   connectionStrength: MythologyConnectionStrength;
   summary: string;
+  /**
+   * Translations of `summary`, keyed by locale. These are OUR prose, so
+   * unlike the verbatim Campbell quotations in quotes.ts they should be
+   * translated — a French reader hitting an English paragraph mid-page in an
+   * otherwise French app is a worse outcome than a translated summary.
+   * Falls back to the English `summary` when a locale is missing.
+   */
+  summaryI18n?: Record<string, string>;
   source: string;
   sourceDetail: string;
+}
+
+/** The summary in the active locale, falling back to English. */
+export function mythologySummary(entry: MythologyEntry, locale: string): string {
+  return entry.summaryI18n?.[locale] ?? entry.summary;
 }
 
 let cache: MythologyEntry[] | null = null;

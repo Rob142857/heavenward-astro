@@ -141,14 +141,52 @@ function renderDataAcknowledgements(): string {
 }
 
 function renderAcknowledgementCard(source: CatalogProvenance): string {
+  // provenance.ts has modelled per-source `upstreams` and `gratitude` all
+  // along and rendered neither, which left the licence claim "used with
+  // authorization, cited per entry" untrue in the product: the four Campbell
+  // books behind the mythology were named nowhere a reader could see them.
+  // Collapsed by default so the page's default length is unchanged — the
+  // detail is there for anyone who wants to check a source, not in the way
+  // of anyone who doesn't.
+  const detail = renderSourceDetail(source);
   return `
     <div class="about-feature">
       <div class="about-feature-icon">${sourceIcon(source.key)}</div>
       <div>
         <strong><a href="${source.primaryUrl}" target="_blank" rel="noopener" class="wiki-link">${source.label}</a></strong>
         <p>${source.summary}</p>
+        ${detail}
       </div>
     </div>
+  `;
+}
+
+function renderSourceDetail(source: CatalogProvenance): string {
+  const hasUpstreams = source.upstreams.length > 0;
+  if (!hasUpstreams && !source.gratitude) return "";
+
+  const upstreams = hasUpstreams
+    ? `<ul class="about-list">${source.upstreams
+        .map(
+          (u) => `<li>
+            <a href="${u.url}" target="_blank" rel="noopener" class="wiki-link">${u.name}</a>
+            — ${u.role}
+            <span class="about-credit-label">${u.maintainer} · ${u.license}</span>
+          </li>`,
+        )
+        .join("")}</ul>`
+    : "";
+
+  const gratitude = source.gratitude
+    ? `<p class="about-gratitude">${source.gratitude}</p>`
+    : "";
+
+  return `
+    <details class="about-source-detail">
+      <summary>${t("about.sources.showDetail", { count: source.upstreams.length })}</summary>
+      ${upstreams}
+      ${gratitude}
+    </details>
   `;
 }
 

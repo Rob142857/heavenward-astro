@@ -39,7 +39,9 @@ import { navigate } from "./router.js";
 import { SORT_OPTIONS } from "./filterOptions.js";
 import { savePrefs } from "../services/prefs.js";
 import { recordObservation } from "../services/observations.js";
-import { t } from "../i18n/translations.js";
+import { t, detectLocale } from "../i18n/translations.js";
+import { mythologySummary } from "../catalog/mythology.js";
+import { historyTopic, historySummary } from "../catalog/history.js";
 
 // ── Breadcrumb trail for nearby-object navigation ─────────────────
 
@@ -1024,6 +1026,8 @@ function appendLoreSection(wrapper: HTMLElement, skyCtx: SkyContext): void {
     `<h3 class="detail-section-title">${t("detail.section.lore")}</h3>`,
   ];
 
+  const locale = detectLocale();
+
   if (myth) {
     // "thin" entries are ones where Campbell discusses the figure but not the
     // constellation — the Aries summary literally opens "Campbell doesn't
@@ -1035,7 +1039,7 @@ function appendLoreSection(wrapper: HTMLElement, skyCtx: SkyContext): void {
         ? "detail.lore.mythThin"
         : "detail.lore.myth";
     parts.push(`
-      <p class="detail-prose lore-body">${myth.summary}</p>
+      <p class="detail-prose lore-body">${mythologySummary(myth, locale)}</p>
       <p class="lore-citation">${t(framingKey, {
         figure: myth.figure,
         source: myth.source,
@@ -1046,8 +1050,8 @@ function appendLoreSection(wrapper: HTMLElement, skyCtx: SkyContext): void {
 
   for (const entry of history) {
     parts.push(`
-      <h4 class="lore-subheading">${entry.topic}</h4>
-      <p class="detail-prose lore-body">${entry.summary}</p>
+      <h4 class="lore-subheading">${historyTopic(entry, locale)}</h4>
+      <p class="detail-prose lore-body">${historySummary(entry, locale)}</p>
       <p class="lore-citation">${t("detail.lore.history", {
         source: entry.source,
         detail: entry.sourceDetail,
