@@ -540,6 +540,53 @@ export const CATALOG_PROVENANCE: CatalogProvenance[] = [
       "Thank you to the translators and scholars who keep these primary texts legible across three thousand years, so a modern stargazer can read almost the same words an ancient one did.",
   },
   {
+    key: "namesakes",
+    label: "Star Namesakes",
+    icon: "myth",
+    status: "active",
+    kind: "supporting",
+    enabledSource: false,
+    summary:
+      "Ships, rockets, telescopes, an aeroplane and a public holiday that took a star's name. Every entry rests on a record from the people who did the naming — a naval reference work, an agency release, a company's own history — never on the fact that two names happen to match. Where a naming story is only ever repeated second-hand, it is marked as such.",
+    maintainer: "Compiled from primary organisational records",
+    primaryUrl: "https://www.history.navy.mil/research/histories/ship-histories/danfs.html",
+    license: "Public records and organisational statements, cited per entry",
+    output: "src/catalog/namesakes.json, surfaced via src/engine/nearby.ts",
+    importJob: null,
+    upstreams: [
+      {
+        name: "Dictionary of American Naval Fighting Ships",
+        url: "https://www.history.navy.mil/research/histories/ship-histories/danfs.html",
+        maintainer: "Naval History and Heritage Command",
+        license: "US Government work, public domain",
+        role: "Source for the Rigel, Bellatrix, Denebola and Albireo ships — each entry opens with the star, in the Navy's own words.",
+      },
+      {
+        name: "NASA and ESA naming announcements",
+        url: "https://www.nasa.gov/",
+        maintainer: "NASA; European Space Agency",
+        license: "Agency releases, cited per entry",
+        role: "Source for Orion, Altair, the Scout rocket stages, the Canopus star tracker and Europe's Vega launcher.",
+      },
+      {
+        name: "Company and institutional histories",
+        url: "https://www.subaru.co.jp/en/",
+        maintainer: "Subaru Corporation; NAOJ; Lockheed Martin; Capella Space; Aldebaran; Sirius",
+        license: "Organisations' own published statements, cited per entry",
+        role: "Source for the Subaru Telescope and carmaker, the Lockheed Electra, Capella Space, Aldebaran Robotics and Sirius Satellite Radio.",
+      },
+      {
+        name: "Te Kāhui o Matariki Public Holiday Act 2022",
+        url: "https://www.legislation.govt.nz/",
+        maintainer: "New Zealand Parliament",
+        license: "Crown copyright, freely reproducible",
+        role: "Source for Matariki — the first public holiday anywhere set by an indigenous astronomical calendar.",
+      },
+    ],
+    gratitude:
+      "Thank you to the archivists and record-keepers who wrote down why a name was chosen. It is the easiest detail in the world to lose, and without them every one of these stories would be folklore.",
+  },
+  {
     key: "gaia-dr3",
     label: "Gaia DR3 Star Expansion",
     icon: "star-field",

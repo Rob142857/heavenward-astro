@@ -1,0 +1,453 @@
+[
+  {
+    "stars": [
+      "Antares"
+    ],
+    "thing": "ANTARES neutrino telescope",
+    "summary": "A neutrino detector that spent sixteen years on the Mediterranean seabed off Toulon, watching for the faint blue flashes left by particles that had crossed the universe. The collaboration's full name — Astronomy with a Neutrino Telescope and Abyss environmental RESearch — folds down to the name of the red supergiant at the Scorpion's heart.",
+    "source": "ANTARES Collaboration, antares.in2p3.fr",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Le télescope à neutrinos ANTARES",
+      "ja": "ニュートリノ望遠鏡 ANTARES",
+      "zh-Hans": "ANTARES 中微子望远镜"
+    },
+    "summaryI18n": {
+      "fr": "Un détecteur de neutrinos qui a passé seize ans au fond de la Méditerranée, au large de Toulon, à guetter les faibles éclairs bleus laissés par des particules ayant traversé l'univers. Le nom complet de la collaboration — Astronomy with a Neutrino Telescope and Abyss environmental RESearch — se replie sur celui de la supergéante rouge au cœur du Scorpion.",
+      "ja": "トゥーロン沖の地中海海底で十六年にわたり、宇宙を横断してきた粒子が残すかすかな青い閃光を見張り続けたニュートリノ検出器。共同研究の正式名称 Astronomy with a Neutrino Telescope and Abyss environmental RESearch の頭文字が、さそり座の心臓に輝く赤色超巨星の名に畳み込まれている。",
+      "zh-Hans": "一台中微子探测器，在土伦外海的地中海海底守候了十六年，等待那些穿越宇宙而来的粒子留下的微弱蓝光。该合作项目的全称 Astronomy with a Neutrino Telescope and Abyss environmental RESearch，首字母恰好折叠成天蝎心脏那颗红超巨星的名字。"
+    }
+  },
+  {
+    "stars": [
+      "Antares"
+    ],
+    "thing": "Antares launch vehicle",
+    "summary": "The medium-lift rocket that carries Cygnus cargo craft to the International Space Station. Orbital Sciences renamed it from Taurus II in 2011, saying the star is one of the brightest in the sky and that they expected the rocket to be one of the brightest in the launch market.",
+    "source": "Orbital Sciences Corporation, naming announcement, 12 December 2011",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Le lanceur Antares",
+      "ja": "ロケット「アンタレス」",
+      "zh-Hans": "安塔瑞斯运载火箭"
+    },
+    "summaryI18n": {
+      "fr": "Le lanceur de moyenne puissance qui emporte les cargos Cygnus vers la Station spatiale internationale. Orbital Sciences l'a rebaptisé Taurus II en 2011, expliquant que l'étoile est l'une des plus brillantes du ciel et qu'ils comptaient bien que la fusée soit l'une des plus brillantes du marché des lancements.",
+      "ja": "シグナス補給船を国際宇宙ステーションへ運ぶ中型ロケット。オービタル・サイエンシズ社は2011年にトーラスIIから改名し、この星は空でもっとも明るい星の一つであり、このロケットも打ち上げ市場でもっとも輝く存在になるはずだ、と述べた。",
+      "zh-Hans": "将天鹅座货运飞船送往国际空间站的中型运载火箭。轨道科学公司于2011年将其由金牛座II号改名，称这颗恒星是夜空中最明亮的星之一，而他们也期待这枚火箭成为发射市场上最耀眼的一员。"
+    }
+  },
+  {
+    "stars": [
+      "Antares"
+    ],
+    "thing": "Apollo 14's lunar module",
+    "summary": "The lunar module that carried Alan Shepard and Edgar Mitchell down to Fra Mauro in February 1971. Mitchell chose the name for the star that hung in view as they descended, and which the crew used to orient the spacecraft for landing.",
+    "source": "Smithsonian National Air and Space Museum, \"Lessons from Apollo 14\"",
+    "confidence": "widely-reported",
+    "thingI18n": {
+      "fr": "Le module lunaire d'Apollo 14",
+      "ja": "アポロ14号の月着陸船",
+      "zh-Hans": "阿波罗14号登月舱"
+    },
+    "summaryI18n": {
+      "fr": "Le module lunaire qui déposa Alan Shepard et Edgar Mitchell à Fra Mauro en février 1971. Mitchell choisit le nom de l'étoile qui restait en vue durant la descente, et dont l'équipage se servit pour orienter l'engin à l'atterrissage.",
+      "ja": "1971年2月、アラン・シェパードとエドガー・ミッチェルをフラ・マウロへ降ろした月着陸船。ミッチェルは、降下の間ずっと視界にあり、着陸時の機体の姿勢決めにも使ったこの星の名を選んだ。",
+      "zh-Hans": "1971年2月将艾伦·谢泼德与埃德加·米切尔送抵弗拉·摩洛的登月舱。米切尔以这颗恒星命名——下降过程中它始终在视野之中，机组也正是靠它来校准着陆姿态。"
+    }
+  },
+  {
+    "stars": [
+      "Algol"
+    ],
+    "thing": "The Scout rocket's first stage",
+    "summary": "NASA's small four-stage launcher, flown from 1960 into the 1990s and known as the poor man's rocket. Every stage was named for a star — Algol, then Castor, Antares and Altair — so a satellite reached orbit by climbing through them in turn.",
+    "source": "NASA SP-4402, Origins of NASA Names",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Le premier étage de la fusée Scout",
+      "ja": "スカウトロケットの第一段",
+      "zh-Hans": "侦察兵火箭第一级"
+    },
+    "summaryI18n": {
+      "fr": "Le petit lanceur à quatre étages de la NASA, en service de 1960 jusqu'aux années 1990, surnommé la fusée du pauvre. Chaque étage portait un nom d'étoile — Algol, puis Castor, Antarès et Altaïr — si bien qu'un satellite gagnait l'orbite en les gravissant tour à tour.",
+      "ja": "1960年から1990年代まで飛び続けた NASA の小型四段式ロケットで、「貧者のロケット」とも呼ばれた。各段にはアルゴル、カストル、アンタレス、アルタイルと星の名が与えられ、衛星は星を順に登るようにして軌道へ達した。",
+      "zh-Hans": "美国航天局的小型四级运载火箭，从1960年一直飞到1990年代，人称「穷人的火箭」。每一级都以恒星命名——大陵五、北河二、心宿二、河鼓二——卫星便这样一级级攀着星星抵达轨道。"
+    }
+  },
+  {
+    "stars": [
+      "Vega"
+    ],
+    "thing": "Europe's Vega launcher",
+    "summary": "The small launcher built to lift science and Earth-observation satellites into low orbit. The name is an acronym, Vettore Europeo di Generazione Avanzata, and ESA says plainly that it refers to Alpha Lyrae, one of the brightest stars in European skies.",
+    "source": "ESA, \"Frequently asked questions on Vega\"",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Le lanceur européen Vega",
+      "ja": "欧州の小型ロケット「ヴェガ」",
+      "zh-Hans": "欧洲“织女星”运载火箭"
+    },
+    "summaryI18n": {
+      "fr": "Le petit lanceur conçu pour placer en orbite basse des satellites scientifiques et d'observation de la Terre. Le nom est un acronyme, Vettore Europeo di Generazione Avanzata, et l'ESA précise sans détour qu'il renvoie à Alpha Lyrae, l'une des étoiles les plus brillantes du ciel européen.",
+      "ja": "科学衛星や地球観測衛星を低軌道へ送るために造られた小型ロケット。名は Vettore Europeo di Generazione Avanzata の頭字語であり、ESA はそれがヨーロッパの空でもっとも明るい星の一つ、こと座アルファ星を指すと明言している。",
+      "zh-Hans": "为将科学卫星与对地观测卫星送入低轨道而建造的小型运载火箭。其名是 Vettore Europeo di Generazione Avanzata 的缩写，欧空局明确表示它指的正是天琴座α，欧洲夜空中最明亮的恒星之一。"
+    }
+  },
+  {
+    "stars": [
+      "Alcyone",
+      "Electra",
+      "Maia",
+      "Merope",
+      "Taygeta"
+    ],
+    "thing": "The Subaru Telescope",
+    "summary": "Japan's 8.2-metre telescope on Maunakea. It was simply the Japan National Large Telescope until 1991, when a public contest drew some 3,500 suggestions; the winning name is the Japanese name for the Pleiades, a cluster the Hawaiians call Makaliʻi.",
+    "source": "National Astronomical Observatory of Japan, Subaru Telescope FAQ",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Le télescope Subaru",
+      "ja": "すばる望遠鏡",
+      "zh-Hans": "昴星团望远镜"
+    },
+    "summaryI18n": {
+      "fr": "Le télescope japonais de 8,2 mètres installé au Maunakea. Il ne s'appelait que « grand télescope national japonais » jusqu'en 1991, année où un concours public recueillit quelque 3 500 propositions ; le nom retenu est le nom japonais des Pléiades, un amas que les Hawaïens appellent Makaliʻi.",
+      "ja": "マウナケアにある日本の口径8.2メートル望遠鏡。1991年までは単に「日本国立大望遠鏡」と呼ばれていたが、公募には約3,500件の応募が寄せられ、選ばれたのはプレアデス星団の和名だった。ハワイではこの星団をマカリイと呼ぶ。",
+      "zh-Hans": "日本设在毛纳凯亚山的8.2米望远镜。1991年之前它只叫「日本国立大望远镜」，那一年的公开征名收到约三千五百份提议，最终选中的是昴星团的日文名字；夏威夷人则称这个星团为 Makaliʻi。"
+    }
+  },
+  {
+    "stars": [
+      "Alcyone",
+      "Electra",
+      "Maia",
+      "Merope",
+      "Taygeta"
+    ],
+    "thing": "Subaru, the carmaker",
+    "summary": "The badge on the cars is this cluster. Subaru is the Japanese name for the Pleiades, also called mutsuraboshi, the six stars, and the word carries a sense of gathering things into one — fitting for the companies brought together in 1953 to form Fuji Heavy Industries.",
+    "source": "Subaru Corporation, \"The Origin of Subaru\"",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Subaru, le constructeur automobile",
+      "ja": "自動車メーカーのスバル",
+      "zh-Hans": "斯巴鲁汽车"
+    },
+    "summaryI18n": {
+      "fr": "L'emblème sur les voitures, c'est cet amas. Subaru est le nom japonais des Pléiades, dites aussi mutsuraboshi, les six étoiles, et le mot porte l'idée de rassembler en un tout — ce qui convenait aux entreprises réunies en 1953 pour former Fuji Heavy Industries.",
+      "ja": "車のエンブレムはこの星団そのものである。スバルはプレアデス星団の和名で、六連星（むつらぼし）とも呼ばれ、語には「統ばる」＝ひとつにまとめるという含みがある。1953年に富士重工業として集った各社にふさわしい名だった。",
+      "zh-Hans": "车标画的就是这个星团。「昴」是昴星团的日文名，也称「六连星」，而这个词本身含有聚拢成一体的意思——正合1953年合并组成富士重工业的那几家公司。"
+    }
+  },
+  {
+    "stars": [
+      "Alcyone",
+      "Electra",
+      "Maia",
+      "Merope",
+      "Taygeta"
+    ],
+    "thing": "A national public holiday",
+    "summary": "New Zealand's newest public holiday, first kept in 2022, and the first anywhere set by an indigenous astronomical calendar. Matariki is the Māori name for this cluster, and the date follows its pre-dawn midwinter rising, which opens the Māori new year.",
+    "source": "Te Kāhui o Matariki Public Holiday Act 2022",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Un jour férié national",
+      "ja": "国民の祝日",
+      "zh-Hans": "一个国定假日"
+    },
+    "summaryI18n": {
+      "fr": "Le plus récent jour férié de Nouvelle-Zélande, célébré pour la première fois en 2022, et le premier au monde fixé par un calendrier astronomique autochtone. Matariki est le nom māori de cet amas, et la date suit son lever avant l'aube au cœur de l'hiver, qui ouvre la nouvelle année māorie.",
+      "ja": "2022年に初めて祝われたニュージーランド最新の祝日であり、先住民の天文暦によって日取りが定まる世界初の祝日でもある。マタリキはこの星団のマオリ名で、真冬の夜明け前にこの星団が昇る日に合わせて定められ、マオリの新年が明ける。",
+      "zh-Hans": "新西兰最新的公众假日，2022年首次庆祝，也是全世界第一个由原住民天文历法定日的假期。Matariki 是这个星团的毛利名字，节期依它在隆冬拂晓前的偕日升而定，标志毛利新年的开始。"
+    }
+  },
+  {
+    "stars": [
+      "Electra"
+    ],
+    "thing": "Amelia Earhart's aircraft",
+    "summary": "The sleek all-metal Lockheed Model 10 of the 1930s, and the aeroplane Earhart was flying when she disappeared over the Pacific in 1937. Lockheed's own history records that the Model 10 was named after a star in the Pleiades.",
+    "source": "Lockheed Martin corporate history",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "L'avion d'Amelia Earhart",
+      "ja": "アメリア・イアハートの機体",
+      "zh-Hans": "阿梅莉亚·埃尔哈特的座机"
+    },
+    "summaryI18n": {
+      "fr": "L'élégant Lockheed Model 10 tout en métal des années 1930, l'avion qu'Earhart pilotait lorsqu'elle disparut au-dessus du Pacifique en 1937. L'histoire officielle de Lockheed indique que le Model 10 fut nommé d'après une étoile des Pléiades.",
+      "ja": "1930年代の、全金属製の優美なロッキード・モデル10。1937年にイアハートが太平洋上で消息を絶ったときに操縦していた機体である。ロッキード社自身の社史は、モデル10がプレアデス星団の一星にちなむ名だと記している。",
+      "zh-Hans": "1930年代那架线条利落的全金属洛克希德10型，也是埃尔哈特1937年在太平洋上空失踪时驾驶的飞机。洛克希德公司自己的企业史记载，10型的名字取自昴星团中的一颗恒星。"
+    }
+  },
+  {
+    "stars": [
+      "Betelgeuse",
+      "Rigel"
+    ],
+    "thing": "NASA's Orion spacecraft",
+    "summary": "The crew capsule for the Artemis flights to the Moon. When the name was announced in 2006, NASA said it was chosen for one of the brightest and most easily recognised constellations, whose stars had guided explorers for centuries.",
+    "source": "NASA release H06-299, 22 August 2006",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Le vaisseau Orion de la NASA",
+      "ja": "NASA の宇宙船オリオン",
+      "zh-Hans": "美国航天局的猎户座飞船"
+    },
+    "summaryI18n": {
+      "fr": "La capsule habitée des missions Artemis vers la Lune. À l'annonce du nom en 2006, la NASA expliqua l'avoir choisi pour l'une des constellations les plus brillantes et les plus faciles à reconnaître, dont les étoiles avaient guidé les explorateurs pendant des siècles.",
+      "ja": "月へ向かうアルテミス計画の有人カプセル。2006年に名が発表された際、NASA は、もっとも明るく見分けやすい星座の一つであり、その星々が幾世紀にもわたり探検者を導いてきたからだと説明した。",
+      "zh-Hans": "执行阿尔忒弥斯登月任务的载人飞船。2006年公布命名时，美国航天局表示，选它是因为这是夜空中最明亮、最易辨认的星座之一，其星辰数百年来一直为探险者指路。"
+    }
+  },
+  {
+    "stars": [
+      "Arcturus"
+    ],
+    "thing": "The voyaging canoe Hōkūleʻa",
+    "summary": "The double-hulled canoe that sailed from Hawaiʻi to Tahiti in 1976 without instruments and revived Polynesian wayfinding. Hōkūleʻa is the Hawaiian name for Arcturus, which passes directly overhead at Hawaiʻi's latitude; its founder Herb Kāne rendered it star of gladness.",
+    "source": "Polynesian Voyaging Society, Herb Kawainui Kāne",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "La pirogue de voyage Hōkūleʻa",
+      "ja": "航海カヌー「ホクレア」",
+      "zh-Hans": "远航独木舟「霍库雷阿」"
+    },
+    "summaryI18n": {
+      "fr": "La pirogue à double coque qui rallia Tahiti depuis Hawaï en 1976 sans le moindre instrument, faisant renaître la navigation polynésienne. Hōkūleʻa est le nom hawaïen d'Arcturus, qui passe exactement au zénith à la latitude d'Hawaï ; son fondateur Herb Kāne le traduisait par « étoile de la joie ».",
+      "ja": "1976年、計器を一切使わずハワイからタヒチまで航海し、ポリネシアの伝統航法を蘇らせた双胴カヌー。ホクレアはアークトゥルスのハワイ名で、この星はハワイの緯度でちょうど真上を通る。創設者ハーブ・カーネはこれを「喜びの星」と訳した。",
+      "zh-Hans": "1976年不带任何仪器从夏威夷航向大溪地、让波利尼西亚传统航海术重获新生的双体独木舟。Hōkūleʻa 是大角星的夏威夷名字，这颗星恰好从夏威夷的纬度正上方经过；创办人赫伯·凯恩将其译作「欢喜之星」。"
+    }
+  },
+  {
+    "stars": [
+      "Sirius"
+    ],
+    "thing": "HMS Sirius, flagship of the First Fleet",
+    "summary": "The naval flagship that sailed from Portsmouth in 1787 and reached Botany Bay in January 1788. Bought as the merchantman Berwick, she was renamed before the voyage south for the brightest star in the night sky.",
+    "source": "Dictionary of Sydney, \"HMS Sirius\"",
+    "confidence": "widely-reported",
+    "thingI18n": {
+      "fr": "Le HMS Sirius, navire amiral de la Première Flotte",
+      "ja": "第一船団の旗艦 HMS シリウス",
+      "zh-Hans": "第一舰队旗舰「天狼星号」"
+    },
+    "summaryI18n": {
+      "fr": "Le navire amiral qui quitta Portsmouth en 1787 et atteignit Botany Bay en janvier 1788. Acheté comme le marchand Berwick, il fut rebaptisé avant le voyage vers le sud du nom de l'étoile la plus brillante du ciel nocturne.",
+      "ja": "1787年にポーツマスを発ち、1788年1月にボタニー湾へ至った旗艦。商船バーウィックとして購入されたのち、南への航海を前に、夜空でもっとも明るい星の名に改められた。",
+      "zh-Hans": "1787年自朴次茅斯启航、1788年1月抵达植物湾的旗舰。她本是买来的商船「贝里克号」，南下之前改以夜空中最明亮的那颗恒星为名。"
+    }
+  },
+  {
+    "stars": [
+      "Rigel"
+    ],
+    "thing": "USS Rigel",
+    "summary": "A destroyer tender commissioned into the US Navy in 1922, part of a long convention of naming naval auxiliaries after navigation stars. The Navy's own ship dictionary does not describe her first — it opens the entry with the derivation, in five words: a star of the first magnitude in the constellation Orion.",
+    "source": "Naval History and Heritage Command, Dictionary of American Naval Fighting Ships, \"Rigel I (AD-13)\"",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "L'USS Rigel",
+      "ja": "アメリカ海軍艦「リゲル」",
+      "zh-Hans": "美国海军「参宿七号」"
+    },
+    "summaryI18n": {
+      "fr": "Un ravitailleur de destroyers entré en service dans la marine américaine en 1922, s'inscrivant dans une longue habitude de baptiser les auxiliaires du nom d'étoiles de navigation. Le dictionnaire officiel des navires de l'US Navy ne commence pas par décrire le bâtiment : il ouvre la notice par l'étymologie, en cinq mots — une étoile de première grandeur dans la constellation d'Orion.",
+      "ja": "1922年に就役したアメリカ海軍の駆逐艦母艦で、補助艦に航海用の星の名を与える長い慣例に連なる。海軍自身の艦艇事典は、まず艦を語らない。項の冒頭に置かれるのは語源のほうである——オリオン座の一等星、と。",
+      "zh-Hans": "1922年入役的美国海军驱逐舰供应舰，延续了以导航星命名辅助舰艇的长久传统。海军自己的舰艇辞典并不先写这条船，而是以词源开篇，只用寥寥数字：猎户座中的一颗一等星。"
+    }
+  },
+  {
+    "stars": [
+      "Bellatrix"
+    ],
+    "thing": "USS Bellatrix",
+    "summary": "An attack cargo ship commissioned in 1942. The Navy's ship dictionary is unusually generous in this entry, giving the star's colour and brightness and then the meaning of the name: a bright white helium star, magnitude 1.7, in Orion — and Latin for female warrior.",
+    "source": "Naval History and Heritage Command, Dictionary of American Naval Fighting Ships, \"Bellatrix I (AK-20)\"",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "L'USS Bellatrix",
+      "ja": "アメリカ海軍艦「ベラトリックス」",
+      "zh-Hans": "美国海军「参宿五号」"
+    },
+    "summaryI18n": {
+      "fr": "Un cargo d'assaut entré en service en 1942. Le dictionnaire des navires de la marine américaine se montre ici inhabituellement généreux : il donne la couleur et l'éclat de l'étoile, puis le sens du nom — une étoile blanche brillante à hélium, de magnitude 1,7, dans Orion, et « guerrière » en latin.",
+      "ja": "1942年就役の攻撃貨物船。海軍の艦艇事典はこの項に限って筆が寛やかで、星の色と明るさを挙げたうえで名の意味まで記す——オリオン座にある1.7等の明るい白色ヘリウム星、そしてラテン語で「女戦士」。",
+      "zh-Hans": "1942年入役的攻击运输舰。海军的舰艇辞典在这一条格外慷慨，先给出这颗星的颜色与亮度，再交代名字的含义——猎户座中一颗1.7等的明亮白色氦星，拉丁文意为「女战士」。"
+    }
+  },
+  {
+    "stars": [
+      "Denebola"
+    ],
+    "thing": "USS Denebola",
+    "summary": "Two ships have carried the name — a destroyer tender and a stores ship — and the Navy's ship dictionary opens both entries with the same line, calling it a first-magnitude star in the northern constellation Leo. The star sits at the lion's tail, which is what its Arabic name means.",
+    "source": "Naval History and Heritage Command, Dictionary of American Naval Fighting Ships, \"Denebola I & II\"",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "L'USS Denebola",
+      "ja": "アメリカ海軍艦「デネボラ」",
+      "zh-Hans": "美国海军「五帝座一号」"
+    },
+    "summaryI18n": {
+      "fr": "Deux navires ont porté ce nom — un ravitailleur de destroyers et un navire-magasin — et le dictionnaire des navires de la marine américaine ouvre les deux notices par la même ligne : une étoile de première grandeur dans la constellation boréale du Lion. L'étoile marque la queue du lion, ce que dit précisément son nom arabe.",
+      "ja": "同名の艦は二隻あり、駆逐艦母艦と貨物補給艦である。海軍の艦艇事典はいずれの項も同じ一行で始める——北天のしし座にある一等星、と。この星は獅子の尾に位置し、アラビア語の名がまさにそれを言い表している。",
+      "zh-Hans": "有两艘舰艇用过这个名字——一艘驱逐舰供应舰与一艘补给舰——海军的舰艇辞典在两条目的开头都写着同一句：北天狮子座中的一颗一等星。这颗星正落在狮子的尾巴上，其阿拉伯语名字说的就是这个意思。"
+    }
+  },
+  {
+    "stars": [
+      "Albireo"
+    ],
+    "thing": "USS Albireo",
+    "summary": "A cargo ship of the Second World War. The Navy's ship dictionary places the star precisely rather than just naming it: the star in the constellation Cygnus which represents the head of the swan — the gold-and-blue double that is, for many people, the loveliest thing a small telescope will show them.",
+    "source": "Naval History and Heritage Command, Dictionary of American Naval Fighting Ships, \"Albireo\"",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "L'USS Albireo",
+      "ja": "アメリカ海軍艦「アルビレオ」",
+      "zh-Hans": "美国海军「辇道增七号」"
+    },
+    "summaryI18n": {
+      "fr": "Un cargo de la Seconde Guerre mondiale. Le dictionnaire des navires de la marine américaine ne se contente pas de nommer l'étoile, il la situe : l'étoile de la constellation du Cygne qui figure la tête du cygne — cette double or et bleu qui reste, pour beaucoup, la plus belle chose qu'une petite lunette leur montrera jamais.",
+      "ja": "第二次世界大戦期の貨物船。海軍の艦艇事典はこの星をただ挙げるのではなく、位置まで示す——はくちょう座で白鳥の頭にあたる星、と。金と青のあの二重星は、小さな望遠鏡が見せてくれるもっとも美しいものだと言う人が少なくない。",
+      "zh-Hans": "一艘二战时期的货船。海军的舰艇辞典没有只报出星名，而是指明了位置：天鹅座中代表天鹅头部的那颗星——那对金蓝相映的双星，对许多人来说，是小望远镜所能呈现的最美之物。"
+    }
+  },
+  {
+    "stars": [
+      "Aldebaran"
+    ],
+    "thing": "Aldebaran Robotics",
+    "summary": "The French company founded in 2005 that built Nao and Pepper, the small humanoid robots. Its own history page glosses the name as the brightest star in Taurus, and reaches for what the star meant to people: one of the four royal stars of Persia, used to navigate at sea and by caravan.",
+    "source": "Aldebaran Robotics company history (archived 2014)",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Aldebaran Robotics",
+      "ja": "アルデバラン・ロボティクス",
+      "zh-Hans": "Aldebaran Robotics 公司"
+    },
+    "summaryI18n": {
+      "fr": "L'entreprise française fondée en 2005 qui conçut Nao et Pepper, les petits robots humanoïdes. Sa propre page d'histoire glose le nom comme l'étoile la plus brillante du Taureau, et va chercher ce que l'étoile représentait pour les hommes : l'une des quatre étoiles royales de Perse, utilisée pour naviguer en mer et guider les caravanes.",
+      "ja": "2005年に設立され、小型ヒューマノイド Nao と Pepper を生んだフランスの企業。同社の沿革ページは社名をおうし座でもっとも明るい星と説き、さらにその星が人にとって何であったかにも触れる——ペルシアの四つの王星の一つであり、海路と隊商の道を導いた星だと。",
+      "zh-Hans": "2005年创立的法国公司，做出了 Nao 与 Pepper 这两款小型人形机器人。公司自己的历史页面把名字解作金牛座最明亮的恒星，并进一步说到这颗星对人的意义：波斯四大王星之一，既用于海上导航，也为商队指路。"
+    }
+  },
+  {
+    "stars": [
+      "Sirius"
+    ],
+    "thing": "Sirius Satellite Radio",
+    "summary": "The satellite radio service, which took the name in November 1999. Its own FAQ answered the question directly — the brightest star in Canis Major, the Dog Star — which is also why the early logo was a dog. (The company's page went on to trace the name to Osiris; that part is mistaken. Sirius is Greek, from seirios, scorching.)",
+    "source": "Sirius Satellite Radio official FAQ (archived 2004); SEC Form 10-K405, filed 30 March 2000",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Sirius Satellite Radio",
+      "ja": "シリウス衛星ラジオ",
+      "zh-Hans": "Sirius 卫星广播"
+    },
+    "summaryI18n": {
+      "fr": "Le service de radio par satellite, qui prit ce nom en novembre 1999. Sa propre FAQ répondait directement à la question — l'étoile la plus brillante du Grand Chien, l'Étoile du Chien — ce qui explique aussi le chien du premier logo. (La page poursuivait en faisant remonter le nom à Osiris ; cette partie est erronée. Sirius vient du grec seirios, brûlant.)",
+      "ja": "1999年11月にこの名を採った衛星ラジオ放送。同社の FAQ は問いに直接答えている——おおいぬ座でもっとも明るい星、ドッグ・スター。初期のロゴが犬だったのもそのためである。（同じページは名の由来をオシリスに求めていたが、そこは誤り。シリウスはギリシャ語のセイリオス、焼き焦がすものに由来する。）",
+      "zh-Hans": "这家卫星广播服务于1999年11月启用这个名字。公司自己的常见问答直接回答了这个问题——大犬座中最亮的恒星，天狼星，也就是「犬星」——这也解释了早期那个狗形标志。（同一页还把名字追溯到俄西里斯，这部分是错的。Sirius 源自希腊语 seirios，意为灼烧。）"
+    }
+  },
+  {
+    "stars": [
+      "Capella"
+    ],
+    "thing": "Capella Space",
+    "summary": "An American company flying small radar satellites that image the Earth through cloud and darkness. It explains the name as the brightest yellow star in the sky, a four-part system whose members never eclipse one another, in the way its radar never loses sight of the ground.",
+    "source": "Capella Space, \"Why the name Capella?\"",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Capella Space",
+      "ja": "カペラ・スペース社",
+      "zh-Hans": "Capella Space 公司"
+    },
+    "summaryI18n": {
+      "fr": "Une entreprise américaine qui exploite de petits satellites radar capables de photographier la Terre à travers les nuages et l'obscurité. Elle explique son nom par l'étoile jaune la plus brillante du ciel, un système quadruple dont les membres ne s'éclipsent jamais l'un l'autre — comme son radar ne perd jamais le sol de vue.",
+      "ja": "雲や闇を透して地表を撮影する小型レーダー衛星を運用するアメリカの企業。社名について同社は、空でもっとも明るい黄色の星であり、互いを食することのない四重星系であること、そして自社のレーダーも地表を見失わないことになぞらえている。",
+      "zh-Hans": "一家运营小型雷达卫星的美国公司，其卫星能穿透云层与黑夜拍摄地表。公司解释说，这是夜空中最明亮的黄色恒星，一个成员彼此从不相掩的四合星系统——正如它的雷达从不失去对地面的视野。"
+    }
+  },
+  {
+    "stars": [
+      "Altair"
+    ],
+    "thing": "The Altair lunar lander",
+    "summary": "The lander NASA designed to return crews to the lunar surface, renamed from the Lunar Surface Access Module in 2007. Altair is the brightest star in Aquila, and Aquila is Latin for eagle — a deliberate line drawn back to Apollo 11's Eagle.",
+    "source": "NASA naming announcement, 13 December 2007",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "L'atterrisseur lunaire Altair",
+      "ja": "月着陸機「アルタイル」",
+      "zh-Hans": "「牛郎星」登月舱"
+    },
+    "summaryI18n": {
+      "fr": "L'atterrisseur que la NASA conçut pour ramener des équipages à la surface de la Lune, rebaptisé en 2007 (il s'appelait jusque-là Lunar Surface Access Module). Altaïr est l'étoile la plus brillante de l'Aigle, et Aquila signifie aigle en latin — un fil délibérément tendu jusqu'à l'Eagle d'Apollo 11.",
+      "ja": "NASA が有人月面帰還のために設計した着陸機で、2007年に Lunar Surface Access Module から改名された。アルタイルはわし座でもっとも明るい星であり、Aquila はラテン語で鷲を意味する。アポロ11号の「イーグル」へと意図して引かれた一本の線である。",
+      "zh-Hans": "美国航天局为送航天员重返月面而设计的着陆器，2007年由「月面进入舱」改名。牛郎星是天鹰座最亮的恒星，而 Aquila 在拉丁语中意为鹰——这是刻意牵回阿波罗11号「鹰号」的一条线。"
+    }
+  },
+  {
+    "stars": [
+      "Castor",
+      "Pollux"
+    ],
+    "thing": "The Gemini Observatory",
+    "summary": "Twin 8.1-metre telescopes, one on Maunakea and one on Cerro Pachón, which between them reach the whole sky. The name is Latin for the twins — for Castor and Pollux, the two bright stars that make the constellation.",
+    "source": "NSF NOIRLab, International Gemini Observatory",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "L'observatoire Gemini",
+      "ja": "ジェミニ天文台",
+      "zh-Hans": "双子座天文台"
+    },
+    "summaryI18n": {
+      "fr": "Deux télescopes jumeaux de 8,1 mètres, l'un au Maunakea et l'autre au Cerro Pachón, qui couvrent à eux deux la totalité du ciel. Le nom est le latin des jumeaux — Castor et Pollux, les deux étoiles brillantes qui dessinent la constellation.",
+      "ja": "マウナケアとセロ・パチョンに一台ずつ据えられた口径8.1メートルの双子望遠鏡で、二台あわせて全天を見渡す。名はラテン語で双子を意味し、星座をかたちづくる二つの明るい星、カストルとポルックスに由来する。",
+      "zh-Hans": "一对8.1米口径的孪生望远镜，一台在毛纳凯亚，一台在帕穹山，两台合起来可以看遍整个天空。名字是拉丁文的「双子」——北河二与北河三，构成这个星座的两颗亮星。"
+    }
+  },
+  {
+    "stars": [
+      "Regulus"
+    ],
+    "thing": "The Regulus cruise missile",
+    "summary": "The US Navy's first operational cruise missile, flown from submarines and cruisers through the 1950s. Its builder's heritage record says it was named for the first-magnitude star in Leo, and that a sister programme was named Rigel for the first-magnitude star in Orion's foot.",
+    "source": "Vought Aircraft Heritage Foundation",
+    "confidence": "widely-reported",
+    "thingI18n": {
+      "fr": "Le missile de croisière Regulus",
+      "ja": "巡航ミサイル「レグルス」",
+      "zh-Hans": "「轩辕十四」巡航导弹"
+    },
+    "summaryI18n": {
+      "fr": "Le premier missile de croisière opérationnel de la marine américaine, tiré depuis des sous-marins et des croiseurs tout au long des années 1950. Les archives de son constructeur indiquent qu'il porte le nom de l'étoile de première grandeur du Lion, et qu'un programme jumeau fut baptisé Rigel, d'après l'étoile de première grandeur du pied d'Orion.",
+      "ja": "1950年代を通じて潜水艦や巡洋艦から発射された、アメリカ海軍初の実用巡航ミサイル。製造企業の社史は、しし座の一等星にちなむ名であり、姉妹計画にはオリオンの足の一等星からリゲルの名が与えられたと記している。",
+      "zh-Hans": "美国海军第一款实用巡航导弹，1950年代由潜艇与巡洋舰发射。制造商的企业史料记载，它以狮子座的一等星命名，而姊妹计划则取名参宿七，来自猎户脚下的那颗一等星。"
+    }
+  },
+  {
+    "stars": [
+      "Canopus"
+    ],
+    "thing": "The Canopus star tracker",
+    "summary": "Early interplanetary craft could not fix their attitude by the Sun alone, so Mariner and the Voyagers carried a second sensor locked onto one particular star. JPL picked Canopus for its brightness — it gave a second celestial reference alongside the Sun, held at right angles to the Sun direction, which is what supplies the missing roll axis. The instrument simply took the star's name.",
+    "source": "NASA JPL release 1969-0521, 1 April 1969; NASA, Basics of Space Flight, ch. 11",
+    "confidence": "documented",
+    "thingI18n": {
+      "fr": "Le viseur d'étoile Canopus",
+      "ja": "スターセンサー「カノープス」",
+      "zh-Hans": "「老人星」星敏感器"
+    },
+    "summaryI18n": {
+      "fr": "Les premières sondes interplanétaires ne pouvaient pas fixer leur orientation avec le seul Soleil ; Mariner et les Voyager embarquaient donc un second capteur verrouillé sur une étoile précise. Le JPL retint Canopus pour son éclat — elle offrait une seconde référence céleste à côté du Soleil, maintenue à angle droit de sa direction, ce qui fournit l'axe de roulis manquant. L'instrument prit tout simplement le nom de l'étoile.",
+      "ja": "初期の惑星探査機は太陽だけでは姿勢を定められず、マリナーやボイジャーは特定の一星に固定する第二のセンサーを積んでいた。JPL がカノープスを選んだのはその明るさゆえで、太陽と並ぶもう一つの天の基準を、太陽方向とほぼ直角に保って与えてくれる——それが欠けていたロール軸になる。装置はそのまま星の名で呼ばれるようになった。",
+      "zh-Hans": "早期的行星际探测器无法只靠太阳确定姿态，因此水手号与旅行者号都带了第二个锁定某一颗恒星的传感器。喷气推进实验室选中老人星，因为它够亮——它在太阳之外提供了第二个天体基准，且始终与太阳方向成直角，这正好补上缺失的滚转轴。这台仪器索性就用了这颗星的名字。"
+    }
+  }
+]

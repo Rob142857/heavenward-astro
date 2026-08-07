@@ -42,6 +42,7 @@ import { recordObservation } from "../services/observations.js";
 import { t, detectLocale } from "../i18n/translations.js";
 import { mythologySummary } from "../catalog/mythology.js";
 import { historyTopic, historySummary } from "../catalog/history.js";
+import { namesakeThing, namesakeSummary } from "../catalog/namesakes.js";
 
 // ── Breadcrumb trail for nearby-object navigation ─────────────────
 
@@ -1117,6 +1118,49 @@ function appendLoreSection(wrapper: HTMLElement, skyCtx: SkyContext): void {
   wrapper.appendChild(section);
 }
 
+/**
+ * Ships, rockets, telescopes and a public holiday that took this star's name.
+ * Kept apart from the myth/history section because the sourcing rules differ:
+ * these are modern corporate and government records, not Campbell or MUL.APIN.
+ * Rendered for everyone, not just WebGPU users — the AI reads the same data,
+ * but a cited fact shouldn't be gated behind a 2 GB download.
+ */
+function appendNamesakesSection(
+  wrapper: HTMLElement,
+  skyCtx: SkyContext,
+): void {
+  const namesakes = skyCtx.target.namesakes;
+  if (namesakes.length === 0) return;
+
+  const section = document.createElement("div");
+  section.className = "detail-section lore-section";
+  const locale = detectLocale();
+
+  const parts: string[] = [
+    `<h3 class="detail-section-title">${t("detail.section.namesakes")}</h3>`,
+    `<p class="lore-coverage namesake-intro">${t("detail.namesakes.intro")}</p>`,
+  ];
+
+  for (const entry of namesakes) {
+    parts.push(`
+      <h4 class="lore-subheading">${namesakeThing(entry, locale)}</h4>
+      <p class="detail-prose lore-body">${namesakeSummary(entry, locale)}</p>
+      <p class="lore-citation">
+        <span class="lore-cite-lead">${t("detail.lore.sourceLabel")}</span>
+        <cite class="lore-cite-work">${entry.source}</cite>
+        ${
+          entry.confidence === "widely-reported"
+            ? `<span class="lore-cite-detail">${t("detail.namesakes.reported")}</span>`
+            : ""
+        }
+      </p>
+    `);
+  }
+
+  section.innerHTML = parts.join("");
+  wrapper.appendChild(section);
+}
+
 function renderSkyContextContent(
   wrapper: HTMLElement,
   skyCtx: SkyContext,
@@ -1147,6 +1191,7 @@ function renderSkyContextContent(
   }
 
   appendLoreSection(wrapper, skyCtx);
+  appendNamesakesSection(wrapper, skyCtx);
 
   // Nearby objects
   if (skyCtx.nearby.length) {

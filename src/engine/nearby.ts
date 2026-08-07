@@ -16,6 +16,8 @@ import { getMythologyForConstellation } from "../catalog/mythology.js";
 import type { MythologyEntry } from "../catalog/mythology.js";
 import { getHistoryForConstellation } from "../catalog/history.js";
 import type { HistoryEntry } from "../catalog/history.js";
+import { getNamesakesForStar } from "../catalog/namesakes.js";
+import type { NamesakeEntry } from "../catalog/namesakes.js";
 import { constellationCode } from "../catalog/constellations.js";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -80,6 +82,9 @@ export interface SkyContext {
     /** Documented historical-astronomy facts for this constellation, if
      *  any — usually empty. */
     history: HistoryEntry[];
+    /** Ships, rockets, telescopes and the like that took this star's name.
+     *  Empty for all but ~11 of the brightest stars. */
+    namesakes: NamesakeEntry[];
   };
   nearby: NearbyObject[];
   constellationObjects: NearbyObject[];
@@ -208,11 +213,15 @@ export async function buildSkyContext(
   // planets and the Moon could never match a mythology entry at all.
   const constellation = constellationCode(event.constellation);
 
-  const [dsos, stars, mythology, history] = await Promise.all([
+  // Namesakes key off the proper star name, not the constellation, so that
+  // "there is a neutrino telescope named Antares" appears on Antares and
+  // nowhere else in Scorpius.
+  const [dsos, stars, mythology, history, namesakes] = await Promise.all([
     loadDSOCatalog(),
     loadStarCatalog(),
     getMythologyForConstellation(constellation),
     getHistoryForConstellation(constellation),
+    getNamesakesForStar(event.name),
   ]);
 
   // The target itself may be a DSO/star with rich catalog fields (description,
@@ -368,6 +377,7 @@ export async function buildSkyContext(
       ...targetDetails,
       mythology,
       history,
+      namesakes,
     },
     nearby,
     constellationObjects,
@@ -488,6 +498,7 @@ function emptyContext(event: CelestialEvent, loc: GeoLocation): SkyContext {
       azimuth: 0,
       constellation: null,
       history: [],
+      namesakes: [],
     },
     nearby: [],
     constellationObjects: [],
