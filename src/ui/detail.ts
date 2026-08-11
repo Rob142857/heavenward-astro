@@ -145,6 +145,10 @@ function freshAbort(): AbortController {
 
 // Abort any running LLM when user navigates away
 window.addEventListener("hashchange", abortLLM);
+// router.ts's navigate() uses history.pushState, which fires no native event
+// — this is the only signal for that path, so an in-flight generation must
+// subscribe to it too, not just hashchange.
+window.addEventListener("app:navigate", abortLLM);
 
 // ── Shared helpers ─────────────────────────────────────────────────
 
@@ -1330,6 +1334,8 @@ function formatLLMDiagnostics(): string {
 function appendAnswerTurn(conversation: HTMLElement): HTMLElement {
   const p = document.createElement("p");
   p.className = "llm-narrative llm-answer detail-prose";
+  p.setAttribute("role", "status");
+  p.setAttribute("aria-live", "polite");
   conversation.appendChild(p);
   return p;
 }
@@ -1354,17 +1360,19 @@ function appendLLMSection(
 
   section.innerHTML = `
     <h3 class="detail-section-title">${t("detail.section.aiSkyGuide")}</h3>
-    <p class="llm-capability-check detail-prose" style="color:#aaa">${t("detail.checkingDeviceCompatibility")}</p>
+    <p class="llm-capability-check detail-prose" role="status" aria-live="polite">${t("detail.checkingDeviceCompatibility")}</p>
     <button class="btn btn-outline btn-block llm-activate-btn" style="display:none"></button>
-    <div class="llm-progress" style="display:none">
+    <div class="llm-progress" style="display:none" tabindex="-1">
       <div class="llm-progress-bar"><div class="llm-progress-fill"></div></div>
       <p class="llm-progress-text detail-prose" role="status" aria-live="polite"></p>
       <button type="button" class="llm-use-smaller" style="display:none">${t("detail.useSmallerModel")}</button>
+      <p class="llm-use-smaller-hint" style="display:none">${t("detail.useSmallerModelHint")}</p>
     </div>
-    <p class="llm-narrative detail-prose" style="display:none"></p>
+    <p class="llm-narrative detail-prose" role="status" aria-live="polite" tabindex="-1" style="display:none"></p>
     <div class="llm-conversation" style="display:none"></div>
+    <p class="llm-followup-label detail-prose" style="display:none">${t("detail.followUpLabel")}</p>
     <form class="llm-followup" style="display:none">
-      <input type="text" class="input llm-followup-input" placeholder="${t("detail.followUpPlaceholder")}" />
+      <input type="text" class="input llm-followup-input" placeholder="${t("detail.followUpPlaceholder")}" aria-label="${t("detail.followUpPlaceholder")}" />
       <button type="submit" class="btn btn-outline llm-followup-send">${t("detail.followUpSend")}</button>
     </form>
   `;
@@ -1381,6 +1389,9 @@ function appendLLMSection(
   const conversation = section.querySelector(
     ".llm-conversation",
   ) as HTMLElement;
+  const followupLabel = section.querySelector(
+    ".llm-followup-label",
+  ) as HTMLElement;
   const followupForm = section.querySelector(
     ".llm-followup",
   ) as HTMLFormElement;
@@ -1390,6 +1401,9 @@ function appendLLMSection(
   const useSmaller = section.querySelector(
     ".llm-use-smaller",
   ) as HTMLButtonElement;
+  const useSmallerHint = section.querySelector(
+    ".llm-use-smaller-hint",
+  ) as HTMLElement;
   const followupSend = section.querySelector(
     ".llm-followup-send",
   ) as HTMLButtonElement;
@@ -1398,6 +1412,121 @@ function appendLLMSection(
   // call (i.e. navigating to a different object) starts a fresh closure, so
   // this naturally resets per object without needing module-level state.
   let skyChat: SkyConversation | null = null;
+
+  // Streams the opening (or a joined-load's) answer turn. Shared by the
+  // ready-to-generate path and the post-load path so both fresh loads and
+  // in-flight loads joined on render end up in the same place.
+  const runGeneration = (skyCtx: SkyContext, abort: AbortController): void => {
+    if (abort.signal.aborted) return;
+    conversation.style.display = "block";
+    const answer = appendAnswerTurn(conversation);
+    answer.textContent = t("detail.generating");
+    answer.classList.add("llm-generating");
+    startSkyConversation(
+      skyCtx,
+      (text) => {
+        if (!abort.signal.aborted) {
+          answer.classList.remove("llm-generating");
+          answer.innerHTML = sanitizeLLMHtml(text);
+        }
+      },
+      abort.signal,
+    )
+      .then((chat) => {
+        if (abort.signal.aborted) return;
+        answer.classList.remove("llm-generating");
+        skyChat = chat;
+        if (!chat.opening) {
+          answer.textContent = t("detail.emptyResponse");
+        } else {
+          followupLabel.style.display = "block";
+          followupForm.style.display = "flex";
+          followupInput.focus();
+        }
+      })
+      .catch((err: unknown) => {
+        if (!abort.signal.aborted) {
+          answer.classList.remove("llm-generating");
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error("[LLM generate]", err);
+          answer.textContent = t("detail.generateError", {
+            msg,
+            diagnostics: formatLLMDiagnostics(),
+          });
+          answer.classList.add("llm-error");
+          // A failed generation must leave a way back, same as a failed
+          // load — otherwise a transient hiccup is a dead end.
+          btn.textContent = t("detail.aiLoadRetry");
+          btn.style.display = "";
+        }
+      });
+  };
+
+  // Loads the model (fresh download, or joining one already in flight —
+  // downloadSignal is undefined for a join, since a joiner's signal is
+  // ignored by loadLLM anyway) then builds context and generates. Shared by
+  // the click handler and the "already loading" render-time join so neither
+  // duplicates the other's ~40 lines.
+  const startLoadThenGenerate = (
+    abort: AbortController,
+    downloadSignal: AbortSignal | undefined,
+    focusProgress: boolean,
+  ): void => {
+    progress.style.display = "block";
+    if (focusProgress) progress.focus({ preventScroll: true });
+
+    loadLLM((text, pct, stage) => {
+      if (abort.signal.aborted) return;
+      progressText.textContent = text;
+      if (stage === "compile") {
+        // No percentage exists for on-device compilation — an animated bar
+        // plus the elapsed-seconds text is honest; a bar frozen at 100%
+        // reads as a hang.
+        fill.classList.add("indeterminate");
+        fill.style.width = "100%";
+      } else {
+        fill.classList.remove("indeterminate");
+        fill.style.width = `${(pct * 100).toFixed(0)}%`;
+      }
+      // The escape hatch only does something during the resumable Gemma 4
+      // fetch: once compilation starts, once the WebLLM fallback chain takes
+      // over (stage arrives unset), or when this call only joined a load
+      // someone else started (downloadSignal undefined), there is nothing
+      // left here for it to abort.
+      const canOfferSmaller = downloadSignal !== undefined && stage === "download";
+      useSmaller.style.display = canOfferSmaller ? "" : "none";
+      useSmallerHint.style.display = canOfferSmaller ? "" : "none";
+    }, downloadSignal).then((ok) => {
+      if (abort.signal.aborted) return;
+      progress.style.display = "none";
+      fill.classList.remove("indeterminate");
+      useSmaller.style.display = "none";
+      useSmallerHint.style.display = "none";
+      if (!ok) {
+        narrative.style.display = "block";
+        narrative.textContent = `${getLLMError() ?? t("detail.couldNotLoadAIModel")}${formatLLMDiagnostics()}`;
+        narrative.classList.add("llm-error");
+        narrative.focus({ preventScroll: true });
+        // A failed load must leave a way back — the download is resumable
+        // and transient GPU conditions clear, so hiding the button forever
+        // turned every hiccup into a dead end.
+        btn.textContent = t("detail.aiLoadRetry");
+        btn.style.display = "";
+        return;
+      }
+      progress.style.display = "block";
+      progressText.textContent = t("detail.buildingSkyContext");
+      // Honest, not just full: there is no fraction to report while the
+      // context builds, so a solid 100% bar would claim a precision it
+      // doesn't have.
+      fill.classList.add("indeterminate");
+      buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
+        progress.style.display = "none";
+        fill.classList.remove("indeterminate");
+        if (!abort.signal.aborted) runGeneration(skyCtx, abort);
+      });
+    });
+  };
 
   followupForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -1412,27 +1541,34 @@ function appendLLMSection(
     appendQuestionTurn(conversation, question);
     const answer = appendAnswerTurn(conversation);
     answer.textContent = t("detail.generating");
+    answer.classList.add("llm-generating");
 
     skyChat
       .ask(
         question,
         (text) => {
-          if (!abort.signal.aborted) answer.innerHTML = sanitizeLLMHtml(text);
+          if (!abort.signal.aborted) {
+            answer.classList.remove("llm-generating");
+            answer.innerHTML = sanitizeLLMHtml(text);
+          }
         },
         abort.signal,
       )
       .then((text) => {
         if (abort.signal.aborted) return;
+        answer.classList.remove("llm-generating");
         if (!text) answer.textContent = t("detail.emptyResponse");
       })
       .catch((err: unknown) => {
         if (!abort.signal.aborted) {
+          answer.classList.remove("llm-generating");
           const msg = err instanceof Error ? err.message : String(err);
           console.error("[LLM follow-up]", err);
           answer.textContent = t("detail.generateError", {
             msg,
             diagnostics: formatLLMDiagnostics(),
           });
+          answer.classList.add("llm-error");
         }
       })
       .finally(() => {
@@ -1448,83 +1584,48 @@ function appendLLMSection(
       narrative.style.display = "block";
       narrative.textContent =
         cap.reason ?? t("detail.deviceCannotRunAI");
+      narrative.classList.add("llm-error");
+      narrative.focus({ preventScroll: true });
       return;
     }
 
-    // Device is capable — show the load button
-    const status = getLLMStatus();
-    const sizeMB = getModelSizeMB();
-    const sizeLabel =
-      sizeMB >= 1000
-        ? t("detail.sizeGB", { value: (sizeMB / 1000).toFixed(1) })
-        : t("detail.sizeMB", { value: sizeMB });
-    const modelLabel = getModelLabel();
-    btn.textContent =
-      status === "ready"
-        ? t("detail.loadAICommentary")
-        : t("detail.loadAICommentaryWithModel", { modelLabel, sizeLabel });
-    btn.style.display = "";
-
+    // Attached unconditionally — even the "loading" branch below can land on
+    // a failure that redisplays this button (see startLoadThenGenerate's
+    // !ok path), and it needs a listener already in place when that happens.
     btn.addEventListener("click", () => {
       btn.style.display = "none";
-      // A retry after a failed load starts clean — the old error would
-      // otherwise sit above the fresh progress bar contradicting it.
+      // A retry after a failed load/generation starts clean — old error
+      // text and a stale failed answer turn would otherwise sit above the
+      // fresh progress bar contradicting it.
       narrative.style.display = "none";
       narrative.textContent = "";
+      narrative.classList.remove("llm-error");
+      conversation.innerHTML = "";
+      conversation.style.display = "none";
+      followupLabel.style.display = "none";
+      followupForm.style.display = "none";
       const abort = freshAbort();
-
-      const runGeneration = (skyCtx: SkyContext) => {
-        if (abort.signal.aborted) return;
-        conversation.style.display = "block";
-        const answer = appendAnswerTurn(conversation);
-        answer.textContent = t("detail.generating");
-        startSkyConversation(
-          skyCtx,
-          (text) => {
-            if (!abort.signal.aborted) answer.innerHTML = sanitizeLLMHtml(text);
-          },
-          abort.signal,
-        )
-          .then((chat) => {
-            if (abort.signal.aborted) return;
-            skyChat = chat;
-            if (!chat.opening) {
-              answer.textContent = t("detail.emptyResponse");
-            } else {
-              followupForm.style.display = "flex";
-            }
-          })
-          .catch((err: unknown) => {
-            if (!abort.signal.aborted) {
-              const msg = err instanceof Error ? err.message : String(err);
-              console.error("[LLM generate]", err);
-              answer.textContent = t("detail.generateError", {
-                msg,
-                diagnostics: formatLLMDiagnostics(),
-              });
-            }
-          });
-      };
 
       if (getLLMStatus() === "ready") {
         // Model already loaded — build context then generate
         progress.style.display = "block";
+        progress.focus({ preventScroll: true });
         progressText.textContent = t("detail.buildingSkyContext");
-        fill.style.width = "100%";
+        // Honest, not just full: there is no fraction to report while the
+        // context builds, so a solid 100% bar would claim a precision it
+        // doesn't have.
+        fill.classList.add("indeterminate");
         buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
           progress.style.display = "none";
-          runGeneration(skyCtx);
+          fill.classList.remove("indeterminate");
+          runGeneration(skyCtx, abort);
         });
       } else {
-        // Need to load model first
-        progress.style.display = "block";
-
-        // A separate controller from `abort`: this one only gives up on the
-        // large model. Navigating away must still cancel everything, but
-        // choosing the smaller model should fall through to it rather than
-        // abandoning the whole request.
+        // Need to load model first. A separate controller from `abort`:
+        // this one only gives up on the large model. Navigating away must
+        // still cancel everything, but choosing the smaller model should
+        // fall through to it rather than abandoning the whole request.
         const downloadAbort = new AbortController();
-        useSmaller.style.display = "";
         useSmaller.disabled = false;
         useSmaller.addEventListener(
           "click",
@@ -1537,43 +1638,35 @@ function appendLLMSection(
           },
           { once: true },
         );
-
-        loadLLM((text, pct, stage) => {
-          if (abort.signal.aborted) return;
-          progressText.textContent = text;
-          if (stage === "compile") {
-            // No percentage exists for on-device compilation — an animated
-            // bar plus the elapsed-seconds text is honest; a bar frozen at
-            // 100% reads as a hang. Switching models now would also throw
-            // away a finished download, so the offer goes away.
-            fill.classList.add("indeterminate");
-            fill.style.width = "100%";
-            useSmaller.style.display = "none";
-          } else {
-            fill.classList.remove("indeterminate");
-            fill.style.width = `${(pct * 100).toFixed(0)}%`;
-          }
-        }, downloadAbort.signal).then((ok) => {
-          if (abort.signal.aborted) return;
-          progress.style.display = "none";
-          fill.classList.remove("indeterminate");
-          useSmaller.style.display = "none";
-          if (!ok) {
-            narrative.style.display = "block";
-            narrative.textContent = `${getLLMError() ?? t("detail.couldNotLoadAIModel")}${formatLLMDiagnostics()}`;
-            // A failed load must leave a way back — the download is resumable
-            // and transient GPU conditions clear, so hiding the button forever
-            // turned every hiccup into a dead end.
-            btn.textContent = t("detail.aiLoadRetry");
-            btn.style.display = "";
-            return;
-          }
-          buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
-            if (!abort.signal.aborted) runGeneration(skyCtx);
-          });
-        });
+        startLoadThenGenerate(abort, downloadAbort.signal, true);
       }
     });
+
+    const status = getLLMStatus();
+
+    if (status === "loading") {
+      // A load started from another page is still running — the engine is a
+      // shared singleton (see llm.ts/litert.ts), so join it and show real
+      // progress instead of an idle "Load AI Commentary" button that hides
+      // work already underway. btn stays hidden unless the join fails, in
+      // which case startLoadThenGenerate redisplays it via the listener above.
+      const abort = freshAbort();
+      startLoadThenGenerate(abort, undefined, false);
+      return;
+    }
+
+    // Not loading — show the idle button so a click runs the handler above.
+    const sizeMB = getModelSizeMB();
+    const sizeLabel =
+      sizeMB >= 1000
+        ? t("detail.sizeGB", { value: (sizeMB / 1000).toFixed(1) })
+        : t("detail.sizeMB", { value: sizeMB });
+    const modelLabel = getModelLabel();
+    btn.textContent =
+      status === "ready"
+        ? t("detail.loadAICommentary")
+        : t("detail.loadAICommentaryWithModel", { modelLabel, sizeLabel });
+    btn.style.display = "";
   });
 }
 

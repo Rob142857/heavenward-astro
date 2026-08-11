@@ -23,10 +23,15 @@ export function navigate(hash: string, state?: unknown): void {
   const target = url.startsWith("#/") ? `/${url}` : url;
   // Avoid pushing duplicate entries for the same route
   if (currentHash === url && !state) {
+    // pushState (below) fires no native event, so anything that must react
+    // to an in-app navigation — e.g. aborting an AI generation in progress —
+    // subscribes to this instead of hashchange/popstate.
+    window.dispatchEvent(new Event("app:navigate"));
     doRoute?.();
     return;
   }
   history.pushState(state ?? null, "", target);
+  window.dispatchEvent(new Event("app:navigate"));
   doRoute?.();
 }
 

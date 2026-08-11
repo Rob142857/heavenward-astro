@@ -16,7 +16,12 @@
  *    written to fail soft so that a preview-software fault degrades to the
  *    WebLLM chain instead of taking the feature down.
  *  - Its ~30 MB WASM runtime exceeds Cloudflare Pages' 25 MB per-file limit,
- *    so it is loaded from Google's CDN rather than served from our origin.
+ *    so it is loaded from jsdelivr rather than served from our origin —
+ *    @litert-lm/core@0.15.0 hardcodes DEFAULT_WASM_PATH to jsdelivr's CDN,
+ *    not Google's. That makes an unmonitored third party a single point of
+ *    failure: jsdelivr has documented regional blocking and outages, and a
+ *    blip there silently downgrades every best-quality (Gemma 4) user back
+ *    to the WebLLM fallback chain with no signal that jsdelivr was the cause.
  */
 
 import type { Conversation, Engine } from "@litert-lm/core";
@@ -48,8 +53,10 @@ export const GEMMA4_E2B: LiteRTModelProfile = {
 /** Which phase of a load the progress text describes. "compile" is the
  *  post-download Engine.create step — minutes of on-device work with no
  *  percentage available, so the UI must switch to an indeterminate bar
- *  instead of sitting at a dishonest 100%. */
-export type LoadStage = "download" | "compile";
+ *  instead of sitting at a dishonest 100%. "fallback" marks the WebLLM
+ *  fallback chain: its downloads are WebLLM's own, not ours, so there is
+ *  nothing here for the UI's "use smaller model" abort control to act on. */
+export type LoadStage = "download" | "compile" | "fallback";
 
 export type LoadProgressFn = (
   text: string,
@@ -172,7 +179,12 @@ async function runLoad(
     if (err instanceof DOMException && err.name === "AbortError") {
       return false;
     }
-    console.warn("[LiteRT] load failed, falling back", err);
+    // err.name carries the real signal here (QuotaExceededError, a wasm
+    // fetch failure, ...) that err.message alone often doesn't mention —
+    // log it explicitly so CDN/storage faults are distinguishable from
+    // model-fit failures in diagnostics.
+    const name = err instanceof Error ? err.name : typeof err;
+    console.warn(`[LiteRT] load failed (${name}), falling back`, err);
     await unloadLiteRT();
     return false;
   }
@@ -188,11 +200,18 @@ function compileMessage(label: string, secs: number): string {
 
 function describeDownload(label: string, p: DownloadProgress): string {
   if (!p.totalBytes) {
-    return `${label}: ${formatMB(p.receivedBytes)} MB downloaded…`;
+    return t("llm.downloadProgress", { label, mb: formatMB(p.receivedBytes) });
   }
   const pct = Math.round((p.fraction ?? 0) * 100);
-  const resumedNote = p.resumed ? " (resumed)" : "";
-  return `${label}: ${formatMB(p.receivedBytes)} / ${formatMB(p.totalBytes)} MB — ${pct}%${resumedNote}`;
+  const params = {
+    label,
+    mb: formatMB(p.receivedBytes),
+    totalMb: formatMB(p.totalBytes),
+    pct,
+  };
+  return p.resumed
+    ? t("llm.downloadProgressPctResumed", params)
+    : t("llm.downloadProgressPct", params);
 }
 
 export async function unloadLiteRT(): Promise<void> {

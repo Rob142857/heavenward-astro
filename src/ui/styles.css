@@ -1977,6 +1977,32 @@ body {
   line-height: 1.65;
 }
 
+.llm-capability-check {
+  color: var(--text-dim);
+}
+
+/* Failures must read as failures, not as narrative prose — applied to
+   whichever .llm-narrative element (capability check, load, or generation)
+   is currently showing an error, removed again on retry. */
+.llm-error {
+  color: var(--danger);
+}
+
+/* "Generating…" placeholder — a slow pulse says "working" without claiming
+   a progress fraction it doesn't have. Cleared as soon as real text streams in. */
+.llm-generating {
+  animation: llm-generating-pulse 1.4s ease-in-out infinite;
+}
+@keyframes llm-generating-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .llm-generating {
+    animation: none;
+  }
+}
+
 .llm-activate-btn {
   font-size: 0.82rem;
 }
@@ -2058,8 +2084,17 @@ body {
   margin-top: 4px;
 }
 
+.llm-followup-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin: 4px 0 2px;
+}
+
 .llm-followup-input {
   flex: 1 1 auto;
+  /* 1rem clears iOS's auto-zoom-on-focus threshold. */
+  font-size: 1rem;
 }
 
 .llm-followup-send {
@@ -2875,7 +2910,7 @@ body {
    connection should never feel like a trap. */
 .llm-use-smaller {
   margin-top: 10px;
-  min-height: 40px;
+  min-height: 44px; /* app's tap-target floor */
   padding: 8px 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -2887,6 +2922,12 @@ body {
 }
 .llm-use-smaller:hover { border-color: var(--gold); color: var(--text); }
 .llm-use-smaller:disabled { opacity: 0.5; cursor: default; }
+
+.llm-use-smaller-hint {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
 
 /* Per-source provenance detail. Collapsed by default so the About page's
    default length is unchanged — this revives .about-list, .about-credit-label

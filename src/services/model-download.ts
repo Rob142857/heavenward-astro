@@ -43,6 +43,13 @@ interface MetaRecord {
   receivedBytes: number;
   chunkCount: number;
   updatedAt: number;
+  /** ETag (preferred) or Last-Modified captured from the response, sent back
+   *  as If-Range on a resume so a file HuggingFace replaced mid-download gets
+   *  a fresh 200 instead of a 206 that splices old and new bytes together.
+   *  Absent on records written before this field existed, or when the server
+   *  sends neither header — treated as "no If-Range sent", identical to the
+   *  original resume behaviour, so old partial downloads still resume. */
+  validator?: string;
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -82,6 +89,13 @@ function idbPut(db: IDBDatabase, store: string, key: string, value: unknown): Pr
 
 function chunkKey(url: string, index: number): string {
   return `${url}::${index}`;
+}
+
+/** True for the DOMException IndexedDB throws when a write exceeds the
+ *  origin's storage quota. Modern browsers set .name; a couple of older
+ *  engines only set the legacy numeric .code (22 = QUOTA_EXCEEDED_ERR). */
+function isQuotaExceededError(err: unknown): boolean {
+  return err instanceof DOMException && (err.name === "QuotaExceededError" || err.code === 22);
 }
 
 /** "bytes 0-1023/2008432640" → 2008432640. The only reliable source of the
@@ -179,11 +193,36 @@ export async function downloadModel(
   const startByte = meta?.receivedBytes ?? 0;
   const resumed = startByte > 0;
 
+  // A resume already has most of its budget on disk; only a fresh download
+  // risks committing to a multi-gigabyte fetch the origin has no room to
+  // land. storage.estimate() is itself an estimate, so this only fires on a
+  // clear shortfall — never a close call — and it fires before any bytes
+  // move rather than after gigabytes of wasted transfer.
+  if (!resumed && expectedBytes) {
+    const estimate = await navigator.storage?.estimate?.();
+    if (
+      estimate?.quota != null &&
+      estimate?.usage != null &&
+      estimate.quota - estimate.usage < expectedBytes
+    ) {
+      db.close();
+      throw new DOMException("Not enough storage quota available for this download.", "QuotaExceededError");
+    }
+  }
+
   // Always request a range, even from zero. Content-Length is not exposed to
   // browser JS by HuggingFace, but Content-Range is — and it carries the total
   // after the slash ("bytes 0-/2008432640"), which is the only way to get an
   // exact size and therefore a truthful progress bar.
-  const headers: HeadersInit = { Range: `bytes=${startByte}-` };
+  const headers: Record<string, string> = { Range: `bytes=${startByte}-` };
+  // Pin a resume to the exact file version the existing bytes came from. A
+  // server that ignores If-Range on a changed file answers 200 (whole file),
+  // which the serverHonouredRange===false branch below already treats as
+  // "discard and restart" — so this is enough to stop a file replacement
+  // from splicing old and new bytes into one corrupt blob.
+  if (resumed && meta?.validator) {
+    headers["If-Range"] = meta.validator;
+  }
 
   const res = await fetch(url, { headers, signal });
   if (!res.ok && res.status !== 206) {
@@ -207,6 +246,14 @@ export async function downloadModel(
     expectedBytes ??
     null;
 
+  // Captured so a later resume can pin its Range request to this exact file
+  // version via If-Range above. ETag is preferred; Last-Modified is the
+  // fallback for hosts that omit it. Falls back to whatever was already
+  // stored so a response that happens to omit both headers doesn't erase a
+  // validator learned earlier in this same download.
+  const validator =
+    res.headers.get("ETag") ?? res.headers.get("Last-Modified") ?? meta?.validator ?? undefined;
+
   let received = effectiveStart;
   let chunkIndex = serverHonouredRange ? (meta?.chunkCount ?? 0) : 0;
   let buffered: BlobPart[] = [];
@@ -214,7 +261,18 @@ export async function downloadModel(
 
   const flush = async (): Promise<void> => {
     if (!bufferedBytes) return;
-    await idbPut(db, CHUNK_STORE, chunkKey(url, chunkIndex), new Blob(buffered));
+    try {
+      await idbPut(db, CHUNK_STORE, chunkKey(url, chunkIndex), new Blob(buffered));
+    } catch (err) {
+      // A full origin storage quota surfaces here as a DOMException. Rethrow
+      // it exactly as IndexedDB threw it — llm.ts tells "disk is full" apart
+      // from a GPU fault by matching /quota/i on err.name/message, so this
+      // must never become a generic Error.
+      if (isQuotaExceededError(err)) {
+        console.warn(`[model-download] storage quota exceeded after ${received} bytes`);
+      }
+      throw err;
+    }
     chunkIndex += 1;
     buffered = [];
     bufferedBytes = 0;
@@ -224,6 +282,7 @@ export async function downloadModel(
       receivedBytes: received,
       chunkCount: chunkIndex,
       updatedAt: Date.now(),
+      validator,
     };
     await idbPut(db, META_STORE, url, record);
   };
@@ -265,6 +324,21 @@ export async function downloadModel(
     }
     await flush();
   } catch (err) {
+    // reader.read() itself rejects with AbortError the instant the signal
+    // fires, which skips the polled check above (and the flush it guards) —
+    // up to FLUSH_BYTES of chunks already off the network would otherwise be
+    // discarded silently. Bank them before honouring the abort, same as the
+    // polled path does.
+    if (err instanceof DOMException && err.name === "AbortError") {
+      try {
+        await flush();
+      } catch (flushErr) {
+        // More actionable than the abort that triggered it — surface it
+        // unchanged instead of masking it with the AbortError.
+        db.close();
+        throw flushErr;
+      }
+    }
     db.close();
     throw err;
   }

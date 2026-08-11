@@ -282,10 +282,14 @@ export function isWebGPUAvailable(): boolean {
 let capabilityResult: { ok: boolean; reason?: string } | null = null;
 
 export async function checkGPUCapability(): Promise<{ ok: boolean; reason?: string }> {
-  if (capabilityResult) return capabilityResult;
+  // Only a positive result is memoized. requestAdapter() can transiently fail
+  // right after a GPU process crash (isResourceError below matches "device
+  // lost", which happens in production) — caching that failure would hide
+  // the AI section for the rest of the session even after the GPU recovers.
+  if (capabilityResult?.ok) return capabilityResult;
 
   if (!isWebGPUAvailable()) {
-    capabilityResult = { ok: false, reason: "WebGPU is not supported in this browser." };
+    capabilityResult = { ok: false, reason: t("llm.gpuNotSupported") };
     return capabilityResult;
   }
 
@@ -293,7 +297,7 @@ export async function checkGPUCapability(): Promise<{ ok: boolean; reason?: stri
     const gpu = (navigator as unknown as { gpu: { requestAdapter: () => Promise<GPUAdapter | null> } }).gpu;
     const adapter = await gpu.requestAdapter();
     if (!adapter) {
-      capabilityResult = { ok: false, reason: "No WebGPU adapter found. Your GPU may not be supported." };
+      capabilityResult = { ok: false, reason: t("llm.noAdapter") };
       return capabilityResult;
     }
 
@@ -316,7 +320,7 @@ export async function checkGPUCapability(): Promise<{ ok: boolean; reason?: stri
     if (maxBuffer > 0 && maxBuffer < minRequired) {
       capabilityResult = {
         ok: false,
-        reason: "This device's GPU does not support large enough buffers for local AI commentary.",
+        reason: t("llm.gpuBufferTooSmall"),
       };
       return capabilityResult;
     }
@@ -328,14 +332,18 @@ export async function checkGPUCapability(): Promise<{ ok: boolean; reason?: stri
     if (deviceMemGB !== null && deviceMemGB < fallbackModel.minDeviceMemoryGB) {
       capabilityResult = {
         ok: false,
-        reason: `This device reports ${deviceMemGB} GB RAM. ${fallbackModel.label} needs at least ${fallbackModel.minDeviceMemoryGB} GB.`,
+        reason: t("llm.notEnoughRam", {
+          mem: deviceMemGB,
+          label: fallbackModel.label,
+          min: fallbackModel.minDeviceMemoryGB,
+        }),
       };
       return capabilityResult;
     }
 
     capabilityResult = { ok: true };
   } catch {
-    capabilityResult = { ok: false, reason: "Could not check GPU capability." };
+    capabilityResult = { ok: false, reason: t("llm.couldNotCheckGPU") };
   }
 
   return capabilityResult;
@@ -417,16 +425,19 @@ async function createDirectEngine(
 
 async function loadModel(
   model: ModelProfile,
-  onProgress?: (text: string, pct: number) => void,
+  onProgress?: LoadProgressFn,
 ): Promise<void> {
   const webllm = await importWebLLM();
   await unloadEngine();
 
-  onProgress?.(`Loading ${model.label}...`, 0);
+  // loadModel only ever runs candidates from getModelCandidates() — the
+  // WebLLM chain — so every broadcast here is stage "fallback": its
+  // downloads are WebLLM's own and can't be aborted to switch models.
+  onProgress?.(t("llm.loadingModel", { label: model.label }), 0, "fallback");
   const engineConfig: MLCEngineConfig = {
     logLevel: isMobile() ? "DEBUG" : "INFO",
     initProgressCallback: (p: InitProgressReport) => {
-      onProgress?.(p.text, p.progress);
+      onProgress?.(p.text, p.progress, "fallback");
     },
   };
 
@@ -436,7 +447,7 @@ async function loadModel(
     const msg = err instanceof Error ? err.message : String(err);
     lastDiagnostics = { ...lastDiagnostics, activeModelId: model.id, lastError: msg };
     if (!/worker|module|import/i.test(msg)) throw err;
-    onProgress?.(`Worker load failed for ${model.label}. Trying direct WebGPU load...`, 0);
+    onProgress?.(`Worker load failed for ${model.label}. Trying direct WebGPU load...`, 0, "fallback");
     engine = await createDirectEngine(webllm, model, engineConfig);
   }
   activeModel = model;
@@ -523,7 +534,7 @@ export async function loadLLM(
   if (isLiteRTLoaded()) return true;
   if (engine && activeModel) return true;
   if (!isWebGPUAvailable()) {
-    loadError = "WebGPU not supported in this browser";
+    loadError = t("llm.gpuNotSupported");
     return false;
   }
 
@@ -557,8 +568,15 @@ async function runLoadChain(signal?: AbortSignal): Promise<boolean> {
     }
     // An abort means the user asked for the smaller model mid-download; their
     // partial Gemma 4 download is kept, so falling through to the small model
-    // costs them nothing later.
-    broadcastLoad(t("llm.didNotFitTryingSmaller", { label: GEMMA4_E2B.label }), 0);
+    // costs them nothing later — and the message must say so rather than
+    // implying something failed. A non-abort false means it genuinely didn't
+    // fit. Either way we're now entering the WebLLM chain, whose downloads
+    // aren't ours to abort, hence stage "fallback".
+    if (signal?.aborted) {
+      broadcastLoad(t("llm.switchingToSmaller", { label: GEMMA4_E2B.label }), 0, "fallback");
+    } else {
+      broadcastLoad(t("llm.didNotFitTryingSmaller", { label: GEMMA4_E2B.label }), 0, "fallback");
+    }
   }
 
   loadError = null;
@@ -578,20 +596,23 @@ async function runLoadChain(signal?: AbortSignal): Promise<boolean> {
         const msg = err instanceof Error ? err.message : String(err);
         lastDiagnostics = { ...lastDiagnostics, activeModelId: candidate.id, lastError: msg };
         if (index === candidates.length - 1) throw err;
-        broadcastLoad(t("llm.didNotFitTryingSmaller", { label: candidate.label }), 0);
+        broadcastLoad(t("llm.didNotFitTryingSmaller", { label: candidate.label }), 0, "fallback");
         if (!isResourceError(msg)) throw err;
       }
     }
   } catch (err: unknown) {
     loading = false;
-    const msg = err instanceof Error ? err.message : String(err);
+    // Include err.name: a DOMException's message doesn't always mention
+    // "quota" even when its name is QuotaExceededError, and friendlyLoadError
+    // needs the name to classify storage exhaustion correctly.
+    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
     lastDiagnostics = { ...lastDiagnostics, lastError: msg };
     loadError = friendlyLoadError(msg);
     return false;
   }
 
   loading = false;
-  loadError = "Failed to load AI model";
+  loadError = t("llm.loadFailed");
   return false;
 }
 
@@ -665,7 +686,11 @@ function buildTargetFacts(ctx: SkyContext): string {
 // (see src/catalog/mythology.ts, history.ts) — most constellations have
 // nothing here. Only ever pass along what's actually in the data; never let
 // the model treat "no entry" as license to invent a myth or historical fact.
-function buildMythHistorySection(ctx: SkyContext, namesakeLimit: number): string {
+function buildMythHistorySection(
+  ctx: SkyContext,
+  namesakeLimit: number,
+  historyLimit: number,
+): string {
   const parts: string[] = [];
   const myth = ctx.target.mythology;
   if (myth) {
@@ -673,13 +698,23 @@ function buildMythHistorySection(ctx: SkyContext, namesakeLimit: number): string
       `Mythology (source: ${myth.source}, ${myth.sourceDetail}): ${myth.summary}`,
     );
   }
-  for (const h of ctx.target.history) {
+  // Rich constellations (Sco, Ori, Lyr) now carry three cultures' entries at
+  // ~130 tokens each. The detail PAGE shows them all; the prompt caps them on
+  // small context windows, where three entries would crowd out the object's
+  // own facts. A star-specific entry beats a constellation-wide one when the
+  // user is looking at that star, so those sort first rather than dropping.
+  const starMatched = [...ctx.target.history].sort((a, b) => {
+    const aHit = a.starName && a.starName === ctx.target.name ? 0 : 1;
+    const bHit = b.starName && b.starName === ctx.target.name ? 0 : 1;
+    return aHit - bHit;
+  });
+  for (const h of starMatched.slice(0, historyLimit)) {
     parts.push(`Historical astronomy — ${h.topic} (source: ${h.source}): ${h.summary}`);
   }
-  // Unlike myth/history (one entry each at most), a bright star can carry four
-  // namesakes at ~100 tokens apiece — enough to crowd out the target's own
-  // facts on a 2048-token model. Cap the count rather than let the section
-  // grow unbounded; the model only needs one good aside, not a catalogue.
+  // A bright star can carry four namesakes at ~100 tokens apiece — enough to
+  // crowd out the target's own facts on a 2048-token model. Cap the count
+  // rather than let the section grow unbounded; the model only needs one
+  // good aside, not a catalogue.
   for (const n of ctx.target.namesakes.slice(0, namesakeLimit)) {
     const hedge = n.confidence === "widely-reported" ? ", widely reported" : "";
     parts.push(`Named after this star — ${n.thing} (source: ${n.source}${hedge}): ${n.summary}`);
@@ -730,9 +765,11 @@ export function buildPrompt(ctx: SkyContext): string {
     .join(", ");
 
   const targetFacts = buildTargetFacts(ctx);
+  const tightBudget = budget !== null && budget < 700;
   const mythHistory = buildMythHistorySection(
     ctx,
-    budget !== null && budget < 700 ? 1 : 2,
+    tightBudget ? 1 : 2,
+    tightBudget ? 1 : isMobile() ? 2 : 3,
   );
 
   const prompt = assemblePrompt(
@@ -811,10 +848,16 @@ function isModelStateError(msg: string): boolean {
 }
 
 function friendlyLoadError(msg: string): string {
-  if (isResourceError(msg)) {
-    return "This device could not allocate enough stable GPU memory for local AI commentary. Try closing other apps/tabs, or use a desktop browser.";
+  // Checked before the GPU-memory guess: a storage-quota failure is not a
+  // GPU problem, and isResourceError's "allocation"/"insufficient memory"
+  // patterns are generic enough to otherwise misclassify it as one.
+  if (/quota/i.test(msg)) {
+    return t("llm.storageFull");
   }
-  return msg || "Failed to load AI model";
+  if (isResourceError(msg)) {
+    return t("llm.gpuUnstable");
+  }
+  return msg || t("llm.loadFailed");
 }
 
 async function fallBackToSmallerModel(onChunk: (text: string) => void): Promise<boolean> {

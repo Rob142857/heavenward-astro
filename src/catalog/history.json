@@ -179,5 +179,559 @@
       "ja": "漢代の中国の天文家たちは、北斗の柄の向きから季節をそのまま読み取っていました。『淮南子』(紀元前139年)は、はっきりとこう述べています。「斗の柄が東を指せば、天下はみな春である。南を指せば、天下はみな夏である。西を指せば、天下はみな秋である。北を指せば、天下はみな冬である。」その数十年のちに書かれた司馬遷の『史記』も同じく、暦を定めるうえで北斗を中心に据えて論じています。",
       "zh-Hans": "汉代的中国天文家直接从北斗的斗柄读出时令。《淮南子》（公元前139年）说得明白：“斗柄东指，天下皆春；斗柄南指，天下皆夏；斗柄西指，天下皆秋；斗柄北指，天下皆冬。”数十年后成书的司马迁《史记》，同样把北斗视为厘定历法的枢要。"
     }
+  },
+  {
+    "constellation": "Car",
+    "starName": "Canopus",
+    "topic": "War, Collowgullouric War, and the Eta Carinae eruption",
+    "summary": "Near Lake Tyrell in the 1850s, William Stanbridge recorded how the Boorong people placed a male crow named War at Canopus and gave him a wife, Collowgullouric War, a \"large red star\" burning nearby in the old constellation Robur Carolinum. Astronomers Duane Hamacher and David Frew later pinned that wife-star to Eta Carinae, caught mid-outburst: during the 1840s Great Eruption the normally faint star rivaled Canopus itself, becoming the second-brightest star in the sky after Sirius before fading back into obscurity within decades. The Boorong account is the only documented indigenous record anywhere of that transient stellar event.",
+    "sourceType": "academic",
+    "source": "Hamacher, D.W. & Frew, D.J., \"An Aboriginal Australian Record of the Great Eruption of Eta Carinae\"",
+    "sourceDetail": "Journal of Astronomical History and Heritage 13(3): 220-234 (2010), analysing and reproducing Stanbridge, W.E., \"On the Astronomy and Mythology of the Aborigines of Victoria\", Transactions of the Philosophical Institute of Victoria 2: 137-140 (1858)",
+    "topicI18n": {
+      "fr": "War, Collowgullouric War et l'éruption d'Eta Carinae",
+      "ja": "War、Collowgullouric War、そしてりゅうこつ座η星の大噴火",
+      "zh-Hans": "War、Collowgullouric War与船底座η星大喷发"
+    },
+    "summaryI18n": {
+      "fr": "Près du lac Tyrell, dans les années 1850, William Stanbridge consigna comment le peuple Boorong plaçait à Canopus un corbeau mâle nommé War, auquel il donnait pour épouse Collowgullouric War, une « grande étoile rouge » brillant à proximité dans l'ancienne constellation de Robur Carolinum. Les astronomes Duane Hamacher et David Frew ont par la suite identifié cette étoile-épouse à Eta Carinae, surprise en pleine éruption : durant la Grande Éruption des années 1840, cette étoile normalement faible rivalisa avec Canopus elle-même, devenant la deuxième étoile la plus brillante du ciel après Sirius, avant de retomber dans l'obscurité en l'espace de quelques décennies. Le récit du peuple Boorong constitue le seul témoignage autochtone documenté, où qu'il soit, de cet événement stellaire transitoire.",
+      "ja": "1850年代、タイレル湖近郊でウィリアム・スタンブリッジが記録したところによれば、ブーロン族はカノープスの位置に雄のカラスWarを置き、その妻として、旧星座Robur Carolinumのそばで輝く「大きな赤い星」Collowgullouric Warを与えたという。天文学者デュエイン・ハマカーとデイヴィッド・フルーは後に、この「妻星」が増光の最中にあったりゅうこつ座η星であったことを突き止めた。1840年代の大噴火の間、ふだんは暗いこの星はカノープスに匹敵する明るさとなり、シリウスに次いで夜空で二番目に明るい星となったのち、数十年のうちに再び目立たない存在へと戻っていった。ブーロン族の伝承は、この一過性の恒星現象について世界で唯一記録された先住民の記録である。",
+      "zh-Hans": "19世纪50年代,在泰雷尔湖附近,威廉·斯坦布里奇记录下博龙人的传说:他们把一只名叫War的雄乌鸦安置在老人星的位置,并为它配了一位妻子Collowgullouric War——一颗在古老星座Robur Carolinum附近燃烧的“大红星”。天文学家杜安·哈马赫与戴维·弗鲁后来确认,这颗“妻星”正是处于爆发期的船底座η星:在19世纪40年代的大喷发中,这颗平时暗淡的恒星一度与老人星比肩,成为仅次于天狼星的夜空第二亮星,随后又在数十年间重新归于暗淡。博龙人的记载,是目前所知全球唯一一份关于这次短暂恒星事件的原住民文字记录。"
+    }
+  },
+  {
+    "constellation": "Cru",
+    "topic": "Gawarrgay, the dark Emu, and the egg-collecting calendar",
+    "summary": "Rather than connecting stars into a shape, several Aboriginal nations trace a giant emu in the dark dust lanes of the Milky Way: her head is the Coalsack beneath the Southern Cross, her neck runs through Centaurus, and her body swells near Scorpius. Working directly with Euahlayi lawman Michael Anderson, researchers documented how the emu's changing posture through the year tracks the real bird's breeding cycle: legs stretched out and \"running\" in April-May means she is laying, sitting quietly on her body in June-July means eggs are still there for the taking, and by September, when her neck fades from view, the chicks have hatched and the egg season is over.",
+    "sourceType": "academic",
+    "source": "Fuller, R.S., Anderson, M.G., Norris, R.P. & Trudgett, M., \"The Emu Sky Knowledge of the Kamilaroi and Euahlayi Peoples\"",
+    "sourceDetail": "Journal of Astronomical History and Heritage 17(2): 171-179 (2014); earliest documentation in Stanbridge, W.E., Transactions Philosophical Institute Victoria 2:139 (1857/1858), and Ridley, W., \"Report on Australian Languages and Traditions\", Journal of the Anthropological Institute of Great Britain and Ireland 2: 273-274 (1873)",
+    "topicI18n": {
+      "fr": "Gawarrgay, l'Émeu sombre, et le calendrier de la cueillette des œufs",
+      "ja": "Gawarrgay、闇の中のエミュー、そして卵採集の暦",
+      "zh-Hans": "Gawarrgay:暗夜中的鸸鹋与拾蛋历法"
+    },
+    "summaryI18n": {
+      "fr": "Plutôt que de relier des étoiles pour former une figure, plusieurs nations aborigènes tracent un émeu géant dans les bandes sombres de poussière de la Voie lactée : sa tête est le Sac à charbon, sous la Croix du Sud, son cou traverse le Centaure, et son corps s'élargit près du Scorpion. En travaillant directement avec Michael Anderson, homme de loi du peuple Euahlayi, des chercheurs ont documenté comment la posture changeante de l'émeu tout au long de l'année suit le cycle de reproduction réel de l'oiseau : pattes étirées et « en train de courir » en avril-mai signifie qu'elle pond, assise tranquillement sur son corps en juin-juillet signifie que les œufs sont encore là, à prendre, et dès septembre, quand son cou disparaît de la vue, les poussins sont éclos et la saison des œufs est terminée.",
+      "ja": "いくつかのアボリジニの諸民族は、星々を線で結んで形をつくるのではなく、天の川の暗い塵の帯の中に巨大なエミューの姿を見出す。頭部は南十字星の下に広がるコールサック(石炭袋)、首はケンタウルス座を貫き、胴体はさそり座付近で膨らむ。研究者たちはエウアレイ族の法の担い手マイケル・アンダーソンと直接協働し、一年を通じて変化するエミューの姿勢が、実際のエミューの繁殖周期をどのように追っているかを記録した。4月から5月にかけて脚が伸びて「走っている」ように見えるときは産卵期を、6月から7月にかけて胴体の上に静かに座っているときは卵がまだそこにあり採取できることを意味し、9月になって首が見えなくなる頃には雛はすでに孵り、卵の季節は終わっている。",
+      "zh-Hans": "许多原住民族群不是把星星连成图形,而是在银河的暗尘带中描绘出一只巨大的鸸鹋:它的头部是南十字座下方的煤袋星云,颈部贯穿半人马座,躯干则在天蝎座附近隆起。研究人员与尤瓦莱人法律长者迈克尔·安德森直接合作,记录下这只鸸鹋一年之中姿态的变化如何对应真实鸸鹋的繁殖周期:四五月间双腿伸展、呈“奔跑”之态,意味着鸸鹋正在产卵;六七月间静静伏卧于躯干之上,意味着蛋仍留在原处、可供拾取;到了九月,当颈部从视野中消退,雏鸟已孵化,拾蛋季节也随之结束。"
+    }
+  },
+  {
+    "constellation": "Ori",
+    "starName": "Betelgeuse",
+    "topic": "Nyeeruna's fire-filled hand and a red giant's pulse",
+    "summary": "Ethnographer Daisy Bates recorded how the Kokatha people described Nyeeruna, a vain hunter formed from the stars of Orion, chasing the Pleiades sisters night after night. When his lust flares, his club-wielding hand — the star Betelgeuse — fills with \"fire magic\" and brightens; when he is humiliated and driven off, it fades again. Astronomer Duane Hamacher argues this narrative tracks something real: Betelgeuse is a genuinely variable red supergiant, and the story's rhythm of flaring and fading matches its documented brightness cycle. Bates herself missed the connection, attributing the glow to \"the effects of radiations from nebulae\" rather than recognising it as stellar variability.",
+    "sourceType": "academic",
+    "source": "Hamacher, D.W., \"Observations of red-giant variable stars by Aboriginal Australians\"",
+    "sourceDetail": "The Australian Journal of Anthropology 29(1): 89-107 (2018), analysing Bates, D., \"The Great Plain's edge\", The Australasian, 27 August 1921: 418; building on Leaman, T.M. & Hamacher, D.W., Journal of Astronomical History and Heritage 17(2): 180-194 (2014)",
+    "topicI18n": {
+      "fr": "La main de feu de Nyeeruna et le pouls d'une supergéante rouge",
+      "ja": "Nyeerunaの炎の手と赤色巨星の脈動",
+      "zh-Hans": "Nyeeruna燃烧的手与红巨星的脉动"
+    },
+    "summaryI18n": {
+      "fr": "L'ethnographe Daisy Bates a consigné comment le peuple Kokatha décrivait Nyeeruna, chasseur vaniteux formé des étoiles d'Orion, poursuivant nuit après nuit les sœurs des Pléiades. Quand son désir s'enflamme, sa main armée d'une massue — l'étoile Bételgeuse — se remplit de « magie de feu » et s'éclaircit ; quand il est humilié et chassé, elle s'éteint à nouveau. L'astronome Duane Hamacher soutient que ce récit reflète un phénomène bien réel : Bételgeuse est une supergéante rouge véritablement variable, et le rythme d'embrasement et d'extinction du récit correspond à son cycle de luminosité documenté. Bates elle-même n'avait pas perçu ce lien, attribuant la lueur aux « effets des radiations des nébuleuses » plutôt qu'à une reconnaissance de la variabilité stellaire.",
+      "ja": "民族誌学者デイジー・ベイツは、コカタ族がオリオン座の星々から形づくられた自惚れ屋の狩人Nyeerunaについて、夜ごとプレアデスの姉妹たちを追いかける姿をどう語っていたかを記録した。彼の欲望が燃え上がると、棍棒を握る手——ベテルギウスの星——は「炎の魔力」で満たされて明るくなり、辱めを受けて追い払われると再び暗くなるという。天文学者デュエイン・ハマカーは、この物語が実在の現象を捉えていると論じる。ベテルギウスは実際に変光する赤色超巨星であり、物語の中で繰り返される燃え上がりと暗転のリズムは、記録されている実際の明るさの周期と一致するという。ベイツ自身はこの関連性に気づかず、その輝きを恒星の変光として認識するのではなく、「星雲からの放射の影響」によるものだとしていた。",
+      "zh-Hans": "民族志学者黛西·贝茨记录下科卡塔人如何讲述Nyeeruna——一个由猎户座群星组成的虚荣猎人,夜复一夜追逐昴宿姐妹。当他欲念燃起,握着棍棒的手——参宿四——便充满“火之魔力”而变亮;当他受辱被逐,光芒又转暗。天文学家杜安·哈马赫认为,这个故事所追踪的是真实存在的现象:参宿四确实是一颗会变光的红超巨星,故事中忽明忽暗的节奏与其有记录可查的亮度周期相吻合。贝茨本人却未能看出这层联系,她把这种光芒归因于“星云辐射的影响”,而不是恒星变光本身。"
+    }
+  },
+  {
+    "constellation": "Sco",
+    "starName": "Antares",
+    "topic": "Waiyungari the Red Man and a corrected planet",
+    "summary": "Ngarrindjeri tradition, first recorded by missionary H.A.E. Meyer in 1846, tells of Waiyungari, an initiate covered in red ochre who broke sacred law with his brother's wives and fled into the sky, becoming a bright red star flanked by the two women. Twentieth-century anthropologists identified Waiyungari as the planet Mars, but Duane Hamacher's re-analysis shows the description — a fixed red star near zenith each September, sitting in the Milky Way's \"canoe\" beside two fainter companions — fits Antares far better, with the companions being Tau and Sigma Scorpii. Waiyungari's recorded brightening, tied to warnings against sexual misconduct during initiation, tracks Antares's genuine, well-documented variability.",
+    "sourceType": "academic",
+    "source": "Hamacher, D.W., \"Observations of red-giant variable stars by Aboriginal Australians\"",
+    "sourceDetail": "The Australian Journal of Anthropology 29(1): 89-107 (2018); primary accounts in Meyer, H.A.E., \"Manners and Customs of the Aborigines of the Encounter Bay Tribe, South Australia\" (1846) and Taplin, G., \"The Narrinyeri\", in Native Tribes of South Australia (1879), p.57; see also Tindale, N.B., \"The legend of Waijungari, Jaralde Tribe\", Records of the South Australian Museum 5: 261-274 (1935)",
+    "topicI18n": {
+      "fr": "Waiyungari l'Homme rouge et une identification planétaire corrigée",
+      "ja": "赤き男Waiyungariと、訂正された惑星の正体",
+      "zh-Hans": "红人Waiyungari与一颗被“纠正”的行星"
+    },
+    "summaryI18n": {
+      "fr": "La tradition ngarrindjeri, consignée pour la première fois par le missionnaire H.A.E. Meyer en 1846, raconte l'histoire de Waiyungari, un initié couvert d'ocre rouge qui transgressa la loi sacrée avec les épouses de son frère et s'enfuit dans le ciel, devenant une étoile rouge éclatante flanquée des deux femmes. Les anthropologues du XXe siècle identifièrent Waiyungari à la planète Mars, mais la nouvelle analyse de Duane Hamacher montre que la description — une étoile rouge fixe près du zénith chaque mois de septembre, installée dans le « canoë » de la Voie lactée aux côtés de deux compagnes plus faibles — correspond bien mieux à Antarès, les deux compagnes étant Tau et Sigma Scorpii. L'accroissement d'éclat de Waiyungari consigné dans la tradition, associé à des mises en garde contre les fautes sexuelles pendant l'initiation, suit la variabilité réelle et bien documentée d'Antarès.",
+      "ja": "ンガリンジェリの伝承は、1846年に宣教師H.A.E.マイヤーによって初めて記録されたもので、赤い赭土(オーカー)にまみれた成人儀礼中の若者Waiyungariが、兄弟の妻たちと聖なる掟を破って空へ逃げ込み、二人の女性を両脇に従えた明るい赤い星になったと語る。20世紀の人類学者たちはWaiyungariを惑星火星と同定したが、デュエイン・ハマカーによる再分析は、その描写——毎年9月に天頂近くに現れる動かない赤い星で、天の川の「カヌー」の中、二つのより暗い伴星のそばに位置する——がアンタレスにはるかによく当てはまることを示した。その伴星はさそり座τ星とσ星である。成人儀礼における性的な過ちへの戒めと結びついたWaiyungariの明るさの増大という伝承は、実際に記録されているアンタレスの変光と一致する。",
+      "zh-Hans": "恩加林杰里人的传统,最早由传教士H.A.E.迈耶于1846年记录,讲述了Waiyungari的故事:一个浑身涂满红赭石的受戒者,因与兄长之妻犯下禁忌而逃入天空,化作一颗明亮的红色星辰,两侧各有一名女子相伴。20世纪的人类学家曾将Waiyungari认定为行星火星,但杜安·哈马赫的重新分析显示,这段描述——每年九月出现在天顶附近、位置固定的红星,坐在银河“独木舟”中、两颗较暗的伴星相随——其实更贴合心宿二,两颗伴星则是天蝎座τ星与σ星。传说中记载的Waiyungari亮度增强,与成人礼期间对不当性行为的告诫联系在一起,这与心宿二真实而有据可查的变光现象相吻合。"
+    }
+  },
+  {
+    "constellation": "Sco",
+    "topic": "Te Waka o Tama-rereti, the canoe of stars",
+    "summary": "Māori tradition holds that when Tāne set the Shining Ones in their places, the heavenly bodies were carried for distribution aboard a canoe called Uruao, with Tama-rereti and his companions appointed as its guardians. That canoe still rides the night sky: Pākehā settlers later dubbed the stars \"the tail of the Scorpion,\" but to Māori they remain Te Waka o Tama-rereti, curving down toward the southern horizon. Ethnographer Elsdon Best recorded this account from Māori sources in the early twentieth century, preserving one of the clearest surviving descriptions of the night sky itself being understood as a vessel.",
+    "sourceType": "primary",
+    "source": "Elsdon Best, The Astronomical Knowledge of the Maori, Genuine and Empirical (1922)",
+    "sourceDetail": "Dominion Museum Monograph No. 3 (Wellington: Dominion Museum, 1922), chapter \"The Distribution and Fixing of the Heavenly Bodies,\" p. 11",
+    "topicI18n": {
+      "fr": "Te Waka o Tama-rereti, le canoë d'étoiles",
+      "ja": "Te Waka o Tama-rereti、星々のカヌー",
+      "zh-Hans": "Te Waka o Tama-rereti:星辰独木舟"
+    },
+    "summaryI18n": {
+      "fr": "La tradition māori veut que lorsque Tāne mit en place les Astres brillants, les corps célestes aient été transportés pour leur répartition à bord d'un canoë nommé Uruao, dont Tama-rereti et ses compagnons furent nommés gardiens. Ce canoë parcourt encore le ciel nocturne : les colons pākehā ont plus tard surnommé ces étoiles « la queue du Scorpion », mais pour les Māori, elles demeurent Te Waka o Tama-rereti, s'incurvant vers l'horizon austral. L'ethnographe Elsdon Best a consigné ce récit auprès de sources māori au début du XXe siècle, préservant l'une des descriptions les plus claires qui nous soient parvenues du ciel nocturne lui-même conçu comme un vaisseau.",
+      "ja": "マオリの伝承によれば、Tāneが「輝ける者たち」をそれぞれの場所に配置したとき、天体はUruaoと呼ばれるカヌーに乗せられて配られ、Tama-reretiとその仲間たちがその守り手に任じられたという。そのカヌーは今も夜空を渡っている。パケハ(ヨーロッパ系入植者)は後にこの星々を「サソリの尾」と呼んだが、マオリにとってそれは今もTe Waka o Tama-reretiであり、南の地平線へと弧を描いて下っていく。民族誌学者エルズドン・ベストは20世紀初頭、マオリの伝承者からこの話を記録し、夜空そのものを一艘の船として理解する、現存する中でも最も明快な記述の一つを残した。",
+      "zh-Hans": "毛利传统认为,当Tāne将“光辉者”们安置到各自的位置时,天体是由一艘名为Uruao的独木舟载运分配的,Tama-rereti及其同伴受命担任守护者。那艘独木舟至今仍航行在夜空之中:后来的欧裔移民(Pākehā)把这些星星称作“天蝎的尾巴”,但对毛利人而言,它们仍是Te Waka o Tama-rereti,向南方地平线弯垂而下。民族志学者埃尔斯登·贝斯特在20世纪初从毛利人口中记录下这段讲述,留下了现存对“夜空本身即是一艘航船”这一理解最清晰的记载之一。"
+    }
+  },
+  {
+    "constellation": "Car",
+    "starName": "Canopus",
+    "topic": "Atutahi, the star left outside the basket",
+    "summary": "When the Shining Ones were sorted for their places in the sky, Māori tradition describes them being packed into baskets — the sun in one, the moon in another, the ordinary stars bundled together into Te Ikaroa, the Milky Way. Canopus alone was left out, hung on the outside instead of being bundled in with the rest. Elsdon Best recorded this account from Māori informants in 1922, noting plainly that the star \"was not put in the basket, but hung or attached outside it\" — which is why, in the tradition, it still blazes alone, apart from the crowded band of the galaxy.",
+    "sourceType": "primary",
+    "source": "Elsdon Best, The Astronomical Knowledge of the Maori, Genuine and Empirical (1922)",
+    "sourceDetail": "Dominion Museum Monograph No. 3 (Wellington: Dominion Museum, 1922), chapter \"The Distribution and Fixing of the Heavenly Bodies,\" p. 11",
+    "topicI18n": {
+      "fr": "Atutahi, l'étoile laissée hors du panier",
+      "ja": "Atutahi、籠の外に残された星",
+      "zh-Hans": "Atutahi:被留在篮筐之外的星"
+    },
+    "summaryI18n": {
+      "fr": "Lorsque les Astres brillants furent triés pour recevoir leur place dans le ciel, la tradition māori les décrit rangés dans des paniers — le soleil dans l'un, la lune dans un autre, les étoiles ordinaires regroupées dans Te Ikaroa, la Voie lactée. Canopus seule fut laissée de côté, suspendue à l'extérieur plutôt que d'être regroupée avec les autres. Elsdon Best a recueilli ce récit auprès d'informateurs māori en 1922, notant sans détour que l'étoile « ne fut pas mise dans le panier, mais suspendue ou attachée à l'extérieur de celui-ci » — c'est pourquoi, selon la tradition, elle brille toujours seule, à l'écart de la bande dense de la galaxie.",
+      "ja": "「輝ける者たち」が空でのそれぞれの居場所へと選り分けられたとき、マオリの伝承では、それらは籠に詰められたと語られる——太陽は一つの籠に、月は別の籠に、並みの星々はまとめてTe Ikaroa、すなわち天の川に詰め込まれた。ただカノープスだけは外に残され、他の星々と一緒に詰め込まれる代わりに、外側に吊るされたという。エルズドン・ベストは1922年、マオリの伝承者たちからこの話を記録し、その星は「籠の中に入れられたのではなく、外側に吊るされ、あるいは取り付けられた」とはっきり書き留めている——だからこそ伝承の中で、この星は今も銀河の密集した帯から離れ、ただ一つで輝いているのだという。",
+      "zh-Hans": "当“光辉者”们被一一分派到天空中的位置时,毛利传统描述它们被装进篮筐——太阳装进一只,月亮装进另一只,普通的星星则被一并归入Te Ikaroa,也就是银河。唯独老人星被漏在外面,不是与其他星星一同打包,而是被挂在篮筐外侧。埃尔斯登·贝斯特于1922年从毛利报道人那里记录下这段讲述,直言这颗星“没有被放进篮筐,而是被悬挂或系在篮筐外面”——这也是为什么,按照这一传统,它至今仍孤悬于银河那拥挤的星带之外,独自闪耀。"
+    }
+  },
+  {
+    "constellation": "Ori",
+    "starName": "Rigel",
+    "topic": "Puanga, the New Year star of the Orion people",
+    "summary": "Not every part of Aotearoa waited for the Pleiades to mark the turning of the year. Ethnographer Elsdon Best recorded that while the east coast reckoned its new year from Matariki's dawn rising, tribes in the far north, the South Island, and the Chatham Islands instead watched for Puanga — Rigel, in Orion — to reappear before sunrise. Best noted this \"Orion year\" belonged to communities most closely tied to the land's earliest settlers, in contrast to the \"Pleiades year\" carried in by the later Takitumu migrants from eastern Polynesia — two calendars, tracking the same season by different lights. One caveat travels with the record: Best framed the regional split as original inhabitants versus later migrants of the so-called Great Fleet — a migration theory scholars have since set aside — so the Puanga/Matariki difference stands, but his explanation of its cause should not be taken at face value.",
+    "sourceType": "primary",
+    "source": "Elsdon Best, The Maori Division of Time (1922)",
+    "sourceDetail": "Dominion Museum Monograph No. 4 (Wellington: Dominion Museum, 1922), opening section on \"The Maori Year\"",
+    "topicI18n": {
+      "fr": "Puanga, l'étoile du Nouvel An du peuple d'Orion",
+      "ja": "Puanga、オリオンの民の新年の星",
+      "zh-Hans": "Puanga:猎户之民的新年之星"
+    },
+    "summaryI18n": {
+      "fr": "Aotearoa n'attendait pas partout les Pléiades pour marquer le changement d'année. L'ethnographe Elsdon Best a noté que si la côte est calculait son nouvel an à partir du lever matinal de Matariki, les tribus de l'extrême nord, de l'île du Sud et des îles Chatham guettaient plutôt la réapparition de Puanga — Rigel, dans Orion — avant le lever du soleil. Best relevait que cette « année d'Orion » appartenait aux communautés les plus étroitement liées aux tout premiers habitants du pays, par opposition à l'« année des Pléiades » apportée plus tard par les migrants takitumu venus de Polynésie orientale — deux calendriers suivant la même saison par des astres différents. Une réserve accompagne ce témoignage : Best présentait cette division régionale comme opposant les habitants d'origine aux migrants plus tardifs de la soi-disant Grande Flotte — une théorie migratoire depuis abandonnée par les chercheurs —, de sorte que la différence entre Puanga et Matariki tient bon, mais son explication de la cause ne doit pas être prise pour argent comptant.",
+      "ja": "アオテアロアの全域が、年の変わり目を知るのにプレアデスを待っていたわけではない。民族誌学者エルズドン・ベストの記録によれば、東海岸ではMatarikiの明け方の出現を基準に新年を数えていた一方、極北部、南島、そしてチャタム諸島の部族は、日の出前にPuanga——オリオン座のリゲル——が再び現れるのを見守っていたという。ベストは、この「オリオンの年」がその土地に最も古くから根づいた人々に属し、後にポリネシア東部からやって来たTakitumuの移住者たちがもたらした「プレアデスの年」とは対照的であったと指摘した——同じ季節を、異なる星で追う二つの暦である。ただし、この記録には一つの留保がつきまとう。ベストはこの地域差を、原住民と、いわゆる「グレート・フリート(大船団)」による後発の移住者との対立として説明したが、この移住理論はその後、学者たちによって退けられている——したがってPuangaとMatarikiの違い自体は成り立つとしても、その原因についての彼の説明はそのまま鵜呑みにすべきではない。",
+      "zh-Hans": "并非整个奥特亚罗瓦(Aotearoa)都靠昴宿星团来标记岁首更替。民族志学者埃尔斯登·贝斯特记录道,东海岸以Matariki拂晓升起为新年起点,而极北部、南岛及查塔姆群岛的部落,则观测Puanga——即猎户座中的参宿七——在日出前重新出现。贝斯特指出,这种“猎户之年”属于与这片土地最早定居者关系最密切的族群,而后来由波利尼西亚东部迁来的Takitumu移民则带来了“昴宿之年”——两套历法,以不同的星辰追踪同一个季节。不过这份记录也附带一点提醒:贝斯特把这种地域差异解释为原住民与所谓“大船队”后来移民之间的区别——而这一迁徙理论后来已被学界摒弃——因此Puanga与Matariki之别本身仍然成立,但他对其成因的解释不应照单全收。"
+    }
+  },
+  {
+    "constellation": "Boo",
+    "starName": "Arcturus",
+    "topic": "Hōkūleʻa: naming a canoe after a zenith star",
+    "summary": "When artist Herb Kawainui Kāne needed a name for the voyaging canoe the newly formed Polynesian Voyaging Society was building in 1975, he dreamed of a star growing brighter and brighter until it woke him — and recognized it in the morning as Arcturus, called Hōkūleʻa in Hawaiian, \"star of gladness.\" The name fit because Arcturus passes directly overhead at Hawaiʻi's latitude: as Kāne later explained, a navigator sailing north from Tahiti watches that zenith climb night by night, and when Arcturus finally stands straight overhead, the canoe has reached Hawaiʻi's latitude and can turn for landfall.",
+    "sourceType": "primary",
+    "source": "Herb Kawainui Kāne, \"Founding the Polynesian Voyaging Society; Building and Naming Hōkūleʻa,\" in Voyagers (Honolulu: Whalesong, 1991)",
+    "sourceDetail": "First-person account by PVS co-founder Herb Kawainui Kāne, reproduced by the Polynesian Voyaging Society at archive.hokulea.com",
+    "topicI18n": {
+      "fr": "Hōkūleʻa : nommer un canoë d'après une étoile zénithale",
+      "ja": "Hōkūleʻa:天頂の星にちなんで名づけられたカヌー",
+      "zh-Hans": "Hōkūleʻa:以天顶星命名的独木舟"
+    },
+    "summaryI18n": {
+      "fr": "Lorsque l'artiste Herb Kawainui Kāne eut besoin d'un nom pour le canoë de voyage que la toute jeune Polynesian Voyaging Society construisait en 1975, il rêva d'une étoile devenant de plus en plus brillante jusqu'à le réveiller — et la reconnut au matin comme étant Arcturus, appelée Hōkūleʻa en hawaïen, « étoile de la joie ». Ce nom convenait parce qu'Arcturus passe directement au zénith à la latitude d'Hawaiʻi : comme Kāne l'expliqua plus tard, un navigateur voguant vers le nord depuis Tahiti voit ce zénith monter nuit après nuit, et quand Arcturus finit par se tenir droit au-dessus de sa tête, le canoë a atteint la latitude d'Hawaiʻi et peut virer vers la terre.",
+      "ja": "画家ハーブ・カワイヌイ・カーネが、1975年に発足したばかりのポリネシアン・ヴォヤージング・ソサエティが建造していた航海カヌーの名前を必要としていたとき、彼は一つの星がだんだん明るくなっていく夢を見て、その光に目を覚ました——そして朝になって、それがハワイ語でHōkūleʻa(「喜びの星」)と呼ばれるアークトゥルスであると気づいた。この名前がふさわしかったのは、アークトゥルスがハワイの緯度でちょうど天頂を通過するからである。カーネが後に説明したところによれば、タヒチから北へ向かう航海士は、その天頂点が夜ごとに高くなっていくのを見守り、アークトゥルスがついに真上に来たとき、カヌーはハワイの緯度に達しており、陸地へ向けて舵を切ることができるのだという。",
+      "zh-Hans": "1975年,新成立的波利尼西亚航海学会正在建造一艘远航独木舟,画家赫布·卡瓦伊努伊·卡内需要为它取名。他梦见一颗星越来越亮,直到把他从梦中唤醒——次日清晨他认出那正是大角星,夏威夷语称作Hōkūleʻa,意为“喜悦之星”。这个名字之所以贴切,是因为大角星恰好经过夏威夷所在纬度的天顶正上方:卡内后来解释道,一名从塔希提向北航行的领航员会夜复一夜地观察那颗天顶星不断攀升,当大角星终于正悬头顶之时,独木舟便已抵达夏威夷所在的纬度,可以转向靠岸了。"
+    }
+  },
+  {
+    "constellation": "Cru",
+    "topic": "Newe, the Southern Cross as a guide toward Tahiti",
+    "summary": "Traditional Hawaiian sailing directions for the voyage south to Tahiti, handed down orally and recorded by ethnographer S. Percy Smith, describe exactly what a navigator would lose and gain while crossing into new waters: the North Star sinking from view, and the Southern Cross rising to take over as guide. Elsdon Best reproduced these directions in 1922 as evidence of how precisely Polynesian navigators tracked the changing sky on long ocean crossings — the pole star's disappearance and Crux's rise marking a change of latitude as reliably as any instrument could. It should be read with care: S. Percy Smith, who compiled the account, is documented to have reshaped and embellished Polynesian oral tradition in his publications, so the text is a mediated record rather than an unfiltered indigenous voice.",
+    "sourceType": "primary",
+    "source": "Elsdon Best, The Astronomical Knowledge of the Maori, Genuine and Empirical (1922), quoting Hawaiian oral sailing-directions recorded by S. Percy Smith",
+    "sourceDetail": "Dominion Museum Monograph No. 3 (Wellington: Dominion Museum, 1922), chapter \"The Use of Stars in Navigation,\" p. 28",
+    "topicI18n": {
+      "fr": "Newe : la Croix du Sud comme guide vers Tahiti",
+      "ja": "Newe:タヒチへの目印となる南十字星",
+      "zh-Hans": "Newe:指引塔希提的南十字星"
+    },
+    "summaryI18n": {
+      "fr": "Les instructions de navigation traditionnelles hawaïennes pour le voyage vers le sud jusqu'à Tahiti, transmises oralement et consignées par l'ethnographe S. Percy Smith, décrivent précisément ce qu'un navigateur perdait et gagnait en traversant vers des eaux nouvelles : l'étoile Polaire s'enfonçant hors de vue, et la Croix du Sud se levant pour prendre le relais comme guide. Elsdon Best a reproduit ces instructions en 1922 comme preuve de la précision avec laquelle les navigateurs polynésiens suivaient le ciel changeant lors des longues traversées océaniques — la disparition de l'étoile polaire et la montée de la Croix du Sud marquant un changement de latitude avec une fiabilité comparable à celle de n'importe quel instrument. Ce texte doit être lu avec prudence : il est documenté que S. Percy Smith, qui a compilé ce récit, a remanié et enjolivé la tradition orale polynésienne dans ses publications ; le texte constitue donc un témoignage médiatisé plutôt qu'une voix autochtone non filtrée.",
+      "ja": "タヒチへ向かう南への航海のための、ハワイの伝統的な航海指示は、口伝えで受け継がれ、民族誌学者S・パーシー・スミスによって記録されたもので、新しい海域へと渡っていく際に航海士が何を失い、何を得るのかを正確に描写している——北極星が視界から沈んでいき、南十字星が昇ってきて道案内の役目を引き継ぐという。エルズドン・ベストは1922年、この指示を、ポリネシアの航海士たちが長い外洋航海の間、変化していく空をいかに正確に追っていたかを示す証拠として引用した——北極星の消失と南十字星の上昇は、どんな計器にも劣らぬ確かさで緯度の変化を示していたのである。この記録は注意して読む必要がある。この話をまとめたS・パーシー・スミスは、自らの著作の中でポリネシアの口承伝承を作り変え、脚色していたことが明らかになっており、したがってこの文章は、ろ過されていない先住民自身の声というよりも、仲介を経た記録なのである。",
+      "zh-Hans": "夏威夷传统航海指南记载着南航塔希提的路线,这些指示口耳相传,后由民族志学者S·珀西·史密斯记录下来,准确描述了领航员在驶入新海域时会失去什么、又会获得什么:北极星渐渐沉入视野之下,南十字星升起接替向导之职。埃尔斯登·贝斯特于1922年转载了这份指南,以此证明波利尼西亚领航员在漫长的跨洋航行中,对天空变化的追踪何等精确——北极星的隐没与南十字座的升起,标示纬度变化的可靠程度不亚于任何仪器。但这份文本需要谨慎看待:有据可查的是,编纂这份记述的S·珀西·史密斯在其出版物中曾对波利尼西亚口传传统加以改写和润色,因此这段文字是经过中介的记录,而非未经过滤的原住民之声。"
+    }
+  },
+  {
+    "constellation": "Leo",
+    "topic": "The lion who needed no long story",
+    "summary": "Most zodiac figures arrive with an elaborate backstory, but Hyginus gives Leo one of the shortest entries in his whole catalog: he was set among the stars simply because he was already recognized as king of beasts. Only after that does the more famous tale get attached — that this was the Nemean lion, the very beast Hercules met on his first labor. Its hide was so tough that no blade could pierce it, so the hero had to strangle the animal bare-handed. Hyginus even credits his source for the detail, the poet Pisandrus, showing he's compiling rather than inventing.",
+    "sourceType": "primary",
+    "source": "Hyginus, Astronomica (2.24)",
+    "sourceDetail": "The Myths of Hyginus, trans. Mary Grant, University of Kansas Publications in Humanistic Studies 34 (1960)",
+    "topicI18n": {
+      "fr": "Le lion qui n'avait besoin d'aucune longue histoire",
+      "ja": "長い物語を必要としなかった獅子",
+      "zh-Hans": "无需长篇故事的狮子"
+    },
+    "summaryI18n": {
+      "fr": "La plupart des figures du zodiaque arrivent avec toute une histoire élaborée, mais Hygin consacre au Lion l'une des notices les plus courtes de tout son catalogue : il fut placé parmi les étoiles simplement parce qu'il était déjà reconnu comme le roi des bêtes. Ce n'est qu'ensuite que se greffe le récit plus célèbre — qu'il s'agissait du lion de Némée, la bête même qu'Hercule affronta lors de son premier travail. Sa peau était si résistante qu'aucune lame ne pouvait la percer, si bien que le héros dut étrangler l'animal à mains nues. Hygin cite même sa source pour ce détail, le poète Pisandre, montrant qu'il compile plutôt qu'il n'invente.",
+      "ja": "黄道十二宮の図像の大半には手の込んだ由来話が伴うが、ヒュギヌスは獅子座について、彼のカタログ全体の中でも最も短い記述の一つしか与えていない。すでに「百獣の王」として認められていたから、というだけの理由で星々の間に置かれた、というのである。より有名な話——これはネメアのライオン、ヘラクレスが最初の功業で出会ったまさにその獣であるという話——が付け加えられるのは、そのあとのことにすぎない。その皮はどんな刃も通さないほど頑丈だったため、英雄は素手でこの動物を絞め殺さねばならなかった。ヒュギヌスはこの詳細についてまで、その出典である詩人ペイサンドロスの名を挙げており、彼が創作しているのではなく編纂していることをうかがわせる。",
+      "zh-Hans": "大多数黄道星座都带有精心编织的来历,但希吉努斯给狮子座的,却是他整部目录中最简短的条目之一:它被安放在群星之间,仅仅是因为它早已被公认为百兽之王。更著名的故事是后来才附加上去的——这原来是涅墨亚狮子,正是赫拉克勒斯在第一件功业中遭遇的那头猛兽。它的皮又厚又韧,任何刀刃都无法穿透,英雄只能徒手将它扼死。希吉努斯甚至为这一细节注明了出处——诗人庇桑德罗斯——显示出他是在汇编而非杜撰。"
+    }
+  },
+  {
+    "constellation": "Cnc",
+    "topic": "Juno's reward for a crushed crab",
+    "summary": "It's a small, almost pitiable myth. While Hercules grappled with the many-headed Hydra in the swamps of Lerna, a crab scuttled up and snapped at his foot. He crushed it without a second thought. But Juno, who despised Hercules as living proof of her husband's infidelity, took the crab's side, rewarding its brief stand against her stepson with a permanent seat in the sky. Hyginus's Astronomica names it as one of the twelve constellations bound into the sun's yearly circuit — turning a minor casualty of a much bigger fight into a fixture of the calendar itself.",
+    "sourceType": "primary",
+    "source": "Hyginus, Astronomica (2.23)",
+    "sourceDetail": "The Myths of Hyginus, trans. Mary Grant, University of Kansas Publications in Humanistic Studies 34 (1960)",
+    "topicI18n": {
+      "fr": "La récompense de Junon pour un crabe écrasé",
+      "ja": "潰された蟹へのユノーの褒美",
+      "zh-Hans": "朱诺给被踩碎的螃蟹的报偿"
+    },
+    "summaryI18n": {
+      "fr": "C'est un mythe modeste, presque pitoyable. Tandis qu'Hercule luttait contre l'Hydre aux nombreuses têtes dans les marais de Lerne, un crabe s'approcha en courant et lui pinça le pied. Il l'écrasa sans y penser à deux fois. Mais Junon, qui méprisait Hercule comme la preuve vivante de l'infidélité de son époux, prit le parti du crabe, récompensant sa brève résistance contre son beau-fils par une place permanente dans le ciel. L'Astronomica d'Hygin le désigne comme l'une des douze constellations liées au cycle annuel du soleil — transformant une victime mineure d'un combat bien plus vaste en un repère fixe du calendrier lui-même.",
+      "ja": "小さな、ほとんど哀れとも言える神話である。ヘラクレスがレルネの沼地で多頭のヒュドラと格闘していたとき、一匹の蟹が這い寄ってきて彼の足に噛みついた。彼は特に気にも留めずそれを踏み潰した。しかしユノーは、夫の不貞の生きた証であるヘラクレスを憎んでおり、蟹の肩を持って、この継子に対するそのささやかな抵抗に報いるため、天に永遠の席を与えた。ヒュギヌスの『アストロノミカ』は、これを太陽の年周軌道に組み込まれた十二星座の一つとして挙げている——はるかに大きな戦いの中のささいな犠牲者を、暦そのものを構成する定点へと変えたのである。",
+      "zh-Hans": "这是一个渺小、近乎可怜的神话。赫拉克勒斯在勒纳的沼泽中与多头许德拉搏斗时,一只螃蟹爬上来钳住了他的脚。他想都没想就把它踩碎了。但朱诺——她把赫拉克勒斯视为丈夫不忠的活证据,一向厌恶他——却站在螃蟹一边,以在天空中赐予它一个永久席位,来回报它对这个继子的短暂反抗。希吉努斯的《天文学》将它列为束缚在太阳周年轨道上的十二星座之一——把一场更大战斗中的一个小小牺牲品,变成了历法本身的固定坐标。"
+    }
+  },
+  {
+    "constellation": "Vir",
+    "topic": "Justice packs up and leaves the earth for good",
+    "summary": "Aratus is unusually direct about who Virgo is: the goddess Dike, or Justice. In the Golden Age, he writes, she lived openly among people, sitting in their gathering-places and settling disputes without ever needing to threaten anyone. Things soured in the Silver Age, when men grew quarrelsome, and she withdrew to the hills, descending only to scold them. The Bronze Age broke her patience for good — this was the generation that forged the first sword and, worse to Aratus, first ate the flesh of the ox that had plowed their fields. Disgusted, Justice abandoned earth entirely and took her seat in the sky beside Boötes, where she remains as Virgo.",
+    "sourceType": "primary",
+    "source": "Aratus, Phaenomena (lines 96–136)",
+    "sourceDetail": "trans. A. W. Mair, Loeb Classical Library 129 (1921)",
+    "topicI18n": {
+      "fr": "La Justice plie bagage et quitte la terre pour de bon",
+      "ja": "正義の女神、荷をまとめて地上を永遠に去る",
+      "zh-Hans": "正义女神收拾行装,永远离开人间"
+    },
+    "summaryI18n": {
+      "fr": "Aratos se montre inhabituellement direct sur l'identité de la Vierge : la déesse Dikè, ou la Justice. À l'Âge d'or, écrit-il, elle vivait ouvertement parmi les hommes, siégeant dans leurs lieux de rassemblement et réglant les différends sans jamais avoir besoin de menacer personne. Les choses se gâtèrent à l'Âge d'argent, quand les hommes devinrent querelleurs, et elle se retira dans les collines, ne descendant que pour les réprimander. L'Âge de bronze eut raison de sa patience pour de bon — ce fut la génération qui forgea la première épée et, pire encore aux yeux d'Aratos, mangea pour la première fois la chair du bœuf qui avait labouré ses champs. Dégoûtée, la Justice abandonna la terre tout entière et prit place dans le ciel aux côtés du Bouvier, où elle demeure sous les traits de la Vierge.",
+      "ja": "アラトスは、乙女座が何者であるかについて、珍しいほど率直に語っている——それは女神ディケー、すなわち「正義」なのだと。彼が書くところによれば、黄金時代には、彼女は人々の間に公然と暮らし、その集いの場に座して、誰を脅すこともなく争いを収めていた。事態が悪化したのは白銀時代、人々が争い合うようになったときで、彼女は丘へと退き、人々を叱るためだけに降りてくるようになった。青銅時代は彼女の忍耐を完全に打ち砕いた——それは初めて剣を鍛え、そしてアラトスにとってさらに悪いことに、畑を耕した牛の肉を初めて食べた世代であった。嫌気がさした正義の女神は、地上を完全に見限り、うしかい座のかたわらに天の座を得た。それが今日、乙女座として残っている。",
+      "zh-Hans": "阿拉托斯对处女座的身份异乎寻常地直言不讳:她就是狄刻女神,即“正义”。他写道,在黄金时代,她公开生活在人群之中,坐在人们的集会场所,平息纠纷从不需要以任何威胁。到了白银时代,情况恶化,人变得好斗争吵,她便退隐山林,只在需要斥责人们时才下山。青铜时代则彻底耗尽了她的耐心——那一代人锻造出第一把剑,在阿拉托斯看来更糟的是,他们第一次吃起了耕过自家田地的牛的肉。心生厌恶的正义女神彻底离弃了大地,在天空中于牧夫座旁落座,如今仍以处女座之名留在那里。"
+    }
+  },
+  {
+    "constellation": "Psc",
+    "topic": "Venus and Cupid's underwater escape from Typhon",
+    "summary": "When the monster Typhon stormed Olympus, Ovid tells us, Venus (whom he calls by her older name, Dione) fled south to the Euphrates with her son Cupid still clinging to her. Cornered at the riverbank with no way out, the pair were saved when two fish appeared and carried them both to safety on their backs. As thanks, the fish earned a permanent place in the sky. Ovid adds a detail about the myth's afterlife on earth: he claims it's the reason scrupulous Syrians of his own day refused to eat fish, treating them as sacred rescuers rather than food.",
+    "sourceType": "primary",
+    "source": "Ovid, Fasti (Book 2, lines 458–474)",
+    "sourceDetail": "trans. James G. Frazer, Loeb Classical Library 253 (1931)",
+    "topicI18n": {
+      "fr": "Vénus et Cupidon : une fuite sous-marine loin de Typhon",
+      "ja": "ウェヌスとクピドの、テュポーンからの水中脱出",
+      "zh-Hans": "维纳斯与丘比特躲避提丰的水下逃亡"
+    },
+    "summaryI18n": {
+      "fr": "Lorsque le monstre Typhon prit d'assaut l'Olympe, nous raconte Ovide, Vénus (qu'il désigne par son nom plus ancien, Dioné) s'enfuit vers le sud jusqu'à l'Euphrate, son fils Cupidon encore accroché à elle. Acculés sur la berge, sans issue, les deux fugitifs furent sauvés lorsque deux poissons apparurent et les portèrent tous deux en lieu sûr sur leur dos. En remerciement, les poissons obtinrent une place permanente dans le ciel. Ovide ajoute un détail sur la postérité terrestre du mythe : il affirme que c'est la raison pour laquelle les Syriens scrupuleux de son époque refusaient de manger du poisson, les traitant comme des sauveteurs sacrés plutôt que comme de la nourriture.",
+      "ja": "怪物テュポーンがオリュンポスに攻め込んだとき、オウィディウスによれば、ウェヌス(彼はより古い名前ディオーネーで呼んでいる)は、まだしがみつく息子クピドを連れて南のユーフラテス川へと逃げた。川岸に追い詰められ、逃げ場を失った二人を救ったのは、現れた二匹の魚で、それぞれの背に乗せて二人を安全な場所まで運んだのだという。その感謝のしるしとして、魚たちは天に永遠の席を与えられた。オウィディウスはこの神話が地上に残した後日談についても付け加えている——彼の時代の敬虔なシリア人たちが魚を食べることを拒んだのは、魚を食料としてではなく聖なる救済者として扱っていたからだ、というのである。",
+      "zh-Hans": "奥维德告诉我们,当怪物提丰突袭奥林匹斯山时,维纳斯(他用她更古老的名字狄俄涅称呼她)带着仍紧紧抱住她的儿子丘比特向南逃往幼发拉底河。二人被逼至河岸,无路可退,危急之际两条鱼出现,将他们驮在背上带到了安全之地。作为报答,这两条鱼获得了天空中永久的一席之地。奥维德还补充了这则神话在人间流传的一个细节:他声称,这正是他那个时代虔诚的叙利亚人拒绝吃鱼的原因——他们把鱼视为神圣的救命恩人,而非食物。"
+    }
+  },
+  {
+    "constellation": "Sgr",
+    "topic": "An archer the ancients couldn't agree on",
+    "summary": "Even the Romans found Sagittarius confusing. Hyginus reports that many people called the constellation Centaurus, then rejects the identification himself: centaurs, he points out, don't use bows and arrows. His preferred answer is Crotus, a satyr who lived on Mount Helicon as huntsman and companion to the Muses, supplying them with game and joining their revels. To capture everything Crotus was known for in one figure, the star-makers gave him a horse's flanks for his love of riding, a bow for his hunting skill, and a satyr's tail because the Muses delighted in him the way Bacchus delighted in satyrs. It's a rare moment where an ancient source argues openly against a rival theory.",
+    "sourceType": "primary",
+    "source": "Hyginus, Astronomica (2.27)",
+    "sourceDetail": "The Myths of Hyginus, trans. Mary Grant, University of Kansas Publications in Humanistic Studies 34 (1960)",
+    "topicI18n": {
+      "fr": "Un archer sur lequel les Anciens ne s'accordaient pas",
+      "ja": "古代人の意見が一致しなかった射手",
+      "zh-Hans": "古人争论不休的射手"
+    },
+    "summaryI18n": {
+      "fr": "Même les Romains trouvaient le Sagittaire déroutant. Hygin rapporte que beaucoup appelaient cette constellation Centaure, avant de rejeter lui-même cette identification : les centaures, fait-il remarquer, n'utilisent pas d'arc ni de flèches. Sa réponse préférée est Crotos, un satyre qui vivait sur le mont Hélicon comme chasseur et compagnon des Muses, leur fournissant du gibier et se joignant à leurs réjouissances. Pour rassembler en une seule figure tout ce pour quoi Crotos était connu, les créateurs de la constellation lui donnèrent des flancs de cheval pour son goût de l'équitation, un arc pour son talent de chasseur, et une queue de satyre parce que les Muses prenaient plaisir en sa compagnie comme Bacchus en celle des satyres. C'est un rare moment où une source antique argumente ouvertement contre une théorie rivale.",
+      "ja": "ローマ人でさえ、いて座には戸惑いを覚えたらしい。ヒュギヌスの報告によれば、多くの人々はこの星座をケンタウルスと呼んでいたが、彼自身はその同定を退けている——ケンタウロスは弓矢を使わない、と彼は指摘するのである。彼が好んだ答えはクロトスであった。ヘリコン山に住み、狩人としてムーサたちの伴侶となり、獲物を届け、彼女たちの宴に加わっていたサテュロスである。クロトスについて知られていたことのすべてを一つの姿にまとめるため、星座の作り手たちは、彼が乗馬を好んだことから馬の胴体を、狩りの腕前から弓を、そしてムーサたちが彼を気に入っていたことをバッコスがサテュロスたちを気に入っていたことになぞらえて、サテュロスの尾を与えた。これは、古代の典拠が競合する説に対して公然と反論を述べている、めずらしい一場面である。",
+      "zh-Hans": "就连罗马人也觉得人马座令人困惑。希吉努斯记载,许多人把这个星座称作“半人马”,但他本人却否定了这一说法——他指出,半人马并不使用弓箭。他更属意的答案是克罗托斯:一个住在赫利孔山上的萨堤尔,身兼猎人与缪斯女神们的伙伴,既为她们供给猎物,也参与她们的欢宴。为了在一个形象中囊括克罗托斯广为人知的一切特质,造星者赐给他马的躯干以对应他对骑乘的喜爱,一张弓以对应他高超的狩猎本领,还有一条萨堤尔的尾巴——因为缪斯们喜爱他的方式,就如巴克斯喜爱萨堤尔一般。这是古代文献中难得一见公开反驳对立说法的时刻。"
+    }
+  },
+  {
+    "constellation": "Cap",
+    "topic": "How Pan's fish-tail explains the word 'panic'",
+    "summary": "Capricorn's odd goat-and-fish body gets an origin story in Hyginus, credited there to the earlier astronomer Eratosthenes: during the gods' war against the Titans, the goat-god Aegipan (Pan) struck terror into the enemy — the very terror the Greeks named panikos, our 'panic,' after him. His fishtail comes from the same battle: rather than throwing stones, he hurled shellfish at the attackers instead. Jupiter, who had been raised alongside Aegipan as a child, later rewarded him with a permanent place in the sky in this half-goat, half-fish form. A constellation myth that doubles as a piece of word history.",
+    "sourceType": "primary",
+    "source": "Hyginus, Astronomica (2.28), citing Eratosthenes",
+    "sourceDetail": "The Myths of Hyginus, trans. Mary Grant, University of Kansas Publications in Humanistic Studies 34 (1960)",
+    "topicI18n": {
+      "fr": "Comment la queue de poisson de Pan explique le mot « panique »",
+      "ja": "パンの魚の尾が「パニック」という言葉を説明するわけ",
+      "zh-Hans": "潘的鱼尾如何解释了“恐慌”(panic)一词的由来"
+    },
+    "summaryI18n": {
+      "fr": "Le corps étrange, mi-chèvre mi-poisson, du Capricorne reçoit une origine chez Hygin, qui l'attribue à l'astronome plus ancien Ératosthène : pendant la guerre des dieux contre les Titans, le dieu-chèvre Égipan (Pan) frappa l'ennemi de terreur — cette terreur même que les Grecs nommèrent panikos, notre « panique », d'après son nom. Sa queue de poisson vient de cette même bataille : plutôt que de lancer des pierres, il jeta des coquillages sur les assaillants. Jupiter, qui avait été élevé aux côtés d'Égipan durant son enfance, le récompensa plus tard d'une place permanente dans le ciel sous cette forme mi-chèvre, mi-poisson. Un mythe de constellation qui est aussi, à double titre, un fragment d'histoire des mots.",
+      "ja": "ヤギと魚が合わさった山羊座の奇妙な姿には、ヒュギヌスによる由来譚があり、それはさらに古い天文学者エラトステネスに帰されている——神々とティーターン族との戦いの最中、ヤギの神アイギパン(パン)は敵に恐怖を叩き込んだ。ギリシア人がこの恐怖を、彼にちなんでパニコス、すなわち私たちの言う「パニック」と名づけたほどであったという。彼の魚の尾もまた、この同じ戦いに由来する——石を投げる代わりに、彼は攻め手に貝殻を投げつけたのだ。幼い頃アイギパンとともに育てられたユピテルは、後に彼にこの半ヤギ半魚の姿のまま天に永遠の席を授けて報いた。星座神話でありながら、同時に言葉の歴史の一片でもある話である。",
+      "zh-Hans": "摩羯座那半羊半鱼的古怪身形,在希吉努斯笔下有一段来历,他将其归功于更早的天文学家埃拉托斯特尼:在众神对抗提坦的战争中,羊神埃癸潘(潘)把恐惧带给了敌人——希腊人后来便以他之名,把这种恐惧称作panikos,也就是我们所说的“恐慌”(panic)。他的鱼尾也源自同一场战役:他没有投掷石块,而是向进攻者投掷贝壳。朱庇特自幼与埃癸潘一同长大,后来便以这半羊半鱼的形态,赐给他天空中永久的一席作为回报。这是一则星座神话,同时也是一段词源史话。"
+    }
+  },
+  {
+    "constellation": "Ari",
+    "topic": "Birth of the 12-sign zodiac, and Aries as \"the Hired Man\"",
+    "summary": "Sometime in the late fifth century BCE, Babylonian astronomers stopped tracking the moon and planets against a patchwork of unevenly sized star groups and instead carved the sky into twelve equal 30-degree slices — the zodiac, invented as pure celestial bookkeeping, modeled on the twelve-month, thirty-day schematic calendar used for accounting and interest. Aries opened the new standard list, but under its old constellation name, \"the Hired Man,\" a farmhand rather than a ram. A later tablet from Uruk shows scribes punning their way from man to sheep: the same figure reglossed first as \"the Hired Sheep Man,\" then simply \"the Hired Sheep,\" its outline plotted star by star across forehead, thigh, and feet.",
+    "sourceType": "academic",
+    "source": "John M. Steele, \"The Development of the Babylonian Zodiac: Some Preliminary Observations\"",
+    "sourceDetail": "Mediterranean Archaeology and Archaeometry 18(4) (2018), pp. 97-105 (DOI: 10.5281/zenodo.1472282); quoting MUL.APIN I iv 31-37 and tablet MLC 1866 Obv. I 13-16, trans. Beaulieu, Frahm, Horowitz & Steele, The Cuneiform Uranology Texts (American Philosophical Society, 2018)",
+    "topicI18n": {
+      "fr": "Naissance du zodiaque à douze signes, et le Bélier comme « l'Homme engagé »",
+      "ja": "十二星座の黄道の誕生――「雇われ人」としての牡羊座",
+      "zh-Hans": "十二宫黄道的诞生,以及作为“雇工”的白羊座"
+    },
+    "summaryI18n": {
+      "fr": "Quelque part à la fin du Ve siècle avant notre ère, les astronomes babyloniens cessèrent de suivre la lune et les planètes à travers une mosaïque de groupes d'étoiles de tailles inégales et découpèrent plutôt le ciel en douze tranches égales de 30 degrés — le zodiaque, inventé comme pure comptabilité céleste, calqué sur le calendrier schématique de douze mois de trente jours utilisé pour la comptabilité et le calcul des intérêts. Le Bélier ouvrait la nouvelle liste standard, mais sous son ancien nom de constellation, « l'Homme engagé », un ouvrier agricole plutôt qu'un bélier. Une tablette plus tardive d'Uruk montre des scribes jouant sur les mots pour passer de l'homme au mouton : la même figure reglosée d'abord en « l'Homme-Mouton engagé », puis simplement en « le Mouton engagé », son contour tracé étoile par étoile à travers le front, la cuisse et les pieds.",
+      "ja": "紀元前5世紀末のある時期、バビロニアの天文学者たちは、大きさの不揃いな星群のつぎはぎを頼りに月や惑星を追うのをやめ、代わりに天を12等分の30度ずつの区画に切り分けた――黄道十二宮は、会計や利息計算に使われていた12か月・30日制の図式暦にならった、純粋な天の帳簿つけとして考案されたものである。牡羊座はこの新しい標準リストの先頭に立ったが、それはまだ古い星座名――牡羊ではなく雇われ農夫を意味する「雇われ人」――のもとでのことだった。後代のウルク出土の粘土板には、書記たちが人から羊へと洒落を効かせていく様子が見られる。同じ星の並びがまず「雇われ羊男」と言い換えられ、次いで単に「雇われ羊」となり、その輪郭は額、腿、足へと星ひとつひとつを追って描かれていった。",
+      "zh-Hans": "大约在公元前5世纪末,巴比伦天文学家不再依据大小参差的星群拼凑来追踪月亮和行星的位置,转而将天空切分为十二等份,每份30度——黄道十二宫由此诞生,纯粹是一种天文记账的产物,仿照的是用于会计与计息的十二月三十日制图式历法。白羊座位列这份新标准名单之首,但当时它沿用的仍是旧的星座名“雇工”,指的是一名雇来的农夫,而非一只公羊。乌鲁克出土的一块较晚的泥板显示,抄写员们用双关语把“人”一步步变成了“羊”:同一个星象先被重新注解为“雇来的牧羊人”,再简化为“雇羊”,其轮廓被逐星标出,从额头到大腿再到双脚。"
+    }
+  },
+  {
+    "constellation": "Cap",
+    "topic": "Ea's goat-fish becomes Capricorn",
+    "summary": "Long before it was a zodiac sign, the goat with a fish's tail was the personal emblem of Ea, Mesopotamian god of fresh water and wisdom. Carved goat-fish images — suhurmašu, a name Assyriologists read as a blend of suhur, \"carp,\" and maš, \"goat\" — appear on cylinder seals from the Ur III period onward, and on the Kassite-era boundary stone of King Nazi-Maruttaš the creature is labeled outright as \"the goat-fish of Ea.\" Small clay figurines of it were buried at temple and palace thresholds for protection. When Babylonian astronomers assembled the zodiac centuries later, this same constellation — MUL.APIN calls it simply \"the Goat-fish\" — was one of the twelve they kept.",
+    "sourceType": "academic",
+    "source": "F. A. M. Wiggermann, Mesopotamian Protective Spirits: The Ritual Texts",
+    "sourceDetail": "Cuneiform Monographs 1 (Groningen: STYX & PP Publications, 1992), p. 184, entry on suhurmašu, citing the kudurru of Nazi-Maruttaš (MDP 2, pl. 17, iv 5)",
+    "topicI18n": {
+      "fr": "Le poisson-bouc d'Ea devient le Capricorne",
+      "ja": "エアの山羊魚が山羊座になるまで",
+      "zh-Hans": "埃亚的山羊鱼演变为摩羯座"
+    },
+    "summaryI18n": {
+      "fr": "Bien avant de devenir un signe du zodiaque, la chèvre à queue de poisson était l'emblème personnel d'Ea, dieu mésopotamien des eaux douces et de la sagesse. Des images gravées de poissons-boucs — suhurmašu, un nom que les assyriologues interprètent comme un mot-valise formé de suhur, « carpe », et maš, « chèvre » — apparaissent sur des sceaux-cylindres à partir de la période d'Ur III, et sur la pierre-frontière d'époque kassite du roi Nazi-Maruttaš, la créature est directement désignée comme « le poisson-bouc d'Ea ». De petites figurines d'argile à son effigie étaient enterrées aux seuils des temples et des palais pour leur protection. Lorsque les astronomes babyloniens assemblèrent le zodiaque des siècles plus tard, cette même constellation — que le MUL.APIN appelle simplement « le Poisson-bouc » — fut l'une des douze qu'ils conservèrent.",
+      "ja": "黄道十二宮の一つになるはるか以前、魚の尾を持つ山羊は、メソポタミアの淡水と知恵の神エアの個人的な紋章であった。彫刻された山羊魚の像――アッシリア学者たちが「鯉」を意味するsuhurと「山羊」を意味するmašの合成語と読むsuhurmašu――は、ウル第三王朝期以降の円筒印章に見られ、カッシート朝時代のナジ・マルッタシュ王の境界石には、この生き物がずばり「エアの山羊魚」と記されている。守護のため、これを象った小さな粘土像が神殿や宮殿の敷居に埋められた。何世紀も後にバビロニアの天文学者たちが黄道十二宮をまとめた際、MUL.APINが単に「山羊魚」と呼ぶこの同じ星座は、彼らが残した十二の一つとなった。",
+      "zh-Hans": "早在成为黄道星座之前,这只长着鱼尾的山羊就是埃亚的个人象征——埃亚是美索不达米亚掌管淡水与智慧的神。刻画山羊鱼的图像——亚述学家将其名称suhurmašu解读为suhur(“鲤鱼”)与maš(“山羊”)的合成词——从乌尔第三王朝时期起便出现在圆柱印章上,而在卡西特时代纳齐-马鲁塔什王的界石上,这一生物被直接标注为“埃亚的山羊鱼”。人们还将它的小陶像埋在神庙与宫殿的门槛下以求庇护。数百年后,当巴比伦天文学家汇编黄道十二宫时,这同一个星座——MUL.APIN径直称之为“山羊鱼”——正是他们保留下来的十二宫之一。"
+    }
+  },
+  {
+    "constellation": "Lyr",
+    "starName": "Vega",
+    "topic": "Rereading the star-figure on Senenmut's ceiling",
+    "summary": "The oldest known map of the Egyptian sky, painted on the ceiling of the courtier Senenmut's tomb around 1478 BCE, includes an egg-shaped \"ovoid bull\" that generations of scholars assumed was just another version of the Bull's Foreleg, the constellation matching our Big Dipper. In 2019 the Egyptologist Gyula Priskin argued this was a mix-up: matching the diagram's own emphasized stars against the real sky, he found the ovoid's outline instead traces the loop of stars now called Corona Borealis. One star at its far tip got special treatment from the ancient artist, marked with an oversized red dot — the brightest point in the whole figure, falling where Vega blazes in the real sky.",
+    "sourceType": "academic",
+    "source": "Gyula Priskin, \"The Constellations of the Egyptian Astronomical Diagrams\"",
+    "sourceDetail": "Égypte Nilotique et Méditerranéenne (ENiM) 12 (2019), pp. 137-180, at pp. 160-161, discussing the northern panel of Senenmut's astronomical ceiling (TT353, c. 1478-1458 BCE)",
+    "topicI18n": {
+      "fr": "Relire la figure stellaire du plafond de Senenmout",
+      "ja": "センエンムトの天井星図を読み直す",
+      "zh-Hans": "重新解读森穆特墓顶星图上的星象"
+    },
+    "summaryI18n": {
+      "fr": "La plus ancienne carte connue du ciel égyptien, peinte au plafond de la tombe du courtisan Senenmout vers 1478 avant notre ère, comprend un « taureau ovoïde » en forme d'œuf que des générations de savants ont supposé n'être qu'une autre version de la Cuisse du Taureau, la constellation correspondant à notre Grande Ourse. En 2019, l'égyptologue Gyula Priskin a soutenu qu'il s'agissait d'une confusion : en comparant les étoiles mises en valeur sur le diagramme lui-même au ciel réel, il a découvert que le contour de la forme ovoïde retraçait plutôt la boucle d'étoiles que l'on appelle aujourd'hui la Couronne boréale. Une étoile à son extrémité reçut un traitement particulier de la part de l'artiste antique, marquée d'un point rouge surdimensionné — le point le plus brillant de toute la figure, tombant exactement là où Véga brille dans le ciel réel.",
+      "ja": "紀元前1478年頃、廷臣センエンムトの墓の天井に描かれた、知られている限り最古のエジプト天空図には、卵形の「卵形の雄牛」が含まれており、幾世代もの学者たちはこれを、北斗七星に相当する星座「雄牛の前脚」の別バージョンにすぎないと考えてきた。2019年、エジプト学者ジュラ・プリシュキンは、これが取り違えだったと論じた。図版自体が強調して描く星々を実際の星空と照合したところ、この卵形の輪郭がむしろ、今日かんむり座と呼ばれる星の連なりをなぞっていることを彼は発見したのである。その先端に位置する一つの星は、古代の絵師から特別な扱いを受け、大きめの赤い点で記されていた――図版全体で最も明るい点であり、それは実際の星空でベガが輝く位置に一致していた。",
+      "zh-Hans": "已知最古老的埃及天空图,约在公元前1478年绘于廷臣森穆特墓室的天花板上,其中包括一个蛋形的“卵形公牛”,几代学者都以为它不过是“公牛前腿”——对应我们北斗七星的那个星座——的又一种画法。2019年,埃及学家久拉·普里什金主张这其实是一场误认:他将图中特意突出标示的星星与真实星空一一比对,发现这个卵形轮廓所描画的其实是如今被称为北冕座的星环。其最远端的一颗星受到了古代画师的特殊处理,被标以一个格外大的红点——是整幅图中最亮的一点,恰好落在织女星在真实星空中闪耀的位置上。"
+    }
+  },
+  {
+    "constellation": "Tau",
+    "topic": "The 1054 guest star that became the Crab Nebula",
+    "summary": "At dawn on July 4, 1054, Song-dynasty court astronomers watched a new star flare into being near Tianguan, the 'Heavenly Gate' asterism at the tip of Taurus's horn. The official history, Song Shi, logs it plainly: a guest star appeared south-east of Tianguan and, after more than a year, gradually disappeared. A companion court document, the Song Huiyao, preserves the fuller report of astronomer Yang Weide — bright as Venus, visible in broad daylight for 23 days, throwing reddish-white rays in every direction. Nine centuries later, astronomers matched that entry to the expanding wreckage of a star's death: the Crab Nebula, an exploded remnant those Song officials had unknowingly logged into the imperial record.",
+    "sourceType": "primary",
+    "source": "Song Shi (History of Song), Treatise on Astronomy, ch. 56; Song Huiyao Jigao (Draft Documents of the Song Administration), astronomical section",
+    "sourceDetail": "Translated and analyzed in Zhentao Xu, David W. Pankenier & Yaotiao Jiang, East Asian Archaeoastronomy: Historical Records of Astronomical Observations of China, Japan and Korea (Gordon & Breach, 2000); see also F. R. Stephenson & D. A. Green, Historical Supernovae and Their Remnants (Oxford, 2002)",
+    "topicI18n": {
+      "fr": "L'« étoile invitée » de 1054 devenue la nébuleuse du Crabe",
+      "ja": "1054年の「客星」、かに星雲となる",
+      "zh-Hans": "1054年的“客星”,演变为蟹状星云"
+    },
+    "summaryI18n": {
+      "fr": "À l'aube du 4 juillet 1054, les astronomes de la cour de la dynastie Song virent une nouvelle étoile s'embraser près de Tianguan, l'astérisme de la « Porte céleste » à la pointe de la corne du Taureau. L'histoire officielle, le Song Shi, l'enregistre sobrement : une étoile invitée apparut au sud-est de Tianguan et, après plus d'un an, disparut peu à peu. Un document de cour complémentaire, le Song Huiyao, conserve le rapport plus détaillé de l'astronome Yang Weide — brillante comme Vénus, visible en plein jour pendant 23 jours, projetant dans toutes les directions des rayons d'un blanc rougeâtre. Neuf siècles plus tard, les astronomes ont fait correspondre cette mention aux débris en expansion de la mort d'une étoile : la nébuleuse du Crabe, un vestige d'explosion que ces fonctionnaires Song avaient, sans le savoir, consigné dans les archives impériales.",
+      "ja": "1054年7月4日の夜明け、宋朝の宮廷天文官たちは、おうし座の角の先端にある星官「天関」の近くに新しい星が輝き出すのを目撃した。正史『宋史』はこれを淡々と記録している――客星が天関の南東に現れ、一年余りをかけて次第に消えていった、と。もう一つの宮廷文書『宋会要』には、天文官・楊維徳によるより詳細な報告が残されている――金星ほど明るく、23日間昼間でも見え、赤みを帯びた白い光条をあらゆる方向に放っていた、と。九世紀後、天文学者たちはこの記録を、ある星の死がもたらした膨張する残骸――かに星雲――と結び付けた。あの宋の官吏たちが知らぬ間に帝国の記録に書き留めていたのは、超新星爆発の残骸だったのである。",
+      "zh-Hans": "1054年7月4日拂晓,宋朝的宫廷天文官们目睹一颗新星在天关——金牛座犄角尖端的星官——附近骤然爆发。官修史书《宋史》平实地记录道:客星出天关东南,岁余稍没。另一份宫廷文献《宋会要》则保存了天文官杨维德更为详尽的记录:亮如金星,昼见二十三日,四面射出赤白色的光芒。九个世纪之后,天文学家将这条记录与一颗恒星死亡后不断膨胀的残骸对应了起来:那就是蟹状星云——那些宋朝官员在毫不知情的情况下,已将这场超新星爆发记入了帝国的史册。"
+    }
+  },
+  {
+    "constellation": "Lyr",
+    "starName": "Vega",
+    "topic": "Vega as the disappointed Weaving Sisters",
+    "summary": "Centuries before Qixi festival romance, a disgruntled poet in the Classic of Poetry's ode 'Da Dong' looked up at the Milky Way to complain about stars that promise more than they deliver. The 'Weaving Sisters' — the star we call Vega, together with its two fainter neighbours — cross the sky seven times a day, the poem says, yet never weave a single pattern; the bright 'Draught Oxen' nearby shine just as uselessly, never yoked to pull a cart. It's a bitter political complaint dressed as sky-watching, comparing showy but unproductive Zhou officials to constellations that only look useful. It is also the earliest datable pairing of Vega and Altair as a matched set of stars in Chinese literature, long before the two became star-crossed lovers.",
+    "sourceType": "primary",
+    "source": "Shijing (Classic of Poetry), 'Da Dong' (大東), Xiaoya section, ode 203",
+    "sourceDetail": "James Legge translation, The Chinese Classics, vol. IV, The She King (Trübner, 1871); Chinese text per Chinese Text Project (ctext.org)",
+    "topicI18n": {
+      "fr": "Véga, les Sœurs Tisserandes déçues",
+      "ja": "織姫姉妹への失望――ベガをめぐる古歌",
+      "zh-Hans": "织女星:失望的织女姐妹"
+    },
+    "summaryI18n": {
+      "fr": "Des siècles avant la romance du festival Qixi, un poète mécontent, dans l'ode « Da Dong » du Classique des vers, leva les yeux vers la Voie lactée pour se plaindre d'étoiles qui promettent plus qu'elles ne tiennent. Les « Sœurs Tisserandes » — l'étoile que nous appelons Véga, avec ses deux voisines plus faibles — traversent le ciel sept fois par jour, dit le poème, sans jamais tisser le moindre motif ; les brillants « Bœufs de trait » tout proches brillent tout aussi inutilement, jamais attelés pour tirer un char. C'est une amère plainte politique déguisée en observation du ciel, comparant des fonctionnaires Zhou tapageurs mais improductifs à des constellations qui n'ont que l'apparence de l'utilité. C'est aussi le plus ancien appariement datable de Véga et d'Altaïr comme paire d'étoiles assortie dans la littérature chinoise, bien avant que les deux ne deviennent des amants séparés par le destin.",
+      "ja": "七夕の恋物語が生まれるはるか以前、『詩経』の詩「大東」の中で、ある不満を抱いた詩人が天の川を見上げ、期待ばかりで実を結ばない星々への愚痴をこぼした。「織女」――私たちがベガと呼ぶ星と、その暗い二つの伴星――は一日に七度も空を渡るのに、ひとつの模様さえ織り上げない、と詩は言う。すぐそばで輝く「牽牛」もまた同様に無為で、車を引くために軛をつけられたことは一度もない。これは天体観測を装った辛辣な政治批判であり、見かけ倒しで実のない周の役人たちを、役に立ちそうに見えるだけの星々になぞらえたものである。またこれは、中国文学においてベガとアルタイルが対になる一組の星として登場する、年代の特定できる最古の例でもあり、両者が悲恋の恋人同士となるよりもはるか昔にさかのぼる。",
+      "zh-Hans": "早在七夕的浪漫传说出现的数百年前,《诗经》“大东”篇中一位心怀不满的诗人便仰望银河,抱怨那些许诺多而兑现少的星星。诗中说,“织女”——我们所称的织女星,连同她两颗较暗的邻星——一天之内七次穿越天空,却从未织成一寸布帛;附近明亮的“牵牛”同样徒有其表,从未被套上轭去拉车。这是一场披着观星外衣的辛辣政治怨言,把徒有其表、毫无作为的周朝官员比作看似有用、实则无功的星宿。这也是中国文献中织女星与牛郎星作为一对相配星辰最早有据可考的记载,远早于二人成为天各一方的苦命恋人的传说。"
+    }
+  },
+  {
+    "constellation": "Aql",
+    "starName": "Altair",
+    "topic": "The Cowherd star's lonely vigil",
+    "summary": "By the second century CE, the paired stars from that old political complaint had grown into full-blown lovers. Poem ten of the Han-dynasty 'Nineteen Old Poems' — preserved in the sixth-century anthology Wen Xuan — opens by calling Altair 'so remote,' gazing across the Milky Way at the bright Weaving Girl, Vega. She works her loom all day without finishing a single piece, weeping, because the river between them, though 'clear and shallow' and barely a stream's width, still keeps them apart and wordless. It is the earliest surviving literary version of the Cowherd-and-Weaver-Girl story in something close to its familiar shape — a love story written directly onto two real stars, three centuries before Qixi festival customs are first recorded.",
+    "sourceType": "primary",
+    "source": "Gushi Shijiu Shou (古詩十九首, Nineteen Old Poems), poem 10, '迢迢牽牛星' — preserved in the Wen Xuan (Selections of Refined Literature), compiled by Xiao Tong, early 6th century CE",
+    "sourceDetail": "Chinese text and translation per East Asia Student classical Chinese series; poem dating per Anne Birrell, Popular Songs and Ballads of Han China (1988) and Wen Xuan scholarship",
+    "topicI18n": {
+      "fr": "La longue veillée solitaire de l'étoile du Bouvier",
+      "ja": "牽牛星の孤独な見張り",
+      "zh-Hans": "牛郎星的孤独守望"
+    },
+    "summaryI18n": {
+      "fr": "Dès le IIe siècle de notre ère, les étoiles jumelées de cette ancienne plainte politique s'étaient muées en amants à part entière. Le dixième poème des « Dix-neuf poèmes anciens » de la dynastie Han — conservé dans l'anthologie du VIe siècle, le Wen Xuan — s'ouvre en qualifiant Altaïr de « si lointaine », contemplant à travers la Voie lactée la brillante Tisserande, Véga. Elle travaille à son métier tout le jour sans jamais achever une seule pièce, pleurant, car le fleuve qui les sépare, bien que « clair et peu profond » et à peine large comme un ruisseau, les tient malgré tout éloignés et sans voix l'un pour l'autre. C'est la plus ancienne version littéraire conservée de l'histoire du Bouvier et de la Tisserande, dans une forme proche de celle que l'on connaît aujourd'hui — une histoire d'amour écrite directement sur deux étoiles réelles, trois siècles avant les premières mentions des coutumes du festival Qixi.",
+      "ja": "2世紀までには、あの古い政治的な愚痴に登場した対の星は、れっきとした恋人同士へと姿を変えていた。漢代の『古詩十九首』の第十首――6世紀の詞華集『文選』に収められている――は、アルタイルを「はるかに遠く」と呼びながら、天の川の向こうに輝く織女、すなわちベガを見つめる場面から始まる。彼女は一日中機を織りながらも一枚の布さえ織り上げられず、涙を流す。二人を隔てる川は「清く浅く」、幅もほとんど小川ほどしかないのに、それでも二人を隔て、言葉を交わすことすら許さないからだ。これは牽牛織女説話の、私たちがよく知る姿にかなり近い形で残る最古の文学的バージョンである――七夕の風習が初めて記録されるより三世紀も前に、二つの実在の星の上に直接書きつけられた恋物語なのである。",
+      "zh-Hans": "到公元二世纪,那对源自古老政治怨诗的星辰,已经演变成了一对如假包换的恋人。汉代《古诗十九首》第十首——保存于六世纪的文选集《文选》之中——开篇便称牛郎星“迢迢”,隔着银河凝望明亮的织女星。她终日织布,却始终织不成一匹,只是哭泣,因为横亘在二人之间的那条河,虽“清且浅”,相距不过盈盈一水之间,却仍将他们分隔两岸,不得言语。这是牛郎织女故事以接近我们今日所熟悉的样貌流传下来的最早的文学版本——一个直接写在两颗真实星辰之上的爱情故事,比七夕节习俗最早见于记载还要早三个世纪。"
+    }
+  },
+  {
+    "constellation": "UMi",
+    "topic": "The sky's Purple Palace around the pole",
+    "summary": "Around 94 BCE, the historian Sima Qian opened the astronomy chapter of the Shiji, China's first great dynastic history, with the stars nearest the celestial pole. He described a 'central palace' where the brightest pole star was the permanent seat of Taiyi, the Great Unity; three stars beside it stood for the Three Ducal Ministers, four more for the empress and her attendants, and twelve encircling stars represented the feudal lords guarding the throne. Together, he wrote, this whole circumpolar cluster was called the Purple Palace, Ziwei. It is the founding text of an idea that shaped Chinese astronomy for two thousand years afterward: the northern sky as a mirror of the imperial court, an idea later tradition would link to the very name of Beijing's Forbidden City.",
+    "sourceType": "primary",
+    "source": "Shiji (Records of the Grand Historian), 'Tianguan Shu' (天官書, Treatise on the Celestial Offices), by Sima Qian",
+    "sourceDetail": "Chinese text per Chinese Text Project (ctext.org); introduced and translated in David W. Pankenier, Astrology and Cosmology in Early China: Conforming Earth to Heaven (Cambridge University Press, 2013), pp. 444-511",
+    "topicI18n": {
+      "fr": "Le Palais pourpre du ciel, autour du pôle",
+      "ja": "北極を囲む天の紫微垣",
+      "zh-Hans": "环绕北极的天上紫微垣"
+    },
+    "summaryI18n": {
+      "fr": "Vers 94 avant notre ère, l'historien Sima Qian ouvrit le chapitre d'astronomie du Shiji, la première grande histoire dynastique de la Chine, par les étoiles les plus proches du pôle céleste. Il décrivit un « palais central » où l'étoile polaire la plus brillante occupait le siège permanent de Taiyi, l'Unité suprême ; trois étoiles à ses côtés représentaient les Trois Ducs-ministres, quatre autres l'impératrice et ses suivantes, et douze étoiles l'entourant figuraient les seigneurs féodaux gardant le trône. L'ensemble de ce groupe circumpolaire, écrivit-il, portait le nom de Palais pourpre, Ziwei. C'est le texte fondateur d'une idée qui allait façonner l'astronomie chinoise pendant deux mille ans : le ciel du nord comme miroir de la cour impériale, une idée que la tradition ultérieure relierait jusqu'au nom même de la Cité interdite de Pékin.",
+      "ja": "紀元前94年頃、歴史家・司馬遷は、中国最初の大いなる正史『史記』の天文の章を、天の北極にもっとも近い星々から書き起こした。彼が描いたのは「中央の宮殿」であり、そこでは最も明るい極星が太一、すなわち至高の統一神の永久の座とされ、その傍らの三星は三公を、さらに四星は皇后とその侍女たちを表し、これを取り囲む十二の星は玉座を守る諸侯を意味していた。この北極を取り巻く星群全体は、紫微垣と呼ばれると彼は記した。これは、その後二千年にわたり中国天文学を形づくることになる一つの発想――北の空を帝国の宮廷の鏡と見立てる考え方――の源流となった文献であり、後世の伝承はこの発想を、北京の紫禁城という名そのものにまで結びつけることになる。",
+      "zh-Hans": "约在公元前94年,史学家司马迁在《史记》——中国第一部伟大的纪传体正史——的天文篇章开篇,便从最靠近天极的星辰写起。他描述了一座“中宫”,其中最明亮的极星是太一的永久居所;旁边三星象征三公,另有四星代表后宫及其侍从,环绕四周的十二星则代表守卫王座的诸侯。他写道,这整个环绕北极的星群合称为紫微垣。这是一个塑造了此后两千年中国天文学的观念的奠基性文本:北天被视为帝王朝廷的镜像,后世更将这一观念与北京紫禁城之名联系在了一起。"
+    }
+  },
+  {
+    "constellation": "Sco",
+    "starName": "Antares",
+    "topic": "The Fire Star that told farmers autumn was coming",
+    "summary": "'In the seventh month the Fire Star declines' — so opens 'The Seventh Month,' one of the oldest poems in the Classic of Poetry, a farming almanac set to verse from the early Zhou state of Bin. 'Fire Star,' Da Huo, was the Chinese name for Antares, and its seasonal drift — rising in early-summer evenings, then sliding lower and further west each dusk as the months passed — served as one of ancient China's most basic calendar markers, cued here to remind households that the ninth month's cold meant it was time to hand out winter clothes. The line stuck so hard in the culture that 'the seventh month, the fire declines' survives today as a Chinese idiom for the turning of the seasons, an unbroken thread back to Bronze Age skywatching.",
+    "sourceType": "primary",
+    "source": "Shijing (Classic of Poetry), 'Qi Yue' (七月, The Seventh Month), Bin Feng section, ode 154",
+    "sourceDetail": "James Legge translation, The Chinese Classics, vol. IV, The She King (Trübner, 1871); astronomical significance discussed in Joseph Needham, Science and Civilisation in China, vol. 3: Mathematics and the Sciences of the Heavens and the Earth (Cambridge University Press, 1959)",
+    "topicI18n": {
+      "fr": "L'Étoile de Feu qui annonçait l'automne aux paysans",
+      "ja": "農民に秋の訪れを告げた「火の星」",
+      "zh-Hans": "告诉农人秋天将至的“大火星”"
+    },
+    "summaryI18n": {
+      "fr": "« Au septième mois, l'Étoile de Feu décline » — ainsi s'ouvre « Le Septième mois », l'un des plus anciens poèmes du Classique des vers, un almanach agricole mis en vers dans l'ancien État de Bin, sous les premiers Zhou. « L'Étoile de Feu », Da Huo, était le nom chinois donné à Antarès, et sa dérive saisonnière — se levant les soirs du début de l'été, puis glissant chaque crépuscule un peu plus bas et plus à l'ouest à mesure que les mois passaient — servait de l'un des repères calendaires les plus fondamentaux de la Chine ancienne, rappelée ici pour signaler aux foyers que le froid du neuvième mois signifiait qu'il était temps de distribuer les vêtements d'hiver. Ce vers s'ancra si profondément dans la culture que « au septième mois, le feu décline » survit encore aujourd'hui comme expression chinoise pour désigner le changement des saisons — un fil ininterrompu remontant à l'observation du ciel de l'âge du bronze.",
+      "ja": "「七月に火星流る」――こう始まるのが「七月」、『詩経』の中でも最も古い詩の一つであり、周初期の邠の国で詩の形に整えられた農事暦である。「火星」、大火は、アンタレスを指す中国語名であり、その季節ごとの動き――初夏の宵に昇り始め、月日が進むにつれて夕暮れごとにより低く、より西へと沈んでいく――は、古代中国においてもっとも基本的な暦の目印の一つとして用いられ、ここでは九月の寒さが冬着を配る時節の到来を告げるものとして詠まれている。この一句は文化に深く根づき、「七月に火流る」は今日でも季節の移ろいを表す中国語の成句として生き続けており、青銅器時代の天体観測にまでまっすぐつながる糸となっている。",
+      "zh-Hans": "“七月流火”——这是《七月》一诗的开篇,《诗经》中最古老的诗篇之一,是周初豳地写成韵文的农事历。“大火”是古代中国对心宿二(即西方所称的Antares)的称呼,它的季节性移动——在初夏的夜晚升起,随着月份推移,每日黄昏时分逐渐低垂并偏向西方——是古代中国最基本的历法标志之一,此处正是用来提醒各家各户:九月的寒意意味着该分发冬衣了。这句诗深深烙印在文化之中,“七月流火”至今仍作为形容季节更替的成语流传于世,一条不曾断绝的丝线,直通青铜时代的观星传统。"
+    }
+  },
+  {
+    "constellation": "Tau",
+    "topic": "Krittika, the Pleiades that open the nakshatra list",
+    "summary": "When the Taittiriya Samhita, one of the core texts of the Krishna Yajurveda, lays out the roll-call of nakshatras — the lunar mansions the moon passes through month by month — it does not start arbitrarily. It starts with Krittika: the Pleiades. 'Krittikas, the nakshatra; Agni, the deity,' the text declares, opening a long sequence pairing each asterism with its presiding god, Rohini next under Prajapati, and onward around the ecliptic. Related Vedic ritual texts describe the Krittikas as a tight cluster of six or seven stars bound 'in fellowship' under Prajapati's care. Their position at the head of every one of the old nakshatra lists — repeated in the Atharvaveda and Taittiriya Brahmana as well — reflects how central this small, unmistakable star cluster was to reckoning the lunar calendar in Vedic India.",
+    "sourceType": "primary",
+    "source": "Taittiriya Samhita (Krishna Yajurveda) 4.4.10, the nakshatra list",
+    "sourceDetail": "Translated by Arthur Berriedale Keith, The Veda of the Black Yajus School, entitled Taittiriya Samhita, Harvard Oriental Series vols. 18-19 (Harvard University Press, 1914); nakshatra-list scholarship in Michael Witzel, 'The Pleiades and the Bears Viewed from Inside the Vedic Texts,' Electronic Journal of Vedic Studies 5.2 (1999)",
+    "topicI18n": {
+      "fr": "Krittika, les Pléiades qui ouvrent la liste des nakshatra",
+      "ja": "ナクシャトラ表の先頭を飾るプレアデス、クリッティカー",
+      "zh-Hans": "开启纳沙特拉序列的昴星团:Krittika"
+    },
+    "summaryI18n": {
+      "fr": "Lorsque la Taittiriya Samhita, l'un des textes fondamentaux du Krishna Yajurveda, dresse l'appel des nakshatra — ces demeures lunaires que la lune traverse mois après mois — elle ne commence pas au hasard. Elle commence par Krittika : les Pléiades. « Les Krittikas, le nakshatra ; Agni, la divinité », déclare le texte, ouvrant une longue séquence associant chaque astérisme à son dieu tutélaire, Rohini venant ensuite sous Prajapati, et ainsi de suite tout autour de l'écliptique. Des textes rituels védiques apparentés décrivent les Krittikas comme un amas resserré de six ou sept étoiles unies « en compagnie » sous la garde de Prajapati. Leur position en tête de chacune des anciennes listes de nakshatra — reprise également dans l'Atharvaveda et la Taittiriya Brahmana — reflète à quel point ce petit amas d'étoiles, si reconnaissable, était central pour le calcul du calendrier lunaire dans l'Inde védique.",
+      "ja": "クリシュナ・ヤジュルヴェーダの中核をなす文献の一つ、タイッティリーヤ・サンヒターがナクシャトラ――月が月ごとに通過していく「月の館」――の名を連ねるとき、その始まり方は決して無作為ではない。それはクリッティカー、すなわちプレアデス星団から始まる。「クリッティカー、そのナクシャトラ。アグニ、その神格」とこの文献は宣言し、そこから各星宿とそれを司る神とを対にした長い列挙が始まる――次はプラジャーパティのもとにあるローヒニー、そうして黄道をめぐっていく。関連するヴェーダの祭式文献は、クリッティカーを、プラジャーパティの庇護のもと「仲間として」結び合わされた六つないし七つの星からなる密集した星団として描いている。古いナクシャトラ表のどれもがこの星団を先頭に置いていること――アタルヴァヴェーダやタイッティリーヤ・ブラーフマナでも繰り返されるこの配置は、ヴェーダ期のインドにおいて、この小さくも見紛いようのない星団が太陰暦の計算にとってどれほど中心的な存在であったかを物語っている。",
+      "zh-Hans": "《鹧鸪氏本集》(Taittiriya Samhita)是《黑夜柔吠陀》(Krishna Yajurveda)的核心文献之一,当它列出nakshatra——月亮逐月经过的“月站”——的名录时,开篇绝非随意为之。它以Krittika,也就是昴星团,作为开端。文本宣告道:“Krittikas,其nakshatra;Agni,其主神”,由此展开一长串将每个星宿与其司掌神祇配对的序列——接下来是归Prajapati所辖的Rohini,如此沿黄道依次排列下去。相关的吠陀祭祀文献将Krittikas描述为一个紧密的星团,由六到七颗星组成,在Prajapati的庇护下“结伴相依”。它们位居每一份古老nakshatra名录之首——在《阿闼婆吠陀》(Atharvaveda)与《鹧鸪氏梵书》(Taittiriya Brahmana)中同样如此——这反映出,在吠陀时代的印度,这个虽小却极易辨认的星团,在推算阴历历法中占据着何等核心的地位。"
+    }
+  },
+  {
+    "constellation": "And",
+    "topic": "Al-Sufi's little cloud: the first galaxy on paper",
+    "summary": "In 964 the Persian astronomer 'Abd al-Rahman al-Sufi was working through Ptolemy's forty-eight constellations star by star, correcting magnitudes and adding stars Ptolemy had missed, when he reached the region where Arab skywatchers pictured a great fish rather than a chained princess. Just before its mouth, he noted a faint smudge of light he called al-latkha al-sahabiya, \"the little cloud\" (also translated \"the nebulous smear\"). It is the earliest surviving written record of any galaxy beyond our own — the object now catalogued as Andromeda, M31 — sitting quietly in his star list more than six centuries before European telescopes first turned toward it.",
+    "sourceType": "primary",
+    "source": "'Abd al-Rahman al-Sufi, Kitab suwar al-kawakib al-thabita (Book of the Fixed Stars), c. 964 CE",
+    "sourceDetail": "Chapter on the Arabic \"Great Fish\"/Andromeda region; passage translated and discussed in Ihsan Hafez, \"'Abd al-Rahman al-Sufi and His Book of the Fixed Stars: A Journey of Re-discovery\" (PhD thesis, James Cook University, 2010); corroborated in Paul Kunitzsch's studies of al-Sufi's nomenclature.",
+    "topicI18n": {
+      "fr": "Le petit nuage d'al-Sufi : la première galaxie sur le papier",
+      "ja": "アル=スーフィーの「小さな雲」――紙に記された最初の銀河",
+      "zh-Hans": "阿尔苏菲的“小云”:纸面上的第一个星系"
+    },
+    "summaryI18n": {
+      "fr": "En 964, l'astronome persan 'Abd al-Rahman al-Sufi passait en revue, étoile par étoile, les quarante-huit constellations de Ptolémée, corrigeant leurs magnitudes et ajoutant des étoiles que Ptolémée avait manquées, lorsqu'il parvint à la région où les observateurs du ciel arabes voyaient un grand poisson plutôt qu'une princesse enchaînée. Juste avant sa bouche, il nota une faible tache de lumière qu'il appela al-latkha al-sahabiya, « le petit nuage » (traduit aussi par « la tache nébuleuse »). C'est le plus ancien témoignage écrit conservé de l'existence d'une galaxie au-delà de la nôtre — l'objet aujourd'hui catalogué comme Andromède, M31 — reposant discrètement dans sa liste d'étoiles plus de six siècles avant que les télescopes européens ne s'y tournent pour la première fois.",
+      "ja": "964年、ペルシアの天文学者アブド・アル=ラフマーン・アル=スーフィーは、プトレマイオスの四十八星座を一つひとつ星ごとに検討し、等級を修正し、プトレマイオスが見落としていた星を書き加えていた。そしてアラブの観測者たちが鎖につながれた王女ではなく大きな魚を思い描いていた領域にたどり着いたとき、彼はその口のすぐ手前に、ぼんやりとした淡い光の染みを見つけ、これをal-latkha al-sahabiya、「小さな雲」(「星雲状のしみ」とも訳される)と呼んだ。これは、私たちの銀河系の外にある銀河について現存する最古の文字記録である――今日アンドロメダ銀河、M31として分類されているこの天体は、ヨーロッパの望遠鏡が初めてそちらへ向けられるより六百年以上も前から、彼の星表の中に静かに記されていたのである。",
+      "zh-Hans": "公元964年,波斯天文学家阿卜杜勒·拉赫曼·阿尔苏菲正逐星逐星地核校托勒密的四十八星座,修正星等,并补上托勒密遗漏的恒星,直到他来到阿拉伯观星者眼中是一条大鱼而非锁链公主的那片天区。就在鱼口之前,他注意到一小片朦胧的光斑,称之为al-latkha al-sahabiya,意为“小云”(也译作“云雾状的斑迹”)。这是现存关于我们所在星系之外任何星系的最早文字记录——如今被编入星表、称为仙女座星系(M31)的天体,就这样静静地躺在他的星表之中,比欧洲的望远镜首次转向它还要早六个多世纪。"
+    }
+  },
+  {
+    "constellation": "Ori",
+    "starName": "Betelgeuse",
+    "topic": "A giant's hand, misread into Betelgeuse",
+    "summary": "Arabic astronomers pictured a great feminine figure, al-Jawza', across the stars we call Orion, and named her limbs accordingly: her raised hand was yad al-Jawza', her trailing leg rijl al-Jawza' al-yusra. The leg's name passed cleanly into Rigel. The hand's did not. The philologist Paul Kunitzsch traced how medieval Latin copyists, transliterating letter by letter, mistook the Arabic ya' of \"yad\" — written with two dots beneath it — for a ba', which carries only one. \"Yad\" became \"Bed,\" then \"Bet,\" and Renaissance scholars, no longer recognizing the word, invented a fresh explanation from an unrelated Arabic word for \"armpit\" — leaving the red giant's name a fossil of a centuries-old scribal slip.",
+    "sourceType": "academic",
+    "source": "Paul Kunitzsch & Tim Smart, A Dictionary of Modern Star Names: A Short Guide to 254 Star Names and Their Derivations (2nd rev. ed.)",
+    "sourceDetail": "Sky Publishing, Cambridge, MA, 2006, entries \"Betelgeuse\" and \"Rigel\"; the derivation was first established in Paul Kunitzsch, Arabische Sternnamen in Europa (Wiesbaden: Otto Harrassowitz, 1959).",
+    "topicI18n": {
+      "fr": "La main d'une géante, mal lue en Bételgeuse",
+      "ja": "巨女の手、誤読されてベテルギウスに",
+      "zh-Hans": "巨人之手,被误读成参宿四"
+    },
+    "summaryI18n": {
+      "fr": "Les astronomes arabes se représentaient une grande figure féminine, al-Jawza', à travers les étoiles que nous appelons Orion, et nommaient ses membres en conséquence : sa main levée était yad al-Jawza', sa jambe traînante rijl al-Jawza' al-yusra. Le nom de la jambe passa proprement dans Rigel. Celui de la main, non. Le philologue Paul Kunitzsch a retracé comment des copistes latins médiévaux, translittérant lettre par lettre, confondirent le ya' arabe de « yad » — écrit avec deux points en dessous — avec un ba', qui n'en porte qu'un seul. « Yad » devint « Bed », puis « Bet », et les érudits de la Renaissance, ne reconnaissant plus le mot, inventèrent une explication toute nouvelle à partir d'un mot arabe sans rapport signifiant « aisselle » — laissant au nom de la géante rouge le fossile d'une erreur de copiste vieille de plusieurs siècles.",
+      "ja": "アラブの天文学者たちは、私たちがオリオン座と呼ぶ星々の中に、al-Jawza'という一人の巨大な女性像を思い描き、それに従って手足に名前をつけた。掲げた手はyad al-Jawza'、後方に伸びる脚はrijl al-Jawza' al-yusraである。脚の名前はそのままリゲルへと受け継がれた。だが手の名前はそうならなかった。文献学者ポール・クニッチュは、中世のラテン語写字生たちが文字を一つずつ書き写す中で、「yad」のアラビア文字ヤー――下に点が二つ打たれる――を、点が一つしかないバーと取り違えたことを跡づけた。「Yad」は「Bed」となり、やがて「Bet」となった。そしてルネサンス期の学者たちは、もはやこの語を認識できず、無関係なアラビア語の「脇の下」を意味する語から新たな由来説をひねり出した――こうして、この赤色巨星の名は、何世紀も前の写字生のうっかりミスの化石となって残ったのである。",
+      "zh-Hans": "阿拉伯天文学家在我们称为猎户座的星群中,想象出一位高大的女性形象al-Jawza',并据此为她的四肢命名:她高举的手是yad al-Jawza',拖在身后的腿是rijl al-Jawza' al-yusra。这条腿的名字干净利落地演变成了如今所用的“Rigel”。手的名字却没有。语文学家保罗·库尼奇追溯了中世纪拉丁文抄写员逐字转写时是如何出错的:“yad”一词中的阿拉伯字母ya'——下方带有两个点——被误认成只有一个点的ba'。“Yad”于是变成了“Bed”,再变成“Bet”,而文艺复兴时期的学者们已经认不出这个词,便从一个毫不相关、意为“腋窝”的阿拉伯语词中生造出一套新的解释——就这样,这颗红巨星的名字,成了一场数百年前抄写疏漏的活化石。"
+    }
+  },
+  {
+    "constellation": "Lyr",
+    "starName": "Vega",
+    "topic": "Two eagles crossing the sky: Vega's falling bird",
+    "summary": "Where Ptolemy's Greeks saw Hermes's lyre, Arab skywatchers before and after Islam saw a bird of prey. Vega and its two closest companion stars became an-nasr al-waqi', \"the falling\" or \"alighting eagle\" (sometimes rendered \"vulture\") — wings folded, stooping toward the ground. Elsewhere in the sky, the same shape in Aquila was named an-nasr al-ta'ir, \"the flying eagle,\" wings spread in open flight. Vega is simply a worn-down European contraction of the first name, absorbed into Latin star lists by the end of the tenth century — making it one of the very earliest Arabic star names to take root in European astronomy, predating al-Sufi's more systematic catalogue.",
+    "sourceType": "academic",
+    "source": "Paul Kunitzsch & Tim Smart, A Dictionary of Modern Star Names: A Short Guide to 254 Star Names and Their Derivations (2nd rev. ed.)",
+    "sourceDetail": "Sky Publishing, Cambridge, MA, 2006, entries \"Vega\" and \"Altair.\"",
+    "topicI18n": {
+      "fr": "Deux aigles traversant le ciel : l'oiseau tombant de Véga",
+      "ja": "空を渡る二羽の鷲――舞い降りるベガの鳥",
+      "zh-Hans": "掠过天空的两只雄鹰:织女星的俯冲之鸟"
+    },
+    "summaryI18n": {
+      "fr": "Là où les Grecs de Ptolémée voyaient la lyre d'Hermès, les observateurs du ciel arabes, avant comme après l'islam, voyaient un oiseau de proie. Véga et ses deux plus proches compagnes devinrent an-nasr al-waqi', « l'aigle tombant » ou « se posant » (parfois rendu par « vautour ») — ailes repliées, piquant vers le sol. Ailleurs dans le ciel, la même figure, dans l'Aigle, fut nommée an-nasr al-ta'ir, « l'aigle volant », ailes déployées en plein vol. Véga n'est qu'une contraction européenne usée du premier nom, absorbée dans les listes d'étoiles latines dès la fin du Xe siècle — ce qui en fait l'un des tout premiers noms d'étoiles arabes à s'être enraciné dans l'astronomie européenne, antérieur au catalogue plus systématique d'al-Sufi.",
+      "ja": "プトレマイオスに連なるギリシア人たちがヘルメスの竪琴を見た場所に、イスラム以前・以後を問わずアラブの観測者たちは猛禽の姿を見ていた。ベガとそれに最も近い二つの伴星は、an-nasr al-waqi'、すなわち「落ちる鷲」あるいは「舞い降りる鷲」(「禿鷲」と訳されることもある)となった――翼をたたみ、地上へと急降下する姿である。空の別の場所、わし座にある同じ形は、an-nasr al-ta'ir、「飛翔する鷲」と名付けられた――翼を大きく広げて飛ぶ姿である。ベガという名は、この最初の名がすり減って縮まったヨーロッパ風の形にすぎず、10世紀末までにはラテン語の星表に取り込まれていた――これにより、アル=スーフィーによるより体系的な星表よりも早く、ヨーロッパ天文学に根づいたごく初期のアラビア語由来の星名の一つとなったのである。",
+      "zh-Hans": "在托勒密笔下的希腊人看到赫尔墨斯竖琴的地方,伊斯兰前后的阿拉伯观星者看到的却是一只猛禽。织女星与它最近的两颗伴星被称为an-nasr al-waqi',意为“俯冲的”或“落下的鹰”(有时也译作“秃鹫”)——双翼收拢,朝地面俯冲而下。而在天空的另一处,天鹰座中同样的形状则被称为an-nasr al-ta'ir,“飞翔的鹰”,双翼展开,正在飞行。“织女星(Vega)”这个名字,不过是第一个名称经欧洲人磨损、缩略后的产物,早在十世纪末便已被纳入拉丁文星表——这使它成为最早在欧洲天文学中扎根的阿拉伯星名之一,时间甚至早于阿尔苏菲那部更为系统的星表。"
+    }
+  },
+  {
+    "constellation": "Per",
+    "topic": "From Gorgon to ghoul: naming Algol",
+    "summary": "Ptolemy's Almagest marks one star in Perseus only by its place in the constellation figure: the bright one in the Gorgon's head, the severed trophy of Medusa that the hero carries. When the Almagest was translated into Arabic in ninth-century Baghdad, scholars kept Ptolemy's picture but swapped the culturally specific monster for one their own readers knew — the ghul, a shape-shifting, corpse-haunting creature of Arabian folklore. The star became ra's al-ghul, \"head of the ghoul.\" Al-Sufi's own tenth-century manuscripts go further, redrawing Perseus holding a bearded male demon's head rather than Medusa's. Centuries later, once astronomers realized Algol visibly dims every 2.87 days — an eclipsing binary, not sorcery — the old \"demon star\" name only felt more fitting.",
+    "sourceType": "academic",
+    "source": "Paul Kunitzsch & Tim Smart, A Dictionary of Modern Star Names: A Short Guide to 254 Star Names and Their Derivations (2nd rev. ed.)",
+    "sourceDetail": "Sky Publishing, Cambridge, MA, 2006, entry \"Algol\"; compare Ptolemy's original wording in Ptolemy's Almagest, trans. G. J. Toomer (London: Duckworth, 1984), Perseus star catalogue. Al-Sufi's substitution of a male demon for Medusa is documented in surviving illustrated copies of his Kitab suwar al-kawakib al-thabita (e.g., Metropolitan Museum of Art, Deccan manuscript, 1644 CE, after the 964 CE original).",
+    "topicI18n": {
+      "fr": "De la Gorgone au goule : nommer Algol",
+      "ja": "ゴルゴンから鬼へ――アルゴルの名付け",
+      "zh-Hans": "从戈耳工到鬼怪:大陵五之名"
+    },
+    "summaryI18n": {
+      "fr": "L'Almageste de Ptolémée ne repère une étoile de Persée que par sa place dans la figure de la constellation : celle qui brille dans la tête de la Gorgone, le trophée tranché de Méduse que le héros porte à la main. Lorsque l'Almageste fut traduit en arabe à Bagdad, au IXe siècle, les savants conservèrent l'image de Ptolémée mais remplacèrent le monstre, propre à une culture particulière, par une figure que leurs propres lecteurs connaissaient — le ghul, créature métamorphe et hanteuse de cadavres du folklore arabe. L'étoile devint ra's al-ghul, « la tête du goule ». Les manuscrits d'al-Sufi lui-même, au Xe siècle, vont plus loin encore, représentant Persée tenant la tête barbue d'un démon masculin plutôt que celle de Méduse. Des siècles plus tard, lorsque les astronomes comprirent qu'Algol s'assombrissait visiblement tous les 2,87 jours — une binaire à éclipses, et non de la sorcellerie —, l'ancien nom d'« étoile démon » n'en parut que plus approprié.",
+      "ja": "プトレマイオスの『アルマゲスト』は、ペルセウス座の一つの星を、星座図の中での位置だけで記している――ゴルゴンの首、すなわち英雄が携える、切り取られたメドゥーサの戦利品の中で輝く星、として。9世紀のバグダードで『アルマゲスト』がアラビア語に翻訳されたとき、学者たちはプトレマイオスの図像はそのまま残しつつ、その文化に固有の怪物を、自分たちの読者になじみ深い存在に置き換えた――姿を変え、死体に取り憑くアラビア民間伝承の生き物、グール(ghul)である。その星はra's al-ghul、「グールの頭」となった。10世紀のアル=スーフィー自身の写本はさらに踏み込み、ペルセウスがメドゥーサではなく髭を生やした男性の悪魔の首を掲げる姿に描き直している。何世紀も後、天文学者たちがアルゴルは2.87日ごとに目に見えて暗くなる――魔術ではなく食連星である――ことに気づいたとき、この古い「悪魔の星」という名は、かえっていっそうふさわしく感じられた。",
+      "zh-Hans": "托勒密的《天文学大成》仅以星座图形中的位置标记英仙座中的一颗星:那颗闪耀在戈耳工头颅中的亮星,即英雄手中提着的、被斩下的美杜莎战利品。当《天文学大成》在九世纪的巴格达被译成阿拉伯文时,学者们保留了托勒密的图像,却把那个带有特定文化色彩的怪物换成了自己读者所熟知的形象——ghul,阿拉伯民间传说中一种能变形、以尸体为食的生物。这颗星由此变成了ra's al-ghul,“食尸鬼之首”。阿尔苏菲本人十世纪的手稿更进一步,将英仙座手中提着的重新画成了一个蓄须的男性恶魔的头颅,而非美杜莎的头颅。数百年后,当天文学家发现大陵五每隔2.87天便会肉眼可见地变暗——那是一对食双星,而非巫术所致——这个古老的“恶魔之星”之名,反倒显得更加贴切了。"
+    }
+  },
+  {
+    "constellation": "PsA",
+    "starName": "Fomalhaut",
+    "topic": "The fish's mouth: naming Fomalhaut",
+    "summary": "Ptolemy located this star, alone and bright in the autumn sky, simply \"in the mouth\" of his Piscis Austrinus, the Southern Fish. Ninth-century Arabic translators rendered that plain description literally as fam al-hut, \"mouth of the fish\" (later fum al-hut in the Arabic of Muslim Spain, the form that reached Latin Europe). Unlike its more mythologically populated neighbours, Piscis Austrinus carries little story beyond Ptolemy's bare geometry — so this star's name records not a myth but a translator's plain act of description, carried word for word from Greek into Arabic and then, centuries later, into European star charts as \"Fomalhaut.\"",
+    "sourceType": "academic",
+    "source": "Paul Kunitzsch & Tim Smart, A Dictionary of Modern Star Names: A Short Guide to 254 Star Names and Their Derivations (2nd rev. ed.)",
+    "sourceDetail": "Sky Publishing, Cambridge, MA, 2006, entry \"Fomalhaut.\"",
+    "topicI18n": {
+      "fr": "La bouche du poisson : nommer Fomalhaut",
+      "ja": "魚の口――フォーマルハウトの名付け",
+      "zh-Hans": "鱼之口:北落师门之名"
+    },
+    "summaryI18n": {
+      "fr": "Ptolémée situait cette étoile, seule et brillante dans le ciel d'automne, simplement « dans la bouche » de son Piscis Austrinus, le Poisson austral. Les traducteurs arabes du IXe siècle rendirent cette description toute simple, mot pour mot, par fam al-hut, « bouche du poisson » (devenu plus tard fum al-hut dans l'arabe de l'Espagne musulmane, la forme qui parvint jusqu'à l'Europe latine). Contrairement à ses voisines bien plus riches en mythologie, le Poisson austral ne porte guère d'histoire au-delà de la géométrie toute nue de Ptolémée — de sorte que le nom de cette étoile n'enregistre pas un mythe, mais le simple geste descriptif d'un traducteur, transporté mot à mot du grec vers l'arabe, puis, des siècles plus tard, vers les cartes du ciel européennes sous la forme « Fomalhaut ».",
+      "ja": "プトレマイオスはこの星を、秋の空にただ一つ輝く星として、彼のいうPiscis Austrinus(みなみのうお座)の「口の中」にあると、ただそれだけの説明で位置づけた。9世紀のアラビア語訳者たちは、この素っ気ない記述をそのままfam al-hut、「魚の口」と直訳した(後にムスリム支配下のスペインのアラビア語ではfum al-hutとなり、この形がラテン世界のヨーロッパへと伝わった)。神話をより豊かに背負う周囲の星座とは異なり、みなみのうお座にはプトレマイオスの無味乾燥な幾何学的記述以上の物語はほとんど付随していない――そのためこの星の名前は、神話ではなく、ある翻訳者による淡々とした記述行為そのものを記録しており、それはギリシア語からアラビア語へ、そして何世紀も後にはヨーロッパの星図へと、一語一語そのまま運ばれて「フォーマルハウト」となったのである。",
+      "zh-Hans": "托勒密将这颗在秋日夜空中独自闪耀的亮星,仅仅定位为他所说的Piscis Austrinus(南鱼座)“口中”的一点。九世纪的阿拉伯译者将这一朴素的描述逐字译为fam al-hut,“鱼之口”(后来在穆斯林治下西班牙的阿拉伯语中演变为fum al-hut,正是这个形式传入了拉丁语的欧洲)。与周围那些拥有丰富神话的邻居不同,南鱼座除了托勒密赤裸裸的几何描述之外几乎没有什么故事流传——因此这颗星的名字所记录的并非一则神话,而是一位译者朴实无华的描述行为,它从希腊语一字一句地转入阿拉伯语,数百年后又原样传入欧洲星图,成为“Fomalhaut”(北落师门)。"
+    }
+  },
+  {
+    "constellation": "Cyg",
+    "starName": "Deneb",
+    "topic": "Tail feathers everywhere: Deneb and its kin",
+    "summary": "Ptolemy's catalogue for Cygnus places one star simply \"on the tail\" of the bird. Arabic translators working from his text — without an accompanying picture — rendered it dhanab al-dajajah, \"the tail of the hen,\" reading Ptolemy's swan as a more familiar barnyard bird. The word dhanab, \"tail,\" proved so convenient that Arabic astronomers reused it across the sky wherever a bright star marked a constellation's tail: Deneb Kaitos in the Whale, Denebola in the Lion, Deneb Algedi in the Sea-Goat. Alpha Cygni kept the plainest version of the name, later shortened by Europeans to simply \"Deneb.\"",
+    "sourceType": "academic",
+    "source": "Paul Kunitzsch & Tim Smart, A Dictionary of Modern Star Names: A Short Guide to 254 Star Names and Their Derivations (2nd rev. ed.)",
+    "sourceDetail": "Sky Publishing, Cambridge, MA, 2006, entry \"Deneb.\"",
+    "topicI18n": {
+      "fr": "Des plumes de queue partout : Deneb et sa parentèle",
+      "ja": "至るところにある尾羽根――デネブとその仲間たち",
+      "zh-Hans": "尾羽处处可见:天津四及其“同族”"
+    },
+    "summaryI18n": {
+      "fr": "Le catalogue de Ptolémée pour le Cygne situe une étoile simplement « sur la queue » de l'oiseau. Les traducteurs arabes travaillant à partir de son texte — sans image d'accompagnement — la rendirent par dhanab al-dajajah, « la queue de la poule », lisant dans le cygne de Ptolémée un oiseau de basse-cour plus familier. Le mot dhanab, « queue », se révéla si pratique que les astronomes arabes le réemployèrent à travers tout le ciel, partout où une étoile brillante marquait la queue d'une constellation : Deneb Kaitos dans la Baleine, Denebola dans le Lion, Deneb Algedi dans le Capricorne. L'Alpha du Cygne conserva la version la plus simple du nom, plus tard raccourcie par les Européens en simplement « Deneb ».",
+      "ja": "はくちょう座に関するプトレマイオスの星表は、ある一つの星を、ただその鳥の「尾の上」にあるとだけ位置づけている。彼のテキストをもとに作業したアラビア語訳者たちは――挿絵を伴わないまま――これをdhanab al-dajajah、「雌鶏の尾」と訳した。プトレマイオスの白鳥を、より身近な庭先の鳥として読み替えたのである。「尾」を意味するdhanabという語は非常に便利だったため、アラビアの天文学者たちは、明るい星が星座の尾を示す場所であればどこでも空じゅうでこれを使い回した――くじら座のDeneb Kaitos、しし座のDenebola、やぎ座のDeneb Algediである。はくちょう座アルファ星は、この名前の最も素っ気ない形をそのまま保ち、のちにヨーロッパ人によって単に「デネブ」へと短縮された。",
+      "zh-Hans": "托勒密为天鹅座编制的星表中,仅将其中一颗星标注为位于这只鸟“尾部”的位置。依据其文本进行翻译的阿拉伯译者——手边并无配图——将其译为dhanab al-dajajah,“母鸡的尾巴”,把托勒密笔下的天鹅读成了更为人熟知的家禽。dhanab(“尾巴”)一词用起来实在方便,以至于阿拉伯天文学家在天空中凡是有亮星标示星座尾部之处都反复沿用它:鲸鱼座中的Deneb Kaitos,狮子座中的Denebola,摩羯座中的Deneb Algedi。天鹅座α星保留了这个名字最朴素的形式,后来被欧洲人简化为“Deneb”(天津四)。"
+    }
   }
 ]
