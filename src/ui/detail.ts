@@ -1358,7 +1358,7 @@ function appendLLMSection(
     <button class="btn btn-outline btn-block llm-activate-btn" style="display:none"></button>
     <div class="llm-progress" style="display:none">
       <div class="llm-progress-bar"><div class="llm-progress-fill"></div></div>
-      <p class="llm-progress-text detail-prose"></p>
+      <p class="llm-progress-text detail-prose" role="status" aria-live="polite"></p>
       <button type="button" class="llm-use-smaller" style="display:none">${t("detail.useSmallerModel")}</button>
     </div>
     <p class="llm-narrative detail-prose" style="display:none"></p>
@@ -1467,6 +1467,10 @@ function appendLLMSection(
 
     btn.addEventListener("click", () => {
       btn.style.display = "none";
+      // A retry after a failed load starts clean — the old error would
+      // otherwise sit above the fresh progress bar contradicting it.
+      narrative.style.display = "none";
+      narrative.textContent = "";
       const abort = freshAbort();
 
       const runGeneration = (skyCtx: SkyContext) => {
@@ -1534,17 +1538,34 @@ function appendLLMSection(
           { once: true },
         );
 
-        loadLLM((text, pct) => {
+        loadLLM((text, pct, stage) => {
           if (abort.signal.aborted) return;
           progressText.textContent = text;
-          fill.style.width = `${(pct * 100).toFixed(0)}%`;
+          if (stage === "compile") {
+            // No percentage exists for on-device compilation — an animated
+            // bar plus the elapsed-seconds text is honest; a bar frozen at
+            // 100% reads as a hang. Switching models now would also throw
+            // away a finished download, so the offer goes away.
+            fill.classList.add("indeterminate");
+            fill.style.width = "100%";
+            useSmaller.style.display = "none";
+          } else {
+            fill.classList.remove("indeterminate");
+            fill.style.width = `${(pct * 100).toFixed(0)}%`;
+          }
         }, downloadAbort.signal).then((ok) => {
           if (abort.signal.aborted) return;
           progress.style.display = "none";
+          fill.classList.remove("indeterminate");
           useSmaller.style.display = "none";
           if (!ok) {
             narrative.style.display = "block";
             narrative.textContent = `${getLLMError() ?? t("detail.couldNotLoadAIModel")}${formatLLMDiagnostics()}`;
+            // A failed load must leave a way back — the download is resumable
+            // and transient GPU conditions clear, so hiding the button forever
+            // turned every hiccup into a dead end.
+            btn.textContent = t("detail.aiLoadRetry");
+            btn.style.display = "";
             return;
           }
           buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {

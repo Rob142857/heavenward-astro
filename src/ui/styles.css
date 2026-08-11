@@ -1936,6 +1936,37 @@ body {
   transition: width 0.3s ease;
 }
 
+/* On-device model compilation has no measurable percentage — a slow gold
+   sweep says "working" without claiming a number. */
+.llm-progress-fill.indeterminate {
+  background: linear-gradient(
+    90deg,
+    var(--border) 0%,
+    var(--gold-dark) 35%,
+    var(--gold) 50%,
+    var(--gold-dark) 65%,
+    var(--border) 100%
+  );
+  background-size: 200% 100%;
+  animation: llm-indeterminate-sweep 1.8s linear infinite;
+}
+
+@keyframes llm-indeterminate-sweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .llm-progress-fill.indeterminate {
+    animation: none;
+    background: var(--gold-dark);
+  }
+}
+
 .llm-progress-text {
   font-size: 0.75rem;
   color: var(--text-dim);

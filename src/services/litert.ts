@@ -22,6 +22,7 @@
 import type { Conversation, Engine } from "@litert-lm/core";
 import { downloadModel, getPartialBytes } from "./model-download.js";
 import type { DownloadProgress } from "./model-download.js";
+import { t } from "../i18n/translations.js";
 
 /** Web-optimised Gemma 4 builds published by litert-community. Only these two
  *  are supported by the JS runtime today — general .litertlm support is still
@@ -44,9 +45,35 @@ export const GEMMA4_E2B: LiteRTModelProfile = {
   maxNumTokens: 4096,
 };
 
+/** Which phase of a load the progress text describes. "compile" is the
+ *  post-download Engine.create step — minutes of on-device work with no
+ *  percentage available, so the UI must switch to an indeterminate bar
+ *  instead of sitting at a dishonest 100%. */
+export type LoadStage = "download" | "compile";
+
+export type LoadProgressFn = (
+  text: string,
+  pct: number,
+  stage?: LoadStage,
+) => void;
+
 let engine: Engine | null = null;
 let activeProfile: LiteRTModelProfile | null = null;
-let loading = false;
+
+/**
+ * The load in flight, if any. Callers that arrive while a load is running
+ * JOIN it (their progress callback is added to the set) instead of being
+ * bounced. The old boolean-flag version returned false to the second caller,
+ * which meant: navigate away mid-download, come back, tap Load — and the
+ * button showed "could not load" forever while the real load kept running
+ * invisibly underneath. That was the top user-reported failure.
+ */
+let inFlight: Promise<boolean> | null = null;
+const progressListeners = new Set<LoadProgressFn>();
+
+function broadcast(text: string, pct: number, stage?: LoadStage): void {
+  for (const listener of progressListeners) listener(text, pct, stage);
+}
 
 export function getActiveLiteRTModel(): LiteRTModelProfile | null {
   return activeProfile;
@@ -74,14 +101,31 @@ export function isLiteRTSupported(): boolean {
  */
 export async function loadLiteRT(
   profile: LiteRTModelProfile,
-  onProgress?: (text: string, pct: number) => void,
+  onProgress?: LoadProgressFn,
   signal?: AbortSignal,
 ): Promise<boolean> {
   if (engine && activeProfile?.id === profile.id) return true;
-  if (loading) return false;
   if (!isLiteRTSupported()) return false;
 
-  loading = true;
+  if (onProgress) progressListeners.add(onProgress);
+  // Join a load already in flight rather than refusing. The joiner's abort
+  // signal is deliberately ignored — the load belongs to whoever started it,
+  // and a shared download must not die because a later page navigated away.
+  if (inFlight) return inFlight;
+
+  inFlight = runLoad(profile, signal);
+  try {
+    return await inFlight;
+  } finally {
+    inFlight = null;
+    progressListeners.clear();
+  }
+}
+
+async function runLoad(
+  profile: LiteRTModelProfile,
+  signal?: AbortSignal,
+): Promise<boolean> {
   try {
     // Fetch the weights ourselves rather than handing Engine.create a URL.
     // The runtime reports no progress at all, so a URL means two gigabytes
@@ -91,39 +135,55 @@ export async function loadLiteRT(
       profile.url,
       (p) => {
         const pct = p.fraction ?? 0;
-        onProgress?.(describeDownload(profile.label, p), pct);
+        broadcast(describeDownload(profile.label, p), pct, "download");
       },
       signal,
       profile.sizeMB * 1024 * 1024,
     );
 
-    onProgress?.(`${profile.label}: preparing…`, 1);
     // Dynamic import keeps the runtime out of the main bundle for the large
     // majority of sessions that never open the AI guide.
     const { Engine } = await import("@litert-lm/core");
-    engine = await Engine.create({
-      model: blob,
-      mainExecutorSettings: { maxNumTokens: profile.maxNumTokens },
-    });
+
+    // Engine.create compiles 2 GB of weights for this device's GPU and offers
+    // no progress callback, so this stage runs for minutes. Left silent it
+    // reads as a hang — "it said it loaded, then nothing" — so tick elapsed
+    // time out loud until it returns.
+    const compileStart = Date.now();
+    broadcast(compileMessage(profile.label, 0), 1, "compile");
+    const ticker = setInterval(() => {
+      const secs = Math.round((Date.now() - compileStart) / 1000);
+      broadcast(compileMessage(profile.label, secs), 1, "compile");
+    }, 1000);
+
+    try {
+      engine = await Engine.create({
+        model: blob,
+        mainExecutorSettings: { maxNumTokens: profile.maxNumTokens },
+      });
+    } finally {
+      clearInterval(ticker);
+    }
     activeProfile = profile;
-    loading = false;
     return true;
   } catch (err: unknown) {
     // An abort is the user choosing to stop, not a fault — the partial
     // download stays on disk and resumes next time.
     if (err instanceof DOMException && err.name === "AbortError") {
-      loading = false;
       return false;
     }
     console.warn("[LiteRT] load failed, falling back", err);
     await unloadLiteRT();
-    loading = false;
     return false;
   }
 }
 
 function formatMB(bytes: number): string {
   return (bytes / (1024 * 1024)).toFixed(0);
+}
+
+function compileMessage(label: string, secs: number): string {
+  return t("llm.compiling", { label, seconds: secs });
 }
 
 function describeDownload(label: string, p: DownloadProgress): string {

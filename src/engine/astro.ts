@@ -207,6 +207,21 @@ export function getMoonEvent(loc: GeoLocation, date: Date): CelestialEvent {
   };
 }
 
+/** Phase name and illuminated fraction only — the cheap subset of
+ *  getMoonEvent for callers that need "what kind of observing night is
+ *  this" rather than a full ephemeris. */
+export function getMoonSummary(date: Date): {
+  phaseName: string;
+  illumination: number;
+} {
+  const phase = Astronomy.MoonPhase(date);
+  const illum = Astronomy.Illumination(Astronomy.Body.Moon, date);
+  return {
+    phaseName: getPhaseLabel(phase),
+    illumination: illum.phase_fraction,
+  };
+}
+
 function getPhaseLabel(angle: number): string {
   if (angle < 22.5) return "New Moon";
   if (angle < 67.5) return "Waxing Crescent";

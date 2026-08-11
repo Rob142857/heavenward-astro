@@ -6,6 +6,7 @@ import {
   azimuthToCompassShort,
   altitudeDescription,
   getRiseSetForRaDec,
+  getMoonSummary,
 } from "./astro.js";
 import { loadDSOCatalog } from "../catalog/dso.js";
 import type { DSOEntry } from "../catalog/dso.js";
@@ -67,6 +68,24 @@ export interface SkyContext {
      *  rises — the two facts that decide what this observer can ever see. */
     circumpolarBelowDec: number;
     neverRisesAboveDec: number;
+  };
+  /**
+   * What kind of observing night this is. Grounds the guide's opening in
+   * the actual date, hemisphere-correct season and moon — without this the
+   * model either says nothing seasonal or guesses from its (northern-biased)
+   * training data, and "a crisp winter evening" in an Australian August is
+   * exactly the kind of small wrongness that erodes trust in the rest.
+   */
+  night: {
+    /** e.g. "11 August" — kept in English, like the rest of the prompt. */
+    date: string;
+    /** Season at the OBSERVER's hemisphere, e.g. "winter" for August at
+     *  -35°. Astronomical enough for prose; not a solstice calculator. */
+    season: string;
+    moonPhaseName: string;
+    /** 0..1 illuminated fraction — the single biggest factor in what is
+     *  actually observable tonight. */
+    moonIllumination: number;
   };
   target: CatalogRichDetails & {
     name: string;
@@ -204,7 +223,7 @@ export async function buildSkyContext(
   const targetDec = event.dec;
 
   if (targetRA === null || targetDec === null) {
-    return emptyContext(event, loc);
+    return emptyContext(event, loc, date);
   }
 
   // Normalise first: the star/DSO catalogs store the IAU code ("UMa") while
@@ -366,6 +385,7 @@ export async function buildSkyContext(
 
   return {
     observer: describeObserver(loc),
+    night: describeNight(loc, date),
     target: {
       name: event.name,
       lookDirection: compass,
@@ -402,6 +422,23 @@ function describeObserver(loc: GeoLocation): SkyContext["observer"] {
     hemisphere: southern ? "southern" : "northern",
     circumpolarBelowDec: southern ? -limit : limit,
     neverRisesAboveDec: southern ? limit : -limit,
+  };
+}
+
+const SEASONS_NORTH = ["winter", "spring", "summer", "autumn"] as const;
+
+function describeNight(loc: GeoLocation, date: Date): SkyContext["night"] {
+  // Meteorological quarters (Dec-Feb, Mar-May, ...) — right-enough naming
+  // for prose, flipped for the southern hemisphere.
+  const quarter = Math.floor(((date.getMonth() + 1) % 12) / 3);
+  const season =
+    loc.lat < 0 ? SEASONS_NORTH[(quarter + 2) % 4] : SEASONS_NORTH[quarter];
+  const moon = getMoonSummary(date);
+  return {
+    date: date.toLocaleDateString("en-GB", { day: "numeric", month: "long" }),
+    season,
+    moonPhaseName: moon.phaseName,
+    moonIllumination: moon.illumination,
   };
 }
 
@@ -486,9 +523,14 @@ function findRichDetails(
   return {};
 }
 
-function emptyContext(event: CelestialEvent, loc: GeoLocation): SkyContext {
+function emptyContext(
+  event: CelestialEvent,
+  loc: GeoLocation,
+  date: Date,
+): SkyContext {
   return {
     observer: describeObserver(loc),
+    night: describeNight(loc, date),
     target: {
       name: event.name,
       lookDirection: "unknown",

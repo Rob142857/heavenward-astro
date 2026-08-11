@@ -15,6 +15,7 @@ import {
   loadLiteRT,
   sendLiteRTMessage,
 } from "./litert.js";
+import type { LoadProgressFn } from "./litert.js";
 import type {
   ChatCompletion,
   ChatCompletionChunk,
@@ -149,6 +150,20 @@ let llmWorker: Worker | null = null;
 let webllmModule: WebLLMModule | null = null;
 let loading = false;
 let loadError: string | null = null;
+/** The load in flight, if any — late callers join it instead of being
+ *  refused. See the matching comment in litert.ts: the old boolean bounce
+ *  made "navigate away during load, come back, tap Load" show a permanent
+ *  failure while the real load ran on invisibly. */
+let loadInFlight: Promise<boolean> | null = null;
+const loadListeners = new Set<LoadProgressFn>();
+
+function broadcastLoad(
+  text: string,
+  pct: number,
+  stage?: Parameters<LoadProgressFn>[2],
+): void {
+  for (const listener of loadListeners) listener(text, pct, stage);
+}
 let activeModel: ModelProfile | null = null;
 let activeModelIndex = 0;
 let lastDiagnostics: LLMDiagnostics = {
@@ -502,7 +517,7 @@ export function isGemma4Available(): boolean {
 }
 
 export async function loadLLM(
-  onProgress?: (text: string, pct: number) => void,
+  onProgress?: LoadProgressFn,
   signal?: AbortSignal,
 ): Promise<boolean> {
   if (isLiteRTLoaded()) return true;
@@ -511,22 +526,41 @@ export async function loadLLM(
     loadError = "WebGPU not supported in this browser";
     return false;
   }
-  if (loading) return false;
+
+  if (onProgress) loadListeners.add(onProgress);
+  // Join a load already running — the second caller sees the same progress
+  // stream and the same outcome. Their signal is ignored on purpose: the load
+  // belongs to whoever started it.
+  if (loadInFlight) return loadInFlight;
+
+  loadInFlight = runLoadChain(signal);
+  try {
+    return await loadInFlight;
+  } finally {
+    loadInFlight = null;
+    loadListeners.clear();
+  }
+}
+
+async function runLoadChain(signal?: AbortSignal): Promise<boolean> {
+  loading = true;
 
   // Gemma 4 first when the user has asked for it. A failure here is not fatal
   // — it falls through to the WebLLM chain below, which is the whole reason
   // that chain is kept while LiteRT is still an early preview.
   if (getAIQuality() === "best" && isLiteRTSupported()) {
     loadError = null;
-    const ok = await loadLiteRT(GEMMA4_E2B, onProgress, signal);
-    if (ok) return true;
+    const ok = await loadLiteRT(GEMMA4_E2B, broadcastLoad, signal);
+    if (ok) {
+      loading = false;
+      return true;
+    }
     // An abort means the user asked for the smaller model mid-download; their
     // partial Gemma 4 download is kept, so falling through to the small model
     // costs them nothing later.
-    onProgress?.(t("llm.didNotFitTryingSmaller", { label: GEMMA4_E2B.label }), 0);
+    broadcastLoad(t("llm.didNotFitTryingSmaller", { label: GEMMA4_E2B.label }), 0);
   }
 
-  loading = true;
   loadError = null;
   activeModelIndex = 0;
 
@@ -536,7 +570,7 @@ export async function loadLLM(
       const candidate = candidates[index];
       try {
         activeModelIndex = index;
-        await loadModel(candidate, onProgress);
+        await loadModel(candidate, broadcastLoad);
         loading = false;
         return true;
       } catch (err: unknown) {
@@ -544,7 +578,7 @@ export async function loadLLM(
         const msg = err instanceof Error ? err.message : String(err);
         lastDiagnostics = { ...lastDiagnostics, activeModelId: candidate.id, lastError: msg };
         if (index === candidates.length - 1) throw err;
-        onProgress?.(t("llm.didNotFitTryingSmaller", { label: candidate.label }), 0);
+        broadcastLoad(t("llm.didNotFitTryingSmaller", { label: candidate.label }), 0);
         if (!isResourceError(msg)) throw err;
       }
     }
@@ -566,15 +600,14 @@ export async function loadLLM(
 // mobile variant anymore (the old SYSTEM_PROMPT_COMPACT is gone).
 const SYSTEM_PROMPT = `You are a friendly expert astronomer and stargazing guide embedded in a mobile astronomy app called Heavenward. You help users explore the night sky from their location, and can continue the conversation if they ask follow-up questions.
 
-For the first message in a conversation (the initial sky guide):
-- Be concise but rich in detail. 2-3 short paragraphs max.
-- Use a conversational, enthusiastic tone, like a knowledgeable friend pointing things out.
-- Include practical observing directions (compass, altitude, nearby bright stars as waypoints).
-- Mention photography opportunities with specific tips (exposure time, filters, focal length).
-- Reference nearby objects by name and note whether they are naked-eye, binocular, or telescope targets.
+For the first message in a conversation (the initial sky guide), write 3 short paragraphs in a conversational, knowledgeable-friend tone:
+- Open wide, then narrow: start from the night itself — the date, season and moon stated in the message, and what kind of observing night that makes from the user's hemisphere — then bring the view down to the target: where to look (compass, altitude, nearby bright stars as waypoints) and what makes it worth looking at.
+- Weave in the human layer wherever the sourced sections provide it: who watched this region of sky, in which era, and what they used it for — name the culture and period. When several cultures are given, lead with the one closest to the user's part of the world, and let the timespan show (a text from 1000 BCE and a practice alive today are both wonders).
+- Close with the practical: nearby objects by name (naked-eye, binocular, or telescope), one concrete photography tip (exposure, filter, focal length), and a final short sentence inviting the user to pull on any thread — the myth, the history, the physics, or the photograph.
 
 For follow-up questions later in the conversation:
 - Just answer what was asked, conversationally and concisely — you don't need to repeat the full sky-guide format above.
+- Follow-ups are where depth lives: when the user asks about a story, culture, or historical practice from the sourced sections, unpack it properly — the era, the source text, what it tells us about the people who looked up. Stay within the sourced material for claims, but explain and connect it fully.
 
 Rules that apply to every message:
 - When mentioning a person (discoverer, astronomer, scientist), link their name to Wikipedia using HTML: <a href="https://en.wikipedia.org/wiki/Person_Name" target="_blank" rel="noopener">Person Name</a>. Replace spaces with underscores in URLs.
@@ -582,7 +615,7 @@ Rules that apply to every message:
 - Do NOT use markdown headers or bullet lists. Use flowing prose with HTML links where appropriate.
 - The user prompt may include a "Known facts about this object" and/or a "Sourced mythology, history and namesakes" section, each citing an exact source. Only use historical, mythological or naming claims that appear there, and only when that section is actually present — if it says no sourced material is available, do not mention any myth, legend, historical claim, or namesake, even if you think you know one. When you do share sourced material, keep it brief (a sentence or two) and natural, and you may mention which book/source it comes from if it fits the flow.
 - Namesake entries are ships, rockets, telescopes and the like that took the object's name. They are a delight to mention — an aside like "there is a neutrino telescope on the Mediterranean seabed named after this star" earns its place. Use them only as given: never guess that something is named after a star because the names happen to match.
-- Never write astrology content: no zodiac signs, horoscopes, "personality traits," or "what this means for you" framing. Constellations are physical patterns of stars and, where sourced, carry historical or mythological stories — nothing more.
+- You may note that a constellation is one of the twelve zodiac constellations, and when the sourced sections cover it, tell the mythology behind its figure or the documented history of the zodiac as an ancient calendar system. What is banned is astrology-as-belief: no horoscopes, no predictions, no personality or character claims from star signs, no "what this means for you." The line is simple — the stories and the history are welcome; the fortune-telling is not.
 - If no "Known facts" or sourced mythology/history is given for something, rely only on well-established, uncontroversial astronomy — don't invent discoverers, dates, or stories.
 - The user's latitude and hemisphere are stated at the top of their message. Every claim about what is or isn't visible must follow from THAT latitude. Most astronomy writing assumes a northern viewpoint; do not carry that assumption over. A southern observer genuinely cannot see Polaris and genuinely can see Crux year-round, and telling them otherwise about their own sky is the worst mistake you can make here. If you are not certain whether something is visible from their latitude, say so rather than guessing.`;
 
@@ -594,7 +627,7 @@ Rules that apply to every message:
 // survives here; only the stylistic guidance is cut.
 const SYSTEM_PROMPT_COMPACT = `You are a friendly expert astronomer guiding someone looking at tonight's sky. Write 2 short paragraphs of flowing prose — where to look, what is worth seeing nearby, and one photography tip. No markdown, no bullet lists, no headings.
 
-Ground everything in the facts given in the user message. If a "Sourced mythology, history and namesakes" section is present you may share it briefly and name its source; if the message says no sourced material is available, do not mention any myth, legend, historical claim, or namesake at all. Never invent discoverers, dates, or stories. Never write astrology — no star signs, horoscopes, or personality readings.
+Ground everything in the facts given in the user message. If a "Sourced mythology, history and namesakes" section is present you may share it briefly and name its source; if the message says no sourced material is available, do not mention any myth, legend, historical claim, or namesake at all. Never invent discoverers, dates, or stories. Zodiac-constellation mythology from the sourced section is fine; astrology is not — no horoscopes, predictions, or personality readings.
 
 The user's latitude and hemisphere are stated at the top of their message. Judge what is visible from THAT latitude, never from a default northern viewpoint — a southern observer cannot see Polaris and can see Crux all year.`;
 
@@ -739,7 +772,13 @@ function assemblePrompt(
   const obs = ctx.observer;
   const observerLine = `The user is at latitude ${obs.latitude.toFixed(1)}°, in the ${obs.hemisphere} hemisphere. From here, anything with declination beyond ${obs.circumpolarBelowDec.toFixed(0)}° never sets, and anything beyond ${obs.neverRisesAboveDec.toFixed(0)}° never rises. Reason about what they can see from THIS latitude, not from a default northern viewpoint.`;
 
+  const night = ctx.night;
+  const moonPct = Math.round(night.moonIllumination * 100);
+  const nightLine = `Tonight is ${night.date} — ${night.season} in the user's hemisphere. The Moon is a ${night.moonPhaseName.toLowerCase()}, ${moonPct}% illuminated${moonPct >= 60 ? " (bright moonlight will wash out faint objects tonight)" : moonPct <= 20 ? " (a dark sky — good conditions for faint objects)" : ""}.`;
+
   return `${observerLine}
+
+${nightLine}
 
 The user is looking at "${ctx.target.name}" in the constellation ${ctx.target.constellation ?? "unknown"}.
 
@@ -751,7 +790,7 @@ Nearby objects within about 20 deg:
 ${nearby || "(none found)"}
 ${sameConstellation ? `\nAlso sharing this constellation: ${sameConstellation}.\n` : ""}
 ${photoTips}
-Generate a rich, concise sky guide for this region of sky. Describe where to look, what is interesting nearby, photography opportunities, and any fascinating facts. Reference the nearby objects naturally.`;
+Generate a rich, concise sky guide for this region of sky: open from tonight's conditions and season, come down to where to look, weave in the sourced human history of this part of the sky, and finish with what else is nearby, a photography opportunity, and an invitation to go deeper. Reference the nearby objects naturally.`;
 }
 
 function isAsyncIterable(value: unknown): value is AsyncIterable<ChatCompletionChunk> {
