@@ -1792,6 +1792,29 @@ body {
   margin-top: 24px;
 }
 
+.sky-context-warning,
+.sky-context-error {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  border-radius: var(--radius);
+  background: rgba(212, 175, 55, 0.06);
+}
+
+.sky-context-error {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+.sky-context-warning .detail-prose,
+.sky-context-error .detail-prose {
+  margin: 0 0 10px;
+}
+
+.sky-context-retry {
+  min-height: 44px;
+}
+
 .sky-direction-box {
   display: flex;
   align-items: center;

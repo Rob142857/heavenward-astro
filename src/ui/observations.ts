@@ -3,7 +3,6 @@ import { t } from "../i18n/translations.js";
 import { renderHeader, renderNav } from "./layout.js";
 import {
   exportSessionMarkdown,
-  fetchObservationHistory,
   getCurrentSession,
   saveSessionToAccount,
   clearCurrentSession,
@@ -12,6 +11,26 @@ import {
   type SavedObservationSummary,
 } from "../services/observations.js";
 import { navigate } from "./router.js";
+
+const observationRenderVersions = new WeakMap<HTMLElement, number>();
+
+async function loadObservationHistory(): Promise<SavedObservationSummary[]> {
+  // Keep this read local to the surface so HTTP/JSON failures remain visible
+  // here. The shared helper intentionally turns them into an empty array,
+  // which would make an unavailable history endpoint look like no history.
+  const response = await fetch("/api/observations", {
+    credentials: "same-origin",
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const data = (await response.json()) as {
+    ok: boolean;
+    data?: SavedObservationSummary[];
+  };
+  if (!data.ok || !Array.isArray(data.data)) {
+    throw new Error("Invalid observation history response");
+  }
+  return data.data;
+}
 
 // ── Modal: current session export ─────────────────────────────────
 
@@ -153,9 +172,19 @@ export async function renderObservations(
   container: HTMLElement,
   ctx: AppContext,
 ): Promise<void> {
+  const renderVersion = (observationRenderVersions.get(container) ?? 0) + 1;
+  observationRenderVersions.set(container, renderVersion);
+  const isCurrentRender = () =>
+    observationRenderVersions.get(container) === renderVersion &&
+    container.isConnected;
+
   container.innerHTML = "";
   renderHeader(container, ctx);
   renderNav("#/account");
+  const renderMarker = document.createComment("observations-render");
+  container.appendChild(renderMarker);
+  const routeIsStillCurrent = () =>
+    isCurrentRender() && renderMarker.isConnected;
 
   const title = document.createElement("h3");
   title.className = "section-title";
@@ -175,7 +204,25 @@ export async function renderObservations(
   loading.textContent = t("observations.loading");
   container.appendChild(loading);
 
-  const history = await fetchObservationHistory();
+  let history: SavedObservationSummary[];
+  try {
+    history = await loadObservationHistory();
+  } catch {
+    if (!routeIsStillCurrent()) return;
+    loading.remove();
+    const error = document.createElement("p");
+    error.className = "muted-prose";
+    error.textContent = t("observations.loadFailed");
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.className = "btn btn-outline";
+    retry.textContent = t("common.tryAgain");
+    retry.addEventListener("click", () => void renderObservations(container, ctx));
+    container.appendChild(error);
+    container.appendChild(retry);
+    return;
+  }
+  if (!routeIsStillCurrent()) return;
   loading.remove();
 
   if (history.length === 0) {
@@ -190,7 +237,9 @@ export async function renderObservations(
   list.className = "obs-history";
   for (const item of history) {
     list.appendChild(
-      renderHistoryItem(item, () => renderObservations(container, ctx)),
+      renderHistoryItem(item, () => {
+        if (routeIsStillCurrent()) void renderObservations(container, ctx);
+      }),
     );
   }
   container.appendChild(list);

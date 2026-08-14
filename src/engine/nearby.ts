@@ -15,11 +15,15 @@ import type { StarEntry } from "../catalog/stars.js";
 import { METEOR_SHOWERS } from "../catalog/meteors.js";
 import { getMythologyForConstellation } from "../catalog/mythology.js";
 import type { MythologyEntry } from "../catalog/mythology.js";
-import { getHistoryForConstellation } from "../catalog/history.js";
+import { loadHistoryCatalog } from "../catalog/history.js";
 import type { HistoryEntry } from "../catalog/history.js";
 import { getNamesakesForStar } from "../catalog/namesakes.js";
 import type { NamesakeEntry } from "../catalog/namesakes.js";
-import { constellationCode } from "../catalog/constellations.js";
+import {
+  constellationCode,
+  constellationName,
+} from "../catalog/constellations.js";
+import { t } from "../i18n/translations.js";
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -51,6 +55,13 @@ export interface NearbyObject extends CatalogRichDetails {
   ra: number;
   dec: number;
 }
+
+export type SkyDataSource =
+  | "deep-sky"
+  | "stars"
+  | "mythology"
+  | "history"
+  | "namesakes";
 
 export interface SkyContext {
   /**
@@ -86,6 +97,10 @@ export interface SkyContext {
     /** 0..1 illuminated fraction — the single biggest factor in what is
      *  actually observable tonight. */
     moonIllumination: number;
+    /** Civil time zones are not available offline for arbitrary manual
+     * coordinates, so this is explicitly approximate local solar time. */
+    localSolarTime: string;
+    utcTime: string;
   };
   target: CatalogRichDetails & {
     name: string;
@@ -95,6 +110,9 @@ export interface SkyContext {
     altitude: number;
     azimuth: number;
     constellation: string | null;
+    riseUTC: string | null;
+    setUTC: string | null;
+    transitUTC: string | null;
     /** Present only when a sourced Campbell entry exists for this
      *  constellation — most won't have one. Never invent when absent. */
     mythology?: MythologyEntry;
@@ -107,8 +125,20 @@ export interface SkyContext {
   };
   nearby: NearbyObject[];
   constellationObjects: NearbyObject[];
+  /** Sourced history attached to other constellations that are genuinely
+   * visible around the target right now. This gives the AI a wider human-sky
+   * view without dumping the entire catalog into a small context window. */
+  visibleHistory: HistoryEntry[];
   photographyTips: string[];
   lookingDescription: string;
+  /**
+   * Catalogs are useful enrichment, but none is allowed to take the whole
+   * guide down. A stale deployment chunk or a brief network failure should
+   * still leave the user with correct direction, altitude and observing
+   * context. The UI uses this list to explain that enrichment is partial and
+   * offer a retry instead of silently leaving a skeleton on screen.
+   */
+  unavailableSources: SkyDataSource[];
 }
 
 // ── Relative direction between two sky positions ──────────────────
@@ -124,12 +154,13 @@ function relativeDirection(
   if (dAz < -180) dAz += 360;
 
   const dAlt = toAlt - fromAlt;
-  const parts: string[] = [];
-
-  if (Math.abs(dAlt) > 3) parts.push(dAlt > 0 ? "above" : "below");
-  if (Math.abs(dAz) > 3) parts.push(dAz > 0 ? "to the right" : "to the left");
-
-  return parts.length ? parts.join(" and ") : "very close";
+  const vertical = Math.abs(dAlt) > 3 ? (dAlt > 0 ? "above" : "below") : "";
+  const horizontal =
+    Math.abs(dAz) > 3 ? (dAz > 0 ? "right" : "left") : "";
+  const key = vertical && horizontal
+    ? `${vertical}${horizontal === "right" ? "Right" : "Left"}`
+    : vertical || horizontal || "veryClose";
+  return t(`detail.relative.${key}`);
 }
 
 // ── Photography tip generator ─────────────────────────────────────
@@ -143,58 +174,38 @@ function getPhotoTips(
   const mag = event.magnitude;
 
   if (alt < 20) {
-    tips.push(
-      "Low altitude means more atmospheric distortion — images may appear reddened or blurred.",
-    );
+    tips.push(t("detail.photo.lowAltitude"));
   }
   if (alt > 60) {
-    tips.push(
-      "High altitude is ideal — minimal atmospheric interference for sharp images.",
-    );
+    tips.push(t("detail.photo.highAltitude"));
   }
 
   if (event.type === "dso") {
     const catType = event.extra.catalogType as string | undefined;
     if (catType?.includes("nebula") || catType?.includes("emission")) {
-      tips.push(
-        "Nebulae respond well to narrowband filters (Ha, OIII). Try 30-120s exposures.",
-      );
+      tips.push(t("detail.photo.nebula"));
     }
     if (catType?.includes("galaxy")) {
-      tips.push(
-        "Galaxies need long exposures (60-300s) at high ISO/gain. Stack multiple frames for detail.",
-      );
+      tips.push(t("detail.photo.galaxy"));
     }
     if (catType?.includes("cluster")) {
-      tips.push(
-        "Star clusters look great at moderate focal lengths. Short exposures (5-30s) prevent trailing.",
-      );
+      tips.push(t("detail.photo.cluster"));
     }
   }
 
   if (event.type === "planet") {
-    tips.push(
-      "Planets are bright — use short exposures or video stacking (lucky imaging) for detail.",
-    );
+    tips.push(t("detail.photo.planet"));
   }
 
   if (event.type === "meteor-shower") {
-    tips.push(
-      "Use a wide-angle lens pointed near but not directly at the radiant. 15-30s exposures at high ISO.",
-    );
-    tips.push(
-      "A tripod and intervalometer let you capture hundreds of frames to catch streaks.",
-    );
+    tips.push(t("detail.photo.meteorWide"));
+    tips.push(t("detail.photo.meteorTripod"));
   }
 
   if (mag !== null && mag > 8) {
-    tips.push(
-      `At magnitude ${mag.toFixed(1)}, this object is invisible to the naked eye — a telescope or long exposure is needed.`,
-    );
+    tips.push(t("detail.photo.faint", { magnitude: mag.toFixed(1) }));
   } else if (mag !== null && mag > 6) {
-    tips.push(
-      `Magnitude ${mag.toFixed(1)} is at the limit of naked-eye visibility — binoculars recommended.`,
-    );
+    tips.push(t("detail.photo.binocular", { magnitude: mag.toFixed(1) }));
   }
 
   const brightNearby = nearby.filter(
@@ -202,9 +213,7 @@ function getPhotoTips(
   );
   if (brightNearby.length) {
     const names = brightNearby.map((n) => n.name).join(", ");
-    tips.push(
-      `Bright stars nearby (${names}) make good framing references and guide stars.`,
-    );
+    tips.push(t("detail.photo.guideStars", { names }));
   }
 
   return tips;
@@ -235,13 +244,47 @@ export async function buildSkyContext(
   // Namesakes key off the proper star name, not the constellation, so that
   // "there is a neutrino telescope named Antares" appears on Antares and
   // nowhere else in Scorpius.
-  const [dsos, stars, mythology, history, namesakes] = await Promise.all([
-    loadDSOCatalog(),
-    loadStarCatalog(),
-    getMythologyForConstellation(constellation),
-    getHistoryForConstellation(constellation),
-    getNamesakesForStar(event.name),
-  ]);
+  const [dsoResult, starResult, mythologyResult, historyResult, namesakeResult] =
+    await Promise.allSettled([
+      loadDSOCatalog(),
+      loadStarCatalog(),
+      getMythologyForConstellation(constellation),
+      loadHistoryCatalog(),
+      getNamesakesForStar(event.name),
+    ]);
+
+  const unavailableSources: SkyDataSource[] = [];
+  const catalogValue = <T>(
+    result: PromiseSettledResult<T>,
+    fallback: T,
+    source: SkyDataSource,
+  ): T => {
+    if (result.status === "fulfilled") return result.value;
+    unavailableSources.push(source);
+    console.warn(`[Sky Guide] ${source} catalog unavailable`, result.reason);
+    return fallback;
+  };
+
+  const dsos = catalogValue(dsoResult, [] as DSOEntry[], "deep-sky");
+  const stars = catalogValue(starResult, [] as StarEntry[], "stars");
+  const mythology = catalogValue(
+    mythologyResult,
+    undefined as MythologyEntry | undefined,
+    "mythology",
+  );
+  const historyCatalog = catalogValue(
+    historyResult,
+    [] as HistoryEntry[],
+    "history",
+  );
+  const history = historyCatalog.filter(
+    (entry) => entry.constellation === constellation,
+  );
+  const namesakes = catalogValue(
+    namesakeResult,
+    [] as NamesakeEntry[],
+    "namesakes",
+  );
 
   // The target itself may be a DSO/star with rich catalog fields (description,
   // discoverer, notableFeatures, ...) that CelestialEvent doesn't carry — look
@@ -257,7 +300,7 @@ export async function buildSkyContext(
     const sep = angularSeparation(targetRA, targetDec, d.ra, d.dec);
     if (sep > radiusDeg) continue;
     const hor = getAltAzForRaDec(d.ra, d.dec, loc, date);
-    if (hor.altitude < -5) continue;
+    if (hor.altitude < 0) continue;
 
     candidates.push({
       id: `dso-${d.id}`,
@@ -293,7 +336,7 @@ export async function buildSkyContext(
     const sep = angularSeparation(targetRA, targetDec, s.ra, s.dec);
     if (sep > radiusDeg) continue;
     const hor = getAltAzForRaDec(s.ra, s.dec, loc, date);
-    if (hor.altitude < -5) continue;
+    if (hor.altitude < 0) continue;
 
     candidates.push({
       id: `star-${s.id}`,
@@ -332,6 +375,7 @@ export async function buildSkyContext(
     );
     if (sep > radiusDeg) continue;
     const hor = getAltAzForRaDec(m.radiantRA, m.radiantDec, loc, date);
+    if (hor.altitude < 0) continue;
     candidates.push({
       id: `meteor-${m.id}`,
       name: m.name,
@@ -362,10 +406,23 @@ export async function buildSkyContext(
     .filter(
       (c) =>
         c.constellation &&
-        event.constellation &&
-        c.constellation === event.constellation,
+        constellation &&
+        constellationCode(c.constellation) === constellation,
     )
     .slice(0, 6);
+
+  const visibleConstellations = new Set(
+    candidates
+      .map((candidate) => constellationCode(candidate.constellation))
+      .filter((code): code is string => Boolean(code)),
+  );
+  const visibleObjectNames = new Set(candidates.map((candidate) => candidate.name));
+  const visibleHistory = historyCatalog.filter(
+    (entry) =>
+      entry.constellation !== constellation &&
+      visibleConstellations.has(entry.constellation) &&
+      (!entry.starName || visibleObjectNames.has(entry.starName)),
+  );
 
   const alt = event.altitude ?? 0;
   const az = event.azimuth ?? 0;
@@ -375,9 +432,8 @@ export async function buildSkyContext(
 
   const lookingDescription = buildLookingDescription(
     event,
-    compass,
+    compassShort,
     alt,
-    altDesc,
     nearby,
   );
 
@@ -393,7 +449,10 @@ export async function buildSkyContext(
       altDescription: altDesc,
       altitude: alt,
       azimuth: az,
-      constellation: event.constellation,
+      constellation: constellationName(event.constellation),
+      riseUTC: formatUTCTime(event.rise),
+      setUTC: formatUTCTime(event.set),
+      transitUTC: formatUTCTime(event.transit),
       ...targetDetails,
       mythology,
       history,
@@ -401,8 +460,10 @@ export async function buildSkyContext(
     },
     nearby,
     constellationObjects,
+    visibleHistory,
     photographyTips,
     lookingDescription,
+    unavailableSources,
   };
 }
 
@@ -434,12 +495,55 @@ function describeNight(loc: GeoLocation, date: Date): SkyContext["night"] {
   const season =
     loc.lat < 0 ? SEASONS_NORTH[(quarter + 2) % 4] : SEASONS_NORTH[quarter];
   const moon = getMoonSummary(date);
+  const utcMinutes = date.getUTCHours() * 60 + date.getUTCMinutes();
+  const solarMinutes = Math.round(
+    ((utcMinutes + loc.lon * 4) % 1440 + 1440) % 1440,
+  );
   return {
     date: date.toLocaleDateString("en-GB", { day: "numeric", month: "long" }),
     season,
     moonPhaseName: moon.phaseName,
     moonIllumination: moon.illumination,
+    localSolarTime: `${String(Math.floor(solarMinutes / 60)).padStart(2, "0")}:${String(solarMinutes % 60).padStart(2, "0")}`,
+    utcTime: `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`,
   };
+}
+
+function formatUTCTime(value: Date | null): string | null {
+  if (!value) return null;
+  return `${String(value.getUTCHours()).padStart(2, "0")}:${String(value.getUTCMinutes()).padStart(2, "0")}`;
+}
+
+/** A translated, reader-facing label for the catalog's stable type code. */
+export function nearbyObjectTypeLabel(type: string): string {
+  switch (type) {
+    case "star":
+      return t("search.chip.namedStar");
+    case "meteor-shower":
+      return t("search.chip.meteor");
+    case "galaxy":
+    case "galaxy-pair":
+    case "galaxy-group":
+      return t("search.chip.galaxy");
+    case "planetary-nebula":
+      return t("search.chip.planetaryNebula");
+    case "supernova-remnant":
+      return t("search.chip.supernovaRemnant");
+    case "open-cluster":
+    case "cluster":
+      return t("search.chip.openCluster");
+    case "globular-cluster":
+      return t("search.chip.globularCluster");
+    case "hii-region":
+      return t("search.chip.hiiRegion");
+    case "nebula":
+    case "emission-nebula":
+    case "reflection-nebula":
+    case "dark-nebula":
+      return t("search.chip.nebula");
+    default:
+      return type;
+  }
 }
 
 // ── Natural-language looking description (template-based) ─────────
@@ -448,17 +552,19 @@ function buildLookingDescription(
   event: CelestialEvent,
   compass: string,
   alt: number,
-  altDesc: string,
   nearby: NearbyObject[],
 ): string {
   const parts: string[] = [];
 
-  parts.push(
-    `Face ${compass} and look ${altDesc} (about ${Math.round(alt)}° above the horizon).`,
-  );
+  parts.push(t("detail.skyGuide.look", { direction: compass, altitude: Math.round(alt) }));
 
   if (event.constellation) {
-    parts.push(`${event.name} is in the constellation ${event.constellation}.`);
+    parts.push(
+      t("detail.skyGuide.inConstellation", {
+        name: event.name,
+        constellation: constellationName(event.constellation) ?? event.constellation,
+      }),
+    );
   }
 
   // Mention bright nearby stars as waypoints
@@ -470,10 +576,15 @@ function buildLookingDescription(
     const waypoints = brightStars
       .map(
         (s) =>
-          `${s.name} (mag ${s.magnitude?.toFixed(1)}, ${s.separation.toFixed(1)}° away, ${s.direction})`,
+          t("detail.skyGuide.waypoint", {
+            name: s.name,
+            magnitude: s.magnitude?.toFixed(1) ?? "?",
+            separation: s.separation.toFixed(1),
+            direction: s.direction,
+          }),
       )
       .join("; ");
-    parts.push(`Nearby bright stars to help navigate: ${waypoints}.`);
+    parts.push(t("detail.skyGuide.waypoints", { objects: waypoints }));
   }
 
   // Mention interesting DSOs
@@ -484,10 +595,15 @@ function buildLookingDescription(
     const dsoList = dsos
       .map(
         (d) =>
-          `${d.name} (${d.type}, ${d.separation.toFixed(1)}° ${d.direction})`,
+          t("detail.skyGuide.nearbyObject", {
+            name: d.name,
+            type: nearbyObjectTypeLabel(d.type),
+            separation: d.separation.toFixed(1),
+            direction: d.direction,
+          }),
       )
       .join("; ");
-    parts.push(`Interesting deep-sky objects nearby: ${dsoList}.`);
+    parts.push(t("detail.skyGuide.deepSkyNearby", { objects: dsoList }));
   }
 
   return parts.join(" ");
@@ -539,13 +655,18 @@ function emptyContext(
       altitude: 0,
       azimuth: 0,
       constellation: null,
+      riseUTC: null,
+      setUTC: null,
+      transitUTC: null,
       history: [],
       namesakes: [],
     },
     nearby: [],
     constellationObjects: [],
+    visibleHistory: [],
     photographyTips: [],
-    lookingDescription: "Position data not available for this object.",
+    lookingDescription: t("detail.skyGuide.positionUnavailable"),
+    unavailableSources: [],
   };
 }
 

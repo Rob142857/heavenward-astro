@@ -1,4 +1,5 @@
 import { registerSW } from "virtual:pwa-register";
+import { t } from "../i18n/translations.js";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -16,6 +17,8 @@ let updateServiceWorker: ((reloadPage?: boolean) => Promise<void>) | null =
 let updateModal: HTMLElement | null = null;
 let updateInProgress = false;
 let reloadScheduled = false;
+let hadControllerAtStartup =
+  typeof navigator !== "undefined" && Boolean(navigator.serviceWorker?.controller);
 
 const INSTALL_SNOOZE_KEY = "heavenward-install-snoozed-until";
 const INSTALL_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -53,6 +56,14 @@ export function initPWA(): void {
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("controllerchange", () => {
+      // clientsClaim() also fires this when the app receives service-worker
+      // control for the very first time. That is not an update and must not
+      // interrupt first use with a modal/reload.
+      if (!hadControllerAtStartup && !updateInProgress) {
+        hadControllerAtStartup = true;
+        return;
+      }
+      hadControllerAtStartup = true;
       scheduleUpdateReload();
     });
   }
@@ -184,9 +195,9 @@ function showUpdateModal(): void {
   modal.innerHTML = `
     <div class="app-update-dialog">
       <div class="app-update-spinner" aria-hidden="true"></div>
-      <div class="app-update-copy">
-        <strong id="app-update-title">Retrieving The Latest Sky</strong>
-        <p>We are loading the latest astronomical observations and sky information. Thanks for your patience.</p>
+      <div class="app-update-copy" role="status" aria-live="polite">
+        <strong id="app-update-title">${t("pwa.update.title")}</strong>
+        <p>${t("pwa.update.body")}</p>
       </div>
     </div>
   `;

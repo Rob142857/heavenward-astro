@@ -9,7 +9,23 @@ async function apiFetch<T>(
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
   });
-  return res.json() as Promise<ApiResponse<T>>;
+  let payload: ApiResponse<T> | null = null;
+  try {
+    payload = (await res.json()) as ApiResponse<T>;
+  } catch {
+    // A proxy/login page returning HTML must not masquerade as a valid API
+    // response or surface as an opaque JSON parse exception.
+  }
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: payload?.error ?? `Request failed (HTTP ${res.status})`,
+    };
+  }
+  if (!payload || typeof payload.ok !== "boolean") {
+    return { ok: false, error: "Invalid server response" };
+  }
+  return payload;
 }
 
 export function fetchUser(): Promise<ApiResponse<UserProfile>> {
@@ -43,6 +59,7 @@ export function deleteApiKey(id: string): Promise<ApiResponse<void>> {
 }
 
 export async function logout(): Promise<ApiResponse<void>> {
-  localStorage.removeItem("heavenward-has-session");
-  return apiFetch<void>("/auth/logout", { method: "POST" });
+  const response = await apiFetch<void>("/auth/logout", { method: "POST" });
+  if (response.ok) localStorage.removeItem("heavenward-has-session");
+  return response;
 }

@@ -5,7 +5,8 @@ import { METEOR_SHOWERS } from "../catalog/meteors.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
 import { trackEvent } from "../services/analytics.js";
-import { t } from "../i18n/translations.js";
+import { t, detectLocale } from "../i18n/translations.js";
+import type { Locale } from "../i18n/translations.js";
 import {
   getAltAzForRaDec,
   getPlanetEvents,
@@ -36,11 +37,19 @@ interface SearchEntry {
 
 let indexCache: SearchEntry[] | null = null;
 let indexBuilding: Promise<SearchEntry[]> | null = null;
+let indexLocale: Locale | null = null;
 
 async function buildIndex(): Promise<SearchEntry[]> {
-  if (indexCache) return indexCache;
-  if (indexBuilding) return indexBuilding;
-  indexBuilding = (async () => {
+  const requestedLocale = detectLocale();
+  if (indexCache && indexLocale === requestedLocale) return indexCache;
+  if (indexBuilding) {
+    await indexBuilding;
+    // A language change can happen while the catalogs are loading. Re-enter
+    // after the in-flight build so the translated built-in briefs are never
+    // left in the previous language for the rest of the session.
+    return buildIndex();
+  }
+  const build = (async () => {
     const [stars, dsos] = await Promise.all([
       loadStarCatalog(),
       loadDSOCatalog(),
@@ -74,7 +83,7 @@ async function buildIndex(): Promise<SearchEntry[]> {
         id: `planet-${name.toLowerCase()}`,
         kind: "planet",
         name,
-        brief: t("search.planetBrief"),
+        brief: t("search.planetBrief", undefined, requestedLocale),
         magnitude: null,
         constellation: "",
         catalogType: "planet",
@@ -90,7 +99,7 @@ async function buildIndex(): Promise<SearchEntry[]> {
       id: "moon",
       kind: "moon",
       name: "Moon",
-      brief: t("search.moonBrief"),
+      brief: t("search.moonBrief", undefined, requestedLocale),
       magnitude: null,
       constellation: "",
       catalogType: "moon",
@@ -106,12 +115,16 @@ async function buildIndex(): Promise<SearchEntry[]> {
         id: `meteor-${shower.id}`,
         kind: "meteor",
         name: shower.name,
-        brief: t("search.meteorBrief", {
-          peakMonth: shower.peakMonth,
-          peakDay: shower.peakDay,
-          zhr: shower.zhr,
-          parentBody: shower.parentBody,
-        }),
+        brief: t(
+          "search.meteorBrief",
+          {
+            peakMonth: shower.peakMonth,
+            peakDay: shower.peakDay,
+            zhr: shower.zhr,
+            parentBody: shower.parentBody,
+          },
+          requestedLocale,
+        ),
         magnitude: null,
         constellation: "",
         catalogType: "meteor-shower",
@@ -123,10 +136,17 @@ async function buildIndex(): Promise<SearchEntry[]> {
     }
 
     indexCache = entries;
-    indexBuilding = null;
+    indexLocale = requestedLocale;
     return entries;
   })();
-  return indexBuilding;
+  indexBuilding = build;
+  try {
+    return await build;
+  } finally {
+    // A rejected import must not poison every later search attempt. The
+    // identity check also avoids clearing a newer retry's promise.
+    if (indexBuilding === build) indexBuilding = null;
+  }
 }
 
 function starToEntry(s: StarEntry): SearchEntry {
@@ -369,8 +389,26 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
       return;
     }
 
-    const entries = await buildIndex();
+    let entries: SearchEntry[];
+    try {
+      entries = await buildIndex();
+    } catch {
+      if (myToken !== queryToken || !page.isConnected) return;
+      results.innerHTML = "";
+      const message = document.createElement("p");
+      message.className = "search-empty";
+      message.textContent = t("common.dataLoadError");
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "btn btn-outline";
+      retry.textContent = t("common.tryAgain");
+      retry.addEventListener("click", () => void refresh());
+      results.appendChild(message);
+      results.appendChild(retry);
+      return;
+    }
     if (myToken !== queryToken) return; // a newer keystroke superseded us
+    if (!page.isConnected) return;
 
     const q = state.query.toLowerCase();
     const activeChips = Array.from(state.activeChips)
@@ -452,9 +490,18 @@ function buildResultCard(
   const card = document.createElement("div");
   card.className = `card card-type-${e.kind}`;
   card.style.setProperty("--i", String(index));
-  card.addEventListener("click", () => {
+  card.setAttribute("role", "link");
+  card.tabIndex = 0;
+  card.setAttribute("aria-label", e.name);
+  const openCard = () => {
     trackEvent("click", `#/detail/${e.id}`, e.name);
     navigate(`#/detail/${e.id}`);
+  };
+  card.addEventListener("click", openCard);
+  card.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openCard();
   });
 
   const magStr =
@@ -493,6 +540,7 @@ async function hydrateAltAz(
   e: SearchEntry,
   ctx: AppContext,
 ): Promise<void> {
+  if (!card.isConnected) return;
   const slot = card.querySelector<HTMLElement>("[data-altaz]");
   if (!slot) return;
 
@@ -522,6 +570,7 @@ async function hydrateAltAz(
   }
 
   if (alt === null) return;
+  if (!card.isConnected) return;
   const isUp = alt > 0;
   const sub = slot.querySelector("span")?.textContent ?? "";
   slot.innerHTML = `

@@ -35,6 +35,10 @@ const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
 /** Daytime peek: user chose to see objects despite sunlight (resets on reload) */
 let daylightOverride = false;
 
+// A route render can outlive the route that started it. Keep the generation
+// on the container so a late catalog response cannot paint into a new page.
+const tonightRenderVersions = new WeakMap<HTMLElement, number>();
+
 /* ── Category filters ────────────────────────────────── */
 const DSO_GALAXY_TYPES = new Set(["galaxy", "galaxy-pair", "galaxy-group"]);
 const DSO_NEBULA_TYPES = new Set([
@@ -75,9 +79,19 @@ function eventCategory(ev: CelestialEvent): string {
 }
 
 export function renderTonight(container: HTMLElement, ctx: AppContext): void {
+  const renderVersion = (tonightRenderVersions.get(container) ?? 0) + 1;
+  tonightRenderVersions.set(container, renderVersion);
+  const isCurrentRender = () =>
+    tonightRenderVersions.get(container) === renderVersion &&
+    container.isConnected;
+
   container.innerHTML = "";
   renderHeader(container, ctx);
   renderNav("#/");
+  const renderMarker = document.createComment("tonight-render");
+  container.appendChild(renderMarker);
+  const routeIsStillCurrent = () =>
+    isCurrentRender() && renderMarker.isConnected;
 
   const now = new Date();
   const twilight = getTwilightTimes(ctx.location, now);
@@ -104,6 +118,7 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
 
   // Collect all events (sync + async) then render together
   collectAllEvents(ctx, now).then((events) => {
+    if (!routeIsStillCurrent()) return;
     cardsHolder.remove();
 
     // Apply equipment mag filter + category filter
@@ -227,6 +242,19 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
         }
       }
     }
+  }).catch(() => {
+    if (!routeIsStillCurrent()) return;
+    cardsHolder.innerHTML = "";
+    const message = document.createElement("p");
+    message.className = "muted-prose";
+    message.textContent = t("common.dataLoadError");
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.className = "btn btn-outline";
+    retry.textContent = t("common.tryAgain");
+    retry.addEventListener("click", () => renderTonight(container, ctx));
+    cardsHolder.appendChild(message);
+    cardsHolder.appendChild(retry);
   });
 }
 
@@ -838,6 +866,7 @@ async function renderAuroraBanner(
   } catch {
     status = null;
   }
+  if (!slot.isConnected) return;
   if (!status || !status.worthSurfacing) return;
 
   const peakLocal = new Date(status.forecastPeakAt).toLocaleString([], {
@@ -964,9 +993,18 @@ function buildCard(ev: CelestialEvent, index: number): HTMLElement {
   const card = document.createElement("div");
   card.className = `card card-type-${ev.type}`;
   card.style.setProperty("--i", String(index));
-  card.addEventListener("click", () => {
+  card.setAttribute("role", "link");
+  card.tabIndex = 0;
+  card.setAttribute("aria-label", ev.name);
+  const openCard = () => {
     trackEvent("click", `#/detail/${ev.id}`, ev.name);
     navigate(`#/detail/${ev.id}`);
+  };
+  card.addEventListener("click", openCard);
+  card.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openCard();
   });
   card.innerHTML = `
     <div class="card-header">

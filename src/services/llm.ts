@@ -5,7 +5,10 @@
  */
 
 import type { SkyContext } from "../engine/nearby.js";
-import { t } from "../i18n/translations.js";
+import { t, detectLocale } from "../i18n/translations.js";
+import { mythologySummary } from "../catalog/mythology.js";
+import { historySummary, historyTopic } from "../catalog/history.js";
+import { namesakeSummary, namesakeThing } from "../catalog/namesakes.js";
 import {
   createLiteRTConversation,
   getActiveLiteRTModel,
@@ -623,7 +626,7 @@ const SYSTEM_PROMPT = `You are a friendly expert astronomer and stargazing guide
 
 For the first message in a conversation (the initial sky guide), write 3 short paragraphs in a conversational, knowledgeable-friend tone:
 - Open wide, then narrow: start from the night itself — the date, season and moon stated in the message, and what kind of observing night that makes from the user's hemisphere — then bring the view down to the target: where to look (compass, altitude, nearby bright stars as waypoints) and what makes it worth looking at.
-- Weave in the human layer wherever the sourced sections provide it: who watched this region of sky, in which era, and what they used it for — name the culture and period. When several cultures are given, lead with the one closest to the user's part of the world, and let the timespan show (a text from 1000 BCE and a practice alive today are both wonders).
+- Weave in the human layer wherever the sourced sections provide it: who watched this region of sky, in which era, and what they used it for — name the culture and period. When several cultures are given, lead with one geographically connected to the observer only when the coordinates and supplied source make that connection certain; otherwise lead with the most observationally relevant account. Let the timespan show (a text from 1000 BCE and a practice alive today are both wonders).
 - Close with the practical: nearby objects by name (naked-eye, binocular, or telescope), one concrete photography tip (exposure, filter, focal length), and a final short sentence inviting the user to pull on any thread — the myth, the history, the physics, or the photograph.
 
 For follow-up questions later in the conversation:
@@ -652,13 +655,44 @@ Ground everything in the facts given in the user message. If a "Sourced mytholog
 
 The user's latitude and hemisphere are stated at the top of their message. Judge what is visible from THAT latitude, never from a default northern viewpoint — a southern observer cannot see Polaris and can see Crux all year.`;
 
+function responseLanguageInstruction(): string {
+  switch (detectLocale()) {
+    case "fr":
+      return "Reply entirely in natural French. Translate explanatory prose, but preserve proper names and source titles accurately.";
+    case "ja":
+      return "Reply entirely in natural Japanese. Translate explanatory prose, but preserve proper names and source titles accurately.";
+    case "zh-Hans":
+      return "Reply entirely in natural Simplified Chinese (common Mandarin). Translate explanatory prose, but preserve proper names and source titles accurately.";
+    default:
+      return "Reply in natural English.";
+  }
+}
+
+function modelContextWindow(): number | null {
+  return (
+    getActiveLiteRTModel()?.maxNumTokens ??
+    activeModel?.chatOpts?.context_window_size ??
+    null
+  );
+}
+
+function modelMaxResponseTokens(): number {
+  // LiteRT exposes one total context limit rather than a separate output cap.
+  // Reserving 640 tokens keeps a useful three-paragraph answer without
+  // allowing the prompt to consume the whole Gemma 4 conversation window.
+  return getActiveLiteRTModel() ? 640 : (activeModel?.maxTokens ?? 400);
+}
+
 /** Small-context models get the compact instructions so the grounding facts
  *  keep their share of the window. 4096 is the threshold because that is what
- *  the roomy models (Gemma 3 1B, Gemma 2 9B) actually run at. */
+ *  the roomy models (Gemma 4 E2B, Gemma 2 9B) actually run at. */
 function getSystemPrompt(): string {
-  const contextWindow = activeModel?.chatOpts?.context_window_size;
-  if (contextWindow && contextWindow < 4096) return SYSTEM_PROMPT_COMPACT;
-  return SYSTEM_PROMPT;
+  const contextWindow = modelContextWindow();
+  const base =
+    contextWindow && contextWindow < 4096
+      ? SYSTEM_PROMPT_COMPACT
+      : SYSTEM_PROMPT;
+  return `${base}\n\n${responseLanguageInstruction()}`;
 }
 
 // Both tiers now share a 4096-token context window (the old 1024-token
@@ -690,12 +724,14 @@ function buildMythHistorySection(
   ctx: SkyContext,
   namesakeLimit: number,
   historyLimit: number,
+  visibleHistoryLimit: number,
 ): string {
   const parts: string[] = [];
+  const locale = detectLocale();
   const myth = ctx.target.mythology;
   if (myth) {
     parts.push(
-      `Mythology (source: ${myth.source}, ${myth.sourceDetail}): ${myth.summary}`,
+      `Mythology (source: ${myth.source}, ${myth.sourceDetail}): ${mythologySummary(myth, locale)}`,
     );
   }
   // Rich constellations (Sco, Ori, Lyr) now carry three cultures' entries at
@@ -709,7 +745,9 @@ function buildMythHistorySection(
     return aHit - bHit;
   });
   for (const h of starMatched.slice(0, historyLimit)) {
-    parts.push(`Historical astronomy — ${h.topic} (source: ${h.source}): ${h.summary}`);
+    parts.push(
+      `Historical astronomy — ${historyTopic(h, locale)} (source: ${h.source}; ${h.sourceDetail}): ${historySummary(h, locale)}`,
+    );
   }
   // A bright star can carry four namesakes at ~100 tokens apiece — enough to
   // crowd out the target's own facts on a 2048-token model. Cap the count
@@ -717,15 +755,46 @@ function buildMythHistorySection(
   // good aside, not a catalogue.
   for (const n of ctx.target.namesakes.slice(0, namesakeLimit)) {
     const hedge = n.confidence === "widely-reported" ? ", widely reported" : "";
-    parts.push(`Named after this star — ${n.thing} (source: ${n.source}${hedge}): ${n.summary}`);
+    parts.push(
+      `Named after this star — ${namesakeThing(n, locale)} (source: ${n.source}${hedge}): ${namesakeSummary(n, locale)}`,
+    );
+  }
+  for (const h of ctx.visibleHistory.slice(0, visibleHistoryLimit)) {
+    parts.push(
+      `Elsewhere in the visible nearby sky — ${historyTopic(h, locale)} (constellation ${h.constellation}; source: ${h.source}; ${h.sourceDetail}): ${historySummary(h, locale)}`,
+    );
   }
   return parts.join("\n");
 }
 
-/** Rough token estimate. English prose runs ~4 chars/token; 3.5 is
- *  deliberately pessimistic so the guard errs toward trimming. */
+/** Rough, deliberately conservative token estimate. Latin prose averages
+ * around 4 characters/token; Japanese kana and CJK ideographs are commonly
+ * close to one character/token and must be counted separately or translated
+ * grounding can overflow a small model even when the English prompt fits. */
 function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 3.5);
+  const cjkChars = text.match(/[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/g)?.length ?? 0;
+  return cjkChars + Math.ceil((text.length - cjkChars) / 3.5);
+}
+
+function clipToTokenBudget(text: string, maxTokens: number): string {
+  if (!text || maxTokens <= 0) return "";
+  if (estimateTokens(text) <= maxTokens) return text;
+
+  let low = 0;
+  let high = text.length;
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    if (estimateTokens(`${text.slice(0, mid)}…`) <= maxTokens) low = mid;
+    else high = mid - 1;
+  }
+
+  let clipped = text.slice(0, low).trimEnd();
+  const boundaries = ["\n", ". ", "; ", "。", "！", "？"];
+  const boundary = Math.max(...boundaries.map((mark) => clipped.lastIndexOf(mark)));
+  if (boundary >= clipped.length * 0.6) {
+    clipped = clipped.slice(0, boundary + 1).trimEnd();
+  }
+  return clipped ? `${clipped}…` : "";
 }
 
 /**
@@ -734,11 +803,10 @@ function estimateTokens(text: string): number {
  * model is loaded yet (nothing to budget against).
  */
 function promptTokenBudget(): number | null {
-  if (!activeModel) return null;
-  const contextWindow = activeModel.chatOpts?.context_window_size;
+  const contextWindow = modelContextWindow();
   if (!contextWindow || contextWindow <= 0) return null;
   const reserved =
-    estimateTokens(getSystemPrompt()) + activeModel.maxTokens + 128;
+    estimateTokens(getSystemPrompt()) + modelMaxResponseTokens() + 128;
   return Math.max(256, contextWindow - reserved);
 }
 
@@ -770,6 +838,7 @@ export function buildPrompt(ctx: SkyContext): string {
     ctx,
     tightBudget ? 1 : 2,
     tightBudget ? 1 : isMobile() ? 2 : 3,
+    tightBudget ? 0 : isMobile() ? 1 : 2,
   );
 
   const prompt = assemblePrompt(
@@ -781,16 +850,59 @@ export function buildPrompt(ctx: SkyContext): string {
   );
   if (budget === null || estimateTokens(prompt) <= budget) return prompt;
 
-  // Still over after the cheap trim. Drop supporting sections in increasing
-  // order of value — nearby list, then constellation neighbours, then photo
-  // tips — but never the target's facts or the sourced mythology, which are
-  // the reason the model can say anything true at all. A model too small to
-  // hold even that is better off with a short prompt than a rejected one.
+  // Still over after the cheap trim. Drop supporting sections first, then fit
+  // the two grounding blocks to the model's actual remaining room. This is
+  // especially important for Japanese/Chinese prose and the 2048-token mobile
+  // fallback, where a character-count estimate based on English is unsafe.
   const trimmedNearby = ctx.nearby
     .slice(0, 2)
     .map((n) => `- ${n.name} (${n.type}, ${n.separation.toFixed(1)} deg ${n.direction})`)
     .join("\n");
-  return assemblePrompt(ctx, trimmedNearby, "", targetFacts, mythHistory, true);
+  let fittedFacts = targetFacts;
+  let fittedSources = mythHistory;
+  let fitted = assemblePrompt(
+    ctx,
+    trimmedNearby,
+    "",
+    fittedFacts,
+    fittedSources,
+    true,
+  );
+  if (estimateTokens(fitted) <= budget) return fitted;
+
+  const baseline = assemblePrompt(ctx, "", "", "", "", true);
+  const optionalBudget = Math.max(0, budget - estimateTokens(baseline) - 72);
+  const hasFacts = Boolean(fittedFacts);
+  const hasSources = Boolean(fittedSources);
+  const sourceShare = hasFacts && hasSources ? 0.6 : hasSources ? 1 : 0;
+  fittedSources = clipToTokenBudget(
+    fittedSources,
+    Math.floor(optionalBudget * sourceShare),
+  );
+  fittedFacts = clipToTokenBudget(
+    fittedFacts,
+    Math.floor(optionalBudget * (hasSources ? 1 - sourceShare : 1)),
+  );
+  fitted = assemblePrompt(ctx, "", "", fittedFacts, fittedSources, true);
+
+  // The wrappers around optional sections also consume a little context.
+  // Ratchet down the larger block until the complete prompt—not merely its
+  // payload—fits. The source preamble remains at the front of a clipped block.
+  while (estimateTokens(fitted) > budget && (fittedFacts || fittedSources)) {
+    if (estimateTokens(fittedSources) >= estimateTokens(fittedFacts) && fittedSources) {
+      fittedSources = clipToTokenBudget(
+        fittedSources,
+        Math.max(0, Math.floor(estimateTokens(fittedSources) * 0.8)),
+      );
+    } else {
+      fittedFacts = clipToTokenBudget(
+        fittedFacts,
+        Math.max(0, Math.floor(estimateTokens(fittedFacts) * 0.8)),
+      );
+    }
+    fitted = assemblePrompt(ctx, "", "", fittedFacts, fittedSources, true);
+  }
+  return estimateTokens(fitted) <= budget ? fitted : baseline;
 }
 
 function assemblePrompt(
@@ -807,11 +919,34 @@ function assemblePrompt(
       : `Photography tips available: ${ctx.photographyTips.join(" ")}\n`;
 
   const obs = ctx.observer;
-  const observerLine = `The user is at latitude ${obs.latitude.toFixed(1)}°, in the ${obs.hemisphere} hemisphere. From here, anything with declination beyond ${obs.circumpolarBelowDec.toFixed(0)}° never sets, and anything beyond ${obs.neverRisesAboveDec.toFixed(0)}° never rises. Reason about what they can see from THIS latitude, not from a default northern viewpoint.`;
+  const observerLine = `The user is at latitude ${obs.latitude.toFixed(1)}° and longitude ${obs.longitude.toFixed(1)}°, in the ${obs.hemisphere} hemisphere. From here, anything with declination beyond ${obs.circumpolarBelowDec.toFixed(0)}° never sets, and anything beyond ${obs.neverRisesAboveDec.toFixed(0)}° never rises. Reason about what they can see from THIS latitude, not from a default northern viewpoint.`;
 
   const night = ctx.night;
   const moonPct = Math.round(night.moonIllumination * 100);
-  const nightLine = `Tonight is ${night.date} — ${night.season} in the user's hemisphere. The Moon is a ${night.moonPhaseName.toLowerCase()}, ${moonPct}% illuminated${moonPct >= 60 ? " (bright moonlight will wash out faint objects tonight)" : moonPct <= 20 ? " (a dark sky — good conditions for faint objects)" : ""}.`;
+  const nightLine = `Tonight is ${night.date} — ${night.season} in the user's hemisphere. Current time is ${night.utcTime} UTC, approximately ${night.localSolarTime} local solar time at this longitude. The Moon is a ${night.moonPhaseName.toLowerCase()}, ${moonPct}% illuminated${moonPct >= 60 ? " (bright moonlight will wash out faint objects tonight)" : moonPct <= 20 ? " (a dark sky — good conditions for faint objects)" : ""}.`;
+
+  const targetTimes = [
+    ctx.target.riseUTC ? `rises ${ctx.target.riseUTC} UTC` : "",
+    ctx.target.transitUTC ? `transits ${ctx.target.transitUTC} UTC` : "",
+    ctx.target.setUTC ? `sets ${ctx.target.setUTC} UTC` : "",
+  ].filter(Boolean);
+  const visibilityLine = targetTimes.length
+    ? `Tonight's event times: ${targetTimes.join(", ")}.`
+    : "";
+
+  const hasKnownSourceMaterial = Boolean(
+    ctx.target.mythology ||
+      ctx.target.history.length ||
+      ctx.target.namesakes.length ||
+      ctx.visibleHistory.length,
+  );
+  const sourceGrounding = mythHistory
+    ? `Sourced mythology, history and namesakes — you may share this, with attribution, but do not add mythological, historical or naming claims beyond what's given here:\n${mythHistory}\n`
+    : hasKnownSourceMaterial
+      ? "Sourced cultural material exists for this region but was omitted to fit this model's context. Do not invent or discuss details that are not supplied; the user can ask a focused follow-up to load the relevant source.\n"
+    : ctx.unavailableSources.length
+      ? `Some source families could not load (${ctx.unavailableSources.join(", ")}). Do not interpret that technical gap as evidence that no tradition or history exists, and do not invent replacement material.\n`
+      : "No sourced mythology, historical-astronomy or namesake material is available here — do not invent any myth, legend, historical claim, or story about something being named after this object.\n";
 
   return `${observerLine}
 
@@ -820,9 +955,10 @@ ${nightLine}
 The user is looking at "${ctx.target.name}" in the constellation ${ctx.target.constellation ?? "unknown"}.
 
 Current position: azimuth ${ctx.target.azimuth.toFixed(0)} deg (${ctx.target.compassShort}), altitude ${ctx.target.altitude.toFixed(0)} deg - ${ctx.target.altDescription}.
+${visibilityLine}
 ${ctx.lookingDescription ? `\n${ctx.lookingDescription}\n` : ""}
 ${targetFacts ? `Known facts about this object (ground your description in these, do not invent additional specifics):\n${targetFacts}\n` : ""}
-${mythHistory ? `Sourced mythology, history and namesakes — you may share this, with attribution, but do not add mythological, historical or naming claims beyond what's given here:\n${mythHistory}\n` : "No sourced mythology, historical-astronomy or namesake material is available here — do not invent any myth, legend, historical claim, or story about something being named after this object.\n"}
+${sourceGrounding}
 Nearby objects within about 20 deg:
 ${nearby || "(none found)"}
 ${sameConstellation ? `\nAlso sharing this constellation: ${sameConstellation}.\n` : ""}
@@ -948,21 +1084,107 @@ async function completeWithRetry(
   throw new Error("Generation failed after trying smaller models.");
 }
 
-// Once a real back-and-forth grows past this many exchanges, older follow-up
-// turns are dropped to stay inside the model's context window — the system
-// prompt and the original grounding-rich turn are always kept, since that's
-// where the catalog/mythology/history facts live.
-const MAX_RETAINED_EXCHANGES = 4;
-
 function trimHistory(
   messages: ChatCompletionMessageParam[],
 ): ChatCompletionMessageParam[] {
-  // [system, grounding user turn, first assistant reply, ...follow-up pairs]
-  if (messages.length <= 3) return messages;
+  // [system, compact conversation seed, first assistant reply, ...pairs].
+  // Count approximate tokens rather than turns: one long cultural answer can
+  // cost more context than four terse exchanges, especially on the 2048-token
+  // mobile model.
   const head = messages.slice(0, 3);
   const tail = messages.slice(3);
-  const maxTail = MAX_RETAINED_EXCHANGES * 2;
-  return tail.length > maxTail ? [...head, ...tail.slice(-maxTail)] : messages;
+  const contextWindow = modelContextWindow() ?? 2048;
+  const historyBudget = Math.max(
+    512,
+    contextWindow - modelMaxResponseTokens() - 128,
+  );
+  const tokenCount = (items: ChatCompletionMessageParam[]): number =>
+    items.reduce(
+      (sum, item) =>
+        sum + estimateTokens(typeof item.content === "string" ? item.content : JSON.stringify(item.content)) + 4,
+      0,
+    );
+
+  while (tail.length > 1 && tokenCount([...head, ...tail]) > historyBudget) {
+    // Remove the oldest complete follow-up pair, never the current question.
+    tail.splice(0, Math.min(2, tail.length - 1));
+  }
+  return [...head, ...tail];
+}
+
+function buildFollowUpGrounding(question: string, ctx: SkyContext): string {
+  const contextWindow = modelContextWindow() ?? 2048;
+  const tight = contextWindow <= 2048;
+  const targetFacts = buildTargetFacts(ctx);
+  const sourcedThreads = buildMythHistorySection(
+    ctx,
+    tight ? 1 : 2,
+    tight ? 2 : 4,
+    tight ? 0 : 2,
+  );
+  const lower = question.toLocaleLowerCase();
+  const matchedNearby = ctx.nearby
+    .filter((object) => lower.includes(object.name.toLocaleLowerCase()))
+    .slice(0, tight ? 1 : 2)
+    .map((object) => {
+      const rich = [
+        object.description,
+        object.morphology ? `Morphology: ${object.morphology}.` : "",
+        object.discoverer
+          ? `Discovered by ${object.discoverer}${object.yearDiscovered ? ` in ${object.yearDiscovered}` : ""}.`
+          : "",
+        object.notableFeatures?.length
+          ? `Notable: ${object.notableFeatures.join("; ")}.`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return `${object.name}: ${object.type}, altitude ${object.altitude.toFixed(0)}°, ${object.separation.toFixed(1)}° from the original target.${rich ? ` ${rich}` : ""}`;
+    });
+
+  const subject = `Current subject: ${ctx.target.name}, altitude ${ctx.target.altitude.toFixed(0)}°, ${ctx.target.compassShort}, from latitude ${ctx.observer.latitude.toFixed(1)}° (${ctx.observer.hemisphere} hemisphere).`;
+  const factSection = targetFacts ? `Known target facts: ${targetFacts}` : "";
+  const sourceSection = sourcedThreads
+    ? `Sourced threads available for a deeper answer (do not add historical or mythological claims beyond these):\n${sourcedThreads}`
+    : "";
+  const nearbySection = matchedNearby.length
+    ? `Matched nearby-object facts:\n${matchedNearby.join("\n")}`
+    : "";
+  const unavailableSection = ctx.unavailableSources.length
+    ? `Unavailable source families: ${ctx.unavailableSources.join(", ")}; absence is a loading gap, not evidence that no tradition exists.`
+    : "";
+  const culturalQuestion = /myth|mytholog|histor|ancient|cultur|legend|archae|anthrop|named|namesake|mythe|histoire|ancien|légend|nomm|神話|歴史|文化|伝説|由来|命名|神话|历史|文化|传说|命名|得名/i.test(
+    question,
+  );
+  const sections = [
+    subject,
+    ...(culturalQuestion
+      ? [sourceSection, factSection]
+      : [factSection, sourceSection]),
+    matchedNearby.length
+      ? nearbySection
+      : "",
+    unavailableSection,
+  ]
+    .filter(Boolean);
+
+  const maxTokens = tight ? 520 : 900;
+  const safeQuestion = clipToTokenBudget(question, tight ? 160 : 240);
+  let result = `${safeQuestion}\n\nLocal grounding for this follow-up:`;
+  for (const section of sections) {
+    const candidate = `${result}\n${section}`;
+    if (estimateTokens(`${candidate}\nUse only the parts relevant to the question.`) <= maxTokens) {
+      result = candidate;
+      continue;
+    }
+    const remaining =
+      maxTokens -
+      estimateTokens(`${result}\nUse only the parts relevant to the question.`) -
+      8;
+    if (remaining >= 48) result += `\n${clipToTokenBudget(section, remaining)}`;
+    break;
+  }
+  return `${result}\nUse only the parts relevant to the question.`;
 }
 
 /**
@@ -985,9 +1207,15 @@ export interface SkyConversation {
 function createWebLLMConversation(
   initial: ChatCompletionMessageParam[],
   opening: string,
+  ctx: SkyContext,
 ): SkyConversation {
+  const system = initial[0];
   let history: ChatCompletionMessageParam[] = [
-    ...initial,
+    system,
+    {
+      role: "user",
+      content: `Continue the conversation about ${ctx.target.name} as seen from latitude ${ctx.observer.latitude.toFixed(1)}° in the ${ctx.observer.hemisphere} hemisphere. Fresh sourced grounding will accompany each follow-up.`,
+    },
     { role: "assistant", content: opening },
   ];
   return {
@@ -995,7 +1223,7 @@ function createWebLLMConversation(
     async ask(question, onChunk, signal) {
       const messages = trimHistory([
         ...history,
-        { role: "user", content: question },
+        { role: "user", content: buildFollowUpGrounding(question, ctx) },
       ]);
       const text = await completeWithRetry(messages, onChunk, signal);
       history = [...messages, { role: "assistant", content: text }];
@@ -1028,7 +1256,12 @@ export async function startSkyConversation(
       return {
         opening,
         ask: (question, chunkCb, sig) =>
-          sendLiteRTMessage(conversation, question, chunkCb, sig),
+          sendLiteRTMessage(
+            conversation,
+            buildFollowUpGrounding(question, ctx),
+            chunkCb,
+            sig,
+          ),
       };
     }
     // Conversation creation failed on a loaded engine — fall through to
@@ -1040,5 +1273,5 @@ export async function startSkyConversation(
     { role: "user", content: prompt },
   ];
   const opening = await completeWithRetry(messages, onChunk, signal);
-  return createWebLLMConversation(messages, opening);
+  return createWebLLMConversation(messages, opening, ctx);
 }

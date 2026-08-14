@@ -15,8 +15,9 @@
     "deploy": "pnpm run deploy:production",
     "deploy:production": "pnpm run build && wrangler pages deploy dist --branch production",
     "deploy:preview": "pnpm run build && wrangler pages deploy dist --branch preview",
-    "typecheck": "tsc --noEmit && pnpm run check:i18n",
+    "typecheck": "tsc --noEmit && pnpm run check:i18n && pnpm run check:data",
     "check:i18n": "node --experimental-strip-types scripts/check-i18n.ts",
+    "check:data": "node --experimental-strip-types scripts/check-sky-data.ts",
     "audit": "pnpm audit --audit-level=moderate",
     "refresh": "node --experimental-strip-types scripts/refresh-catalog.ts",
     "catalog:plan": "node --experimental-strip-types scripts/refresh-catalog.ts --plan"

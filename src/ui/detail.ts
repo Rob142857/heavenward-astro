@@ -21,7 +21,7 @@ import {
 import { renderHeader, renderNav } from "./layout.js";
 import { renderFinderChart } from "../chart/finder.js";
 import type { FieldStar } from "../chart/finder.js";
-import { buildSkyContext } from "../engine/nearby.js";
+import { buildSkyContext, nearbyObjectTypeLabel } from "../engine/nearby.js";
 import type { SkyContext, NearbyObject } from "../engine/nearby.js";
 import {
   getLLMStatus,
@@ -129,6 +129,7 @@ function attachBreadcrumbHandlers(container: HTMLElement): void {
 // ── Abort controller for LLM — cancelled on every route change ────
 
 let llmAbort: AbortController | null = null;
+let detailRenderVersion = 0;
 
 function abortLLM(): void {
   if (llmAbort) {
@@ -149,6 +150,12 @@ window.addEventListener("hashchange", abortLLM);
 // — this is the only signal for that path, so an in-flight generation must
 // subscribe to it too, not just hashchange.
 window.addEventListener("app:navigate", abortLLM);
+window.addEventListener("hashchange", () => {
+  detailRenderVersion += 1;
+});
+window.addEventListener("app:navigate", () => {
+  detailRenderVersion += 1;
+});
 
 // ── Shared helpers ─────────────────────────────────────────────────
 
@@ -1042,19 +1049,56 @@ function appendSkyContext(
 
   const wrapper = document.createElement("div");
   wrapper.className = "sky-context";
-  wrapper.innerHTML = `
-    <h3 class="detail-section-title">${t("detail.section.skyGuide")}</h3>
-    <div class="sky-context-loading">
-      <div class="skeleton" style="height:60px;border-radius:8px"></div>
-    </div>
-  `;
   container.appendChild(wrapper);
 
-  const now = new Date();
-  buildSkyContext(event, ctx.location, now).then((skyCtx) => {
-    wrapper.innerHTML = "";
-    renderSkyContextContent(wrapper, skyCtx, event, ctx);
-  });
+  const showLoading = (): void => {
+    const hasPosition = event.altitude !== null && event.azimuth !== null;
+    const altitude = Math.round(event.altitude ?? 0);
+    const compass = azimuthToCompassShort(event.azimuth ?? 0);
+    wrapper.innerHTML = `
+      <h3 class="detail-section-title">${t("detail.section.skyGuide")}</h3>
+      ${hasPosition ? `<div class="sky-direction-box">
+        <div class="sky-direction-compass">${compass}</div>
+        <div class="sky-direction-text">
+          <strong>${t("detail.faceDirectionLabel", { direction: compass })}</strong> — ${t("detail.altitudeUp", { altitude })}
+        </div>
+      </div>` : ""}
+      <div class="sky-context-loading" role="status" aria-live="polite" aria-label="${t("detail.buildingSkyContext")}">
+        <p class="detail-prose">${t("detail.skyGuide.loadingEnrichment")}</p>
+        <div class="skeleton" style="height:60px;border-radius:8px"></div>
+      </div>
+    `;
+  };
+
+  const loadGuide = (): void => {
+    if (!wrapper.isConnected) return;
+    showLoading();
+    buildSkyContext(event, ctx.location, new Date())
+      .then((skyCtx) => {
+        if (!wrapper.isConnected) return;
+        // Keep the section title after the skeleton is replaced. Previously
+        // the successful path erased it, while a failed import left only the
+        // heading and an eternal skeleton — exactly backwards.
+        wrapper.innerHTML = `<h3 class="detail-section-title">${t("detail.section.skyGuide")}</h3>`;
+        renderSkyContextContent(wrapper, skyCtx, event, ctx, loadGuide);
+      })
+      .catch((err: unknown) => {
+        if (!wrapper.isConnected) return;
+        console.error("[Sky Guide] Could not build context", err);
+        wrapper.innerHTML = `
+          <h3 class="detail-section-title">${t("detail.section.skyGuide")}</h3>
+          <div class="sky-context-error" role="alert">
+            <p class="detail-prose">${t("detail.skyGuide.loadError")}</p>
+            <button type="button" class="btn btn-outline sky-context-retry">${t("detail.skyGuide.retry")}</button>
+          </div>
+        `;
+        wrapper
+          .querySelector<HTMLButtonElement>(".sky-context-retry")
+          ?.addEventListener("click", loadGuide, { once: true });
+      });
+  };
+
+  loadGuide();
 }
 
 /**
@@ -1170,6 +1214,7 @@ function renderSkyContextContent(
   skyCtx: SkyContext,
   event: CelestialEvent,
   ctx: AppContext,
+  retry: () => void,
 ): void {
   // Looking direction callout
   const dirBox = document.createElement("div");
@@ -1177,11 +1222,24 @@ function renderSkyContextContent(
   dirBox.innerHTML = `
     <div class="sky-direction-compass">${skyCtx.target.compassShort}</div>
     <div class="sky-direction-text">
-      <strong>${t("detail.faceDirectionLabel", { direction: skyCtx.target.lookDirection })}</strong> — ${skyCtx.target.altDescription}
-      (${t("detail.altitudeUp", { altitude: Math.round(skyCtx.target.altitude) })})
+      <strong>${t("detail.faceDirectionLabel", { direction: skyCtx.target.compassShort })}</strong> — ${t("detail.altitudeUp", { altitude: Math.round(skyCtx.target.altitude) })}
     </div>
   `;
   wrapper.appendChild(dirBox);
+
+  if (skyCtx.unavailableSources.length > 0) {
+    const warning = document.createElement("div");
+    warning.className = "sky-context-warning";
+    warning.setAttribute("role", "status");
+    warning.innerHTML = `
+      <p class="detail-prose">${t("detail.skyGuide.partialData")}</p>
+      <button type="button" class="btn btn-outline sky-context-retry">${t("detail.skyGuide.retry")}</button>
+    `;
+    warning
+      .querySelector<HTMLButtonElement>(".sky-context-retry")
+      ?.addEventListener("click", retry, { once: true });
+    wrapper.appendChild(warning);
+  }
 
   // Template-based description
   if (skyCtx.lookingDescription) {
@@ -1215,6 +1273,7 @@ function renderSkyContextContent(
     sortWrap.appendChild(sortLabel);
     const sortSel = document.createElement("select");
     sortSel.className = "ctrl-select";
+    sortSel.setAttribute("aria-label", t("common.sort.label"));
     // Add "Nearest" as default for nearby context
     const nearestOpt = document.createElement("option");
     nearestOpt.value = "nearest";
@@ -1240,16 +1299,25 @@ function renderSkyContextContent(
       for (const obj of sorted) {
         const card = document.createElement("div");
         card.className = "nearby-card";
-        card.addEventListener("click", () => {
+        card.setAttribute("role", "link");
+        card.tabIndex = 0;
+        card.setAttribute("aria-label", obj.name);
+        const openCard = (): void => {
           pushBreadcrumb(event.id, event.name, obj.separation);
           navigate(`#/detail/${obj.id}`, { breadcrumb: [...breadcrumbTrail] });
+        };
+        card.addEventListener("click", openCard);
+        card.addEventListener("keydown", (keyEvent) => {
+          if (keyEvent.key !== "Enter" && keyEvent.key !== " ") return;
+          keyEvent.preventDefault();
+          openCard();
         });
         card.innerHTML = `
           <div class="nearby-card-header">
             <span class="nearby-name">${obj.name}</span>
             <span class="nearby-sep">${obj.separation.toFixed(1)}°</span>
           </div>
-          <div class="nearby-type">${obj.type}${obj.magnitude !== null ? ` · ${t("detail.magAbbrev", { mag: obj.magnitude.toFixed(1) })}` : ""}</div>
+          <div class="nearby-type">${nearbyObjectTypeLabel(obj.type)}${obj.magnitude !== null ? ` · ${t("detail.magAbbrev", { mag: obj.magnitude.toFixed(1) })}` : ""}</div>
           <div class="nearby-dir">${obj.direction}${obj.constellation ? ` · ${obj.constellation}` : ""}</div>
         `;
         grid.appendChild(card);
@@ -1334,8 +1402,8 @@ function formatLLMDiagnostics(): string {
 function appendAnswerTurn(conversation: HTMLElement): HTMLElement {
   const p = document.createElement("p");
   p.className = "llm-narrative llm-answer detail-prose";
-  p.setAttribute("role", "status");
-  p.setAttribute("aria-live", "polite");
+  p.setAttribute("role", "article");
+  p.setAttribute("aria-busy", "true");
   conversation.appendChild(p);
   return p;
 }
@@ -1363,7 +1431,7 @@ function appendLLMSection(
     <p class="llm-capability-check detail-prose" role="status" aria-live="polite">${t("detail.checkingDeviceCompatibility")}</p>
     <button class="btn btn-outline btn-block llm-activate-btn" style="display:none"></button>
     <div class="llm-progress" style="display:none" tabindex="-1">
-      <div class="llm-progress-bar"><div class="llm-progress-fill"></div></div>
+      <div class="llm-progress-bar" role="progressbar" aria-label="${t("detail.aiProgressLabel")}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="llm-progress-fill"></div></div>
       <p class="llm-progress-text detail-prose" role="status" aria-live="polite"></p>
       <button type="button" class="llm-use-smaller" style="display:none">${t("detail.useSmallerModel")}</button>
       <p class="llm-use-smaller-hint" style="display:none">${t("detail.useSmallerModelHint")}</p>
@@ -1372,7 +1440,7 @@ function appendLLMSection(
     <div class="llm-conversation" style="display:none"></div>
     <p class="llm-followup-label detail-prose" style="display:none">${t("detail.followUpLabel")}</p>
     <form class="llm-followup" style="display:none">
-      <input type="text" class="input llm-followup-input" placeholder="${t("detail.followUpPlaceholder")}" aria-label="${t("detail.followUpPlaceholder")}" />
+      <input type="text" maxlength="600" class="input llm-followup-input" placeholder="${t("detail.followUpPlaceholder")}" aria-label="${t("detail.followUpPlaceholder")}" />
       <button type="submit" class="btn btn-outline llm-followup-send">${t("detail.followUpSend")}</button>
     </form>
   `;
@@ -1381,6 +1449,7 @@ function appendLLMSection(
   const capMsg = section.querySelector(".llm-capability-check") as HTMLElement;
   const btn = section.querySelector(".llm-activate-btn") as HTMLButtonElement;
   const progress = section.querySelector(".llm-progress") as HTMLElement;
+  const progressBar = section.querySelector(".llm-progress-bar") as HTMLElement;
   const fill = section.querySelector(".llm-progress-fill") as HTMLElement;
   const progressText = section.querySelector(
     ".llm-progress-text",
@@ -1435,6 +1504,7 @@ function appendLLMSection(
       .then((chat) => {
         if (abort.signal.aborted) return;
         answer.classList.remove("llm-generating");
+        answer.setAttribute("aria-busy", "false");
         skyChat = chat;
         if (!chat.opening) {
           answer.textContent = t("detail.emptyResponse");
@@ -1447,6 +1517,7 @@ function appendLLMSection(
       .catch((err: unknown) => {
         if (!abort.signal.aborted) {
           answer.classList.remove("llm-generating");
+          answer.setAttribute("aria-busy", "false");
           const msg = err instanceof Error ? err.message : String(err);
           console.error("[LLM generate]", err);
           answer.textContent = t("detail.generateError", {
@@ -1459,6 +1530,38 @@ function appendLLMSection(
           btn.textContent = t("detail.aiLoadRetry");
           btn.style.display = "";
         }
+      });
+  };
+
+  const buildContextThenGenerate = (abort: AbortController): void => {
+    if (abort.signal.aborted) return;
+    progress.style.display = "block";
+    progressText.textContent = t("detail.buildingSkyContext");
+    fill.classList.add("indeterminate");
+    fill.style.width = "100%";
+    progressBar.removeAttribute("aria-valuenow");
+    progressBar.setAttribute("aria-valuetext", t("detail.buildingSkyContext"));
+
+    buildSkyContext(event, ctx.location, new Date())
+      .then((skyCtx) => {
+        if (abort.signal.aborted) return;
+        progress.style.display = "none";
+        fill.classList.remove("indeterminate");
+        progressBar.removeAttribute("aria-valuetext");
+        runGeneration(skyCtx, abort);
+      })
+      .catch((err: unknown) => {
+        if (abort.signal.aborted) return;
+        console.error("[AI Sky Guide] Could not build context", err);
+        progress.style.display = "none";
+        fill.classList.remove("indeterminate");
+        progressBar.removeAttribute("aria-valuetext");
+        narrative.style.display = "block";
+        narrative.textContent = t("detail.skyGuide.loadError");
+        narrative.classList.add("llm-error");
+        narrative.focus({ preventScroll: true });
+        btn.textContent = t("detail.aiLoadRetry");
+        btn.style.display = "";
       });
   };
 
@@ -1484,9 +1587,14 @@ function appendLLMSection(
         // reads as a hang.
         fill.classList.add("indeterminate");
         fill.style.width = "100%";
+        progressBar.removeAttribute("aria-valuenow");
+        progressBar.setAttribute("aria-valuetext", text);
       } else {
         fill.classList.remove("indeterminate");
-        fill.style.width = `${(pct * 100).toFixed(0)}%`;
+        const percent = Math.round(pct * 100);
+        fill.style.width = `${percent}%`;
+        progressBar.setAttribute("aria-valuenow", String(percent));
+        progressBar.removeAttribute("aria-valuetext");
       }
       // The escape hatch only does something during the resumable Gemma 4
       // fetch: once compilation starts, once the WebLLM fallback chain takes
@@ -1496,36 +1604,43 @@ function appendLLMSection(
       const canOfferSmaller = downloadSignal !== undefined && stage === "download";
       useSmaller.style.display = canOfferSmaller ? "" : "none";
       useSmallerHint.style.display = canOfferSmaller ? "" : "none";
-    }, downloadSignal).then((ok) => {
-      if (abort.signal.aborted) return;
-      progress.style.display = "none";
-      fill.classList.remove("indeterminate");
-      useSmaller.style.display = "none";
-      useSmallerHint.style.display = "none";
-      if (!ok) {
-        narrative.style.display = "block";
-        narrative.textContent = `${getLLMError() ?? t("detail.couldNotLoadAIModel")}${formatLLMDiagnostics()}`;
-        narrative.classList.add("llm-error");
-        narrative.focus({ preventScroll: true });
-        // A failed load must leave a way back — the download is resumable
-        // and transient GPU conditions clear, so hiding the button forever
-        // turned every hiccup into a dead end.
-        btn.textContent = t("detail.aiLoadRetry");
-        btn.style.display = "";
-        return;
-      }
-      progress.style.display = "block";
-      progressText.textContent = t("detail.buildingSkyContext");
-      // Honest, not just full: there is no fraction to report while the
-      // context builds, so a solid 100% bar would claim a precision it
-      // doesn't have.
-      fill.classList.add("indeterminate");
-      buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
+    }, downloadSignal)
+      .then((ok) => {
+        if (abort.signal.aborted) return;
         progress.style.display = "none";
         fill.classList.remove("indeterminate");
-        if (!abort.signal.aborted) runGeneration(skyCtx, abort);
+        progressBar.removeAttribute("aria-valuetext");
+        useSmaller.style.display = "none";
+        useSmallerHint.style.display = "none";
+        if (!ok) {
+          narrative.style.display = "block";
+          narrative.textContent = `${getLLMError() ?? t("detail.couldNotLoadAIModel")}${formatLLMDiagnostics()}`;
+          narrative.classList.add("llm-error");
+          narrative.focus({ preventScroll: true });
+          // A failed load must leave a way back — the download is resumable
+          // and transient GPU conditions clear, so hiding the button forever
+          // turned every hiccup into a dead end.
+          btn.textContent = t("detail.aiLoadRetry");
+          btn.style.display = "";
+          return;
+        }
+        buildContextThenGenerate(abort);
+      })
+      .catch((err: unknown) => {
+        if (abort.signal.aborted) return;
+        console.error("[AI Sky Guide] Model load failed", err);
+        progress.style.display = "none";
+        fill.classList.remove("indeterminate");
+        progressBar.removeAttribute("aria-valuetext");
+        useSmaller.style.display = "none";
+        useSmallerHint.style.display = "none";
+        narrative.style.display = "block";
+        narrative.textContent = `${t("detail.couldNotLoadAIModel")}${formatLLMDiagnostics()}`;
+        narrative.classList.add("llm-error");
+        narrative.focus({ preventScroll: true });
+        btn.textContent = t("detail.aiLoadRetry");
+        btn.style.display = "";
       });
-    });
   };
 
   followupForm.addEventListener("submit", (e) => {
@@ -1557,11 +1672,13 @@ function appendLLMSection(
       .then((text) => {
         if (abort.signal.aborted) return;
         answer.classList.remove("llm-generating");
+        answer.setAttribute("aria-busy", "false");
         if (!text) answer.textContent = t("detail.emptyResponse");
       })
       .catch((err: unknown) => {
         if (!abort.signal.aborted) {
           answer.classList.remove("llm-generating");
+          answer.setAttribute("aria-busy", "false");
           const msg = err instanceof Error ? err.message : String(err);
           console.error("[LLM follow-up]", err);
           answer.textContent = t("detail.generateError", {
@@ -1610,16 +1727,7 @@ function appendLLMSection(
         // Model already loaded — build context then generate
         progress.style.display = "block";
         progress.focus({ preventScroll: true });
-        progressText.textContent = t("detail.buildingSkyContext");
-        // Honest, not just full: there is no fraction to report while the
-        // context builds, so a solid 100% bar would claim a precision it
-        // doesn't have.
-        fill.classList.add("indeterminate");
-        buildSkyContext(event, ctx.location, new Date()).then((skyCtx) => {
-          progress.style.display = "none";
-          fill.classList.remove("indeterminate");
-          runGeneration(skyCtx, abort);
-        });
+        buildContextThenGenerate(abort);
       } else {
         // Need to load model first. A separate controller from `abort`:
         // this one only gives up on the large model. Navigating away must
@@ -1672,11 +1780,33 @@ function appendLLMSection(
 
 // ── Route handlers ─────────────────────────────────────────────────
 
+function renderCatalogLoadError(
+  container: HTMLElement,
+  ctx: AppContext,
+  retry: () => void,
+): void {
+  container.innerHTML = "";
+  renderHeader(container, ctx);
+  renderNav("#/");
+  const state = document.createElement("div");
+  state.className = "detail-section";
+  state.setAttribute("role", "alert");
+  state.innerHTML = `
+    <p class="detail-prose">${t("common.dataLoadError")}</p>
+    <button type="button" class="btn btn-outline">${t("common.tryAgain")}</button>
+  `;
+  state.querySelector("button")?.addEventListener("click", retry, {
+    once: true,
+  });
+  container.appendChild(state);
+}
+
 export function renderDetail(
   container: HTMLElement,
   ctx: AppContext,
   eventId: string,
 ): void {
+  detailRenderVersion += 1;
   const now = new Date();
   const event = findEvent(ctx, eventId, now);
   if (!event) {
@@ -1719,13 +1849,26 @@ export async function renderDSODetail(
   ctx: AppContext,
   dsoId: string,
 ): Promise<void> {
+  const renderVersion = ++detailRenderVersion;
+  const isCurrent = () => renderVersion === detailRenderVersion;
   container.innerHTML = "";
   renderHeader(container, ctx);
   renderNav("#/");
   container.innerHTML += `<p style="padding:20px;color:var(--text-dim)">${t("detail.loading")}</p>`;
 
   const raw = dsoId.replace("dso-", "");
-  const entry = await getDSOById(raw);
+  let entry: DSOEntry | undefined;
+  try {
+    entry = await getDSOById(raw);
+  } catch (err: unknown) {
+    if (!isCurrent()) return;
+    console.error("[Detail] DSO catalog failed", err);
+    renderCatalogLoadError(container, ctx, () => {
+      void renderDSODetail(container, ctx, dsoId);
+    });
+    return;
+  }
+  if (!isCurrent()) return;
   if (!entry) {
     container.innerHTML = "";
     renderHeader(container, ctx);
@@ -1781,13 +1924,26 @@ export async function renderStarDetail(
   ctx: AppContext,
   starId: string,
 ): Promise<void> {
+  const renderVersion = ++detailRenderVersion;
+  const isCurrent = () => renderVersion === detailRenderVersion;
   container.innerHTML = "";
   renderHeader(container, ctx);
   renderNav("#/");
   container.innerHTML += `<p style="padding:20px;color:var(--text-dim)">${t("detail.loading")}</p>`;
 
   const raw = starId.replace("star-", "");
-  const entry = await getStarById(raw);
+  let entry: StarEntry | undefined;
+  try {
+    entry = await getStarById(raw);
+  } catch (err: unknown) {
+    if (!isCurrent()) return;
+    console.error("[Detail] star catalog failed", err);
+    renderCatalogLoadError(container, ctx, () => {
+      void renderStarDetail(container, ctx, starId);
+    });
+    return;
+  }
+  if (!isCurrent()) return;
   if (!entry) {
     container.innerHTML = "";
     renderHeader(container, ctx);

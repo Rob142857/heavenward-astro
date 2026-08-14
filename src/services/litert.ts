@@ -24,7 +24,7 @@
  *    to the WebLLM fallback chain with no signal that jsdelivr was the cause.
  */
 
-import type { Conversation, Engine } from "@litert-lm/core";
+import type { Conversation, Engine, Message } from "@litert-lm/core";
 import { downloadModel, getPartialBytes } from "./model-download.js";
 import type { DownloadProgress } from "./model-download.js";
 import { t } from "../i18n/translations.js";
@@ -66,6 +66,30 @@ export type LoadProgressFn = (
 
 let engine: Engine | null = null;
 let activeProfile: LiteRTModelProfile | null = null;
+
+/**
+ * LiteRT keeps conversation history inside the WASM object.  Keep a small
+ * amount of bookkeeping outside it so the public Conversation-shaped API can
+ * remain unchanged while we periodically replace an overgrown conversation.
+ * The map is keyed by the handle returned to llm.ts; callers do not need to
+ * know that the active runtime conversation may be a newer instance.
+ */
+interface ConversationState {
+  readonly root: Conversation;
+  readonly systemPrompt: string;
+  active: Conversation;
+  generation: Promise<void> | null;
+  compaction: Promise<void> | null;
+}
+
+const conversationStates = new Map<Conversation, ConversationState>();
+const liveConversations = new Set<ConversationState>();
+
+// Gemma 4 E2B is configured for a 4096-token runtime window. Keep room for a
+// response and sampling overhead; the original grounded user turn is retained
+// even when the follow-up transcript has to be shortened.
+const MAX_CONTEXT_TOKENS = 3000;
+const MAX_RETAINED_MESSAGES = 8;
 
 /**
  * The load in flight, if any. Callers that arrive while a load is running
@@ -215,6 +239,33 @@ function describeDownload(label: string, p: DownloadProgress): string {
 }
 
 export async function unloadLiteRT(): Promise<void> {
+  const conversations = [...liveConversations];
+  liveConversations.clear();
+
+  // Stop generation before destroying its WASM conversation. LiteRT has no
+  // abort signal on sendMessageStreaming(), so cancel() is the only runtime
+  // level interruption available to us.
+  for (const state of conversations) {
+    try {
+      state.active.cancel();
+    } catch {
+      // Best effort: the engine may already be in teardown.
+    }
+  }
+  for (const state of conversations) {
+    try {
+      if (state.generation) await state.generation;
+    } catch {
+      // The caller's generation promise owns the useful error handling.
+    }
+    try {
+      await state.active.delete();
+    } catch {
+      // Best-effort teardown — a failure here must not block a fallback load.
+    }
+    conversationStates.delete(state.root);
+  }
+
   const current = engine;
   engine = null;
   activeProfile = null;
@@ -237,9 +288,19 @@ export async function createLiteRTConversation(
 ): Promise<Conversation | null> {
   if (!engine) return null;
   try {
-    return await engine.createConversation({
+    const conversation = await engine.createConversation({
       preface: { messages: [{ role: "system", content: systemPrompt }] },
     });
+    const state: ConversationState = {
+      root: conversation,
+      systemPrompt,
+      active: conversation,
+      generation: null,
+      compaction: null,
+    };
+    conversationStates.set(conversation, state);
+    liveConversations.add(state);
+    return conversation;
   } catch (err: unknown) {
     console.warn("[LiteRT] createConversation failed", err);
     return null;
@@ -257,17 +318,226 @@ export async function sendLiteRTMessage(
   onChunk: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
-  let full = "";
-  const stream = conversation.sendMessageStreaming(message);
-  for await (const chunk of stream) {
-    if (signal?.aborted) {
-      conversation.cancel();
-      break;
-    }
-    full += extractText(chunk.content);
-    onChunk(full);
+  if (signal?.aborted) throw abortError();
+
+  const state = conversationStates.get(conversation);
+  if (state?.generation) {
+    throw new Error("Conversation is busy. A generation is already in progress.");
   }
-  return full;
+
+  if (state) await compactConversationIfNeeded(state, message, signal);
+  if (signal?.aborted) throw abortError();
+  if (state?.generation) {
+    throw new Error("Conversation is busy. A generation is already in progress.");
+  }
+
+  const active = state?.active ?? conversation;
+  const generation = streamLiteRTMessage(active, message, onChunk, signal);
+  if (!state) return generation;
+
+  state.generation = generation.then(
+    () => undefined,
+    () => undefined,
+  );
+  try {
+    return await generation;
+  } finally {
+    state.generation = null;
+  }
+}
+
+/**
+ * LiteRT's streaming method has no AbortSignal parameter. Registering the
+ * listener before calling it closes the small race where navigation aborts
+ * between our initial check and generation start. Breaking the async iterator
+ * also invokes ReadableStream.cancel(), while Conversation.cancel() asks the
+ * WASM runtime to stop its current decode immediately.
+ */
+async function streamLiteRTMessage(
+  conversation: Conversation,
+  message: string,
+  onChunk: (text: string) => void,
+  signal?: AbortSignal,
+): Promise<string> {
+  let full = "";
+  let stream: ReadableStream<Message> | null = null;
+  const cancel = (): void => {
+    try {
+      conversation.cancel();
+    } catch {
+      // Cancellation is best effort; the iterator close below still runs.
+    }
+  };
+
+  if (signal?.aborted) throw abortError();
+  signal?.addEventListener("abort", cancel, { once: true });
+  try {
+    // Check once more after installing the listener. This prevents a signal
+    // firing in the gap above from allowing a new generation to begin.
+    if (signal?.aborted) {
+      cancel();
+      throw abortError();
+    }
+
+    stream = conversation.sendMessageStreaming(message);
+    if (signal?.aborted) cancel();
+
+    for await (const chunk of stream) {
+      if (signal?.aborted) {
+        cancel();
+        break;
+      }
+      full += extractText(chunk.content);
+      if (!signal?.aborted) onChunk(full);
+    }
+    return full;
+  } catch (err: unknown) {
+    // LiteRT may report cancellation as a stream error, depending on whether
+    // the WASM decode had yielded a chunk yet. Abort is still a successful
+    // user cancellation from this layer's perspective.
+    if (signal?.aborted) return full;
+    throw err;
+  } finally {
+    signal?.removeEventListener("abort", cancel);
+  }
+}
+
+function abortError(): DOMException {
+  return new DOMException("Generation aborted", "AbortError");
+}
+
+/**
+ * Bound the history held by LiteRT. The runtime exposes both token counting
+ * and history inspection, and permits a new conversation to be seeded with a
+ * preface, so we can preserve the system prompt, original grounded turn and
+ * the most recent follow-ups without allowing the WASM KV cache to grow
+ * forever.
+ */
+async function compactConversationIfNeeded(
+  state: ConversationState,
+  incomingMessage: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (state.compaction) return state.compaction;
+
+  const task = compactConversation(state, incomingMessage, signal);
+  state.compaction = task;
+  try {
+    await task;
+  } finally {
+    state.compaction = null;
+  }
+}
+
+async function compactConversation(
+  state: ConversationState,
+  incomingMessage: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (signal?.aborted) throw abortError();
+
+  let history: Message[];
+  let tokenCount: number;
+  try {
+    [history, tokenCount] = await Promise.all([
+      state.active.getHistory(),
+      state.active.getTokenCount(),
+    ]);
+  } catch (err: unknown) {
+    // History inspection is a lifecycle aid, not a reason to lose a usable
+    // conversation if a preview runtime cannot provide it on one device.
+    console.warn("[LiteRT] could not inspect conversation history", err);
+    return;
+  }
+
+  const turns = history.filter((item) => item.role !== "system");
+  const incomingTokens = Math.ceil(incomingMessage.length / 3.5) + 16;
+  if (
+    tokenCount + incomingTokens <= MAX_CONTEXT_TOKENS &&
+    turns.length <= MAX_RETAINED_MESSAGES
+  ) {
+    return;
+  }
+
+  const firstUserIndex = turns.findIndex((item) => item.role === "user");
+  if (firstUserIndex < 0) return;
+  const firstAssistantIndex = turns.findIndex(
+    (item, index) => index > firstUserIndex && isAssistantMessage(item),
+  );
+  const groundedTurnEnd =
+    firstAssistantIndex >= 0 ? firstAssistantIndex + 1 : firstUserIndex + 1;
+  const grounded = turns.slice(firstUserIndex, groundedTurnEnd);
+  let recent = turns.slice(-MAX_RETAINED_MESSAGES);
+  if (recent.length && recent[0] === grounded[grounded.length - 1]) {
+    recent = recent.slice(1);
+  }
+
+  // Try the largest safe turn-limited transcript first, then shorten it if
+  // the runtime's actual tokenizer says it still exceeds our budget.
+  while (true) {
+    if (signal?.aborted) throw abortError();
+    const replacement = await createConversationFromHistory(
+      state.systemPrompt,
+      [...grounded, ...recent],
+    );
+    if (!replacement) return;
+
+    let replacementTokens = Number.POSITIVE_INFINITY;
+    try {
+      replacementTokens = await replacement.getTokenCount();
+    } catch {
+      // If token inspection is unavailable, the explicit turn cap still
+      // bounds the conversation, so use the replacement.
+    }
+
+    if (
+      replacementTokens + incomingTokens <= MAX_CONTEXT_TOKENS ||
+      recent.length === 0
+    ) {
+      const old = state.active;
+      state.active = replacement;
+      try {
+        await old.delete();
+      } catch {
+        console.warn("[LiteRT] old conversation could not be deleted");
+      }
+      return;
+    }
+
+    try {
+      await replacement.delete();
+    } catch {
+      console.warn("[LiteRT] temporary conversation could not be deleted");
+    }
+    recent = recent.slice(1);
+  }
+}
+
+// LiteRT examples use model-facing responses as either "assistant" or
+// "model" depending on the model/template. Treat both as a completed reply
+// so the original grounded exchange survives compaction.
+function isAssistantMessage(message: Message): boolean {
+  return message.role === "assistant" || message.role === "model";
+}
+
+async function createConversationFromHistory(
+  systemPrompt: string,
+  turns: Message[],
+): Promise<Conversation | null> {
+  if (!engine) return null;
+  try {
+    return await engine.createConversation({
+      preface: {
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...turns,
+        ],
+      },
+    });
+  } catch (err: unknown) {
+    console.warn("[LiteRT] conversation rebuild failed", err);
+    return null;
+  }
 }
 
 /** A message's content may be a bare string or an array of typed parts, and

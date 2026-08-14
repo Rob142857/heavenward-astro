@@ -38,19 +38,24 @@ export function renderLocation(container: HTMLElement, ctx: AppContext): void {
   manualSection.textContent = t("location.manualEntry");
   container.appendChild(manualSection);
 
-  const form = document.createElement("div");
+  const form = document.createElement("form");
+  form.noValidate = false;
   form.style.display = "flex";
   form.style.flexDirection = "column";
   form.style.gap = "8px";
   form.innerHTML = `
-    <input class="input" type="number" id="lat" placeholder="${t("location.latitude")}" value="${ctx.location.lat}" step="0.01" min="-90" max="90">
-    <input class="input" type="number" id="lon" placeholder="${t("location.longitude")}" value="${ctx.location.lon}" step="0.01" min="-180" max="180">
-    <input class="input" type="number" id="elev" placeholder="${t("location.elevation")}" value="${ctx.location.elev}" step="1" min="0">
-    <button class="btn btn-outline btn-block" id="save-loc">${t("location.save")}</button>
+    <label class="ctrl-label" for="lat">${t("location.latitude")}</label>
+    <input class="input" type="number" id="lat" name="latitude" value="${ctx.location.lat}" step="0.01" min="-90" max="90" inputmode="decimal" required>
+    <label class="ctrl-label" for="lon">${t("location.longitude")}</label>
+    <input class="input" type="number" id="lon" name="longitude" value="${ctx.location.lon}" step="0.01" min="-180" max="180" inputmode="decimal" required>
+    <label class="ctrl-label" for="elev">${t("location.elevation")}</label>
+    <input class="input" type="number" id="elev" name="elevation" value="${ctx.location.elev}" step="1" min="-500" max="9000" inputmode="decimal">
+    <button type="submit" class="btn btn-outline btn-block" id="save-loc">${t("location.save")}</button>
   `;
   container.appendChild(form);
 
-  form.querySelector("#save-loc")!.addEventListener("click", () => {
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
     const lat = parseFloat(
       (form.querySelector("#lat") as HTMLInputElement).value,
     );

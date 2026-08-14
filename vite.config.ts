@@ -45,6 +45,14 @@ export default defineConfig({
     target: "es2022",
     rollupOptions: {
       input: resolve(__dirname, "index.html"),
+      output: {
+        // Content hashes normally make chunks immutable, but a custom-domain
+        // edge once cached the SPA's HTML fallback at a not-yet-propagated
+        // chunk URL. When that same content hash appeared in a later deploy,
+        // the poisoned HTML response survived for a year. Including the
+        // release id makes every deployment's lazy chunks a new namespace.
+        chunkFileNames: `assets/[name]-${APP_BUILD}-[hash].js`,
+      },
     },
   },
   plugins: [
@@ -101,6 +109,23 @@ export default defineConfig({
             options: {
               cacheName: "skyview-images",
               expiration: { maxEntries: 50, maxAgeSeconds: 86400 * 7 },
+            },
+          },
+          {
+            // LiteRT's ~30 MB WASM file is larger than Cloudflare Pages'
+            // per-file limit, so the package loads it from jsDelivr. Cache
+            // that versioned runtime after the first successful use; a user
+            // who already saved 2 GB of model weights should not lose Gemma
+            // merely because the CDN is unavailable on their next visit.
+            urlPattern:
+              /^https:\/\/cdn\.jsdelivr\.net\/npm\/@litert-lm\/core@.*\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "litert-runtime",
+              expiration: {
+                maxEntries: 8,
+                maxAgeSeconds: 86400 * 365,
+              },
             },
           },
         ],

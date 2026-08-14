@@ -91,6 +91,11 @@ export function initAnalytics(): void {
   window.addEventListener("hashchange", () => {
     recordPageview(window.location.hash || "#/");
   });
+  // Normal in-app navigation uses history.pushState(), which emits no native
+  // hashchange. router.ts publishes this event after updating the URL.
+  window.addEventListener("app:navigate", () => {
+    recordPageview(window.location.hash || "#/");
+  });
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {

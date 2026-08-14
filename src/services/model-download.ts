@@ -50,6 +50,8 @@ interface MetaRecord {
    *  sends neither header — treated as "no If-Range sent", identical to the
    *  original resume behaviour, so old partial downloads still resume. */
   validator?: string;
+  /** True once the complete blob has been written and verified locally. */
+  complete?: boolean;
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -114,47 +116,115 @@ function contentLengthTotal(
   return len > 0 ? startByte + len : null;
 }
 
+function parseContentRangeStart(header: string | null): number | null {
+  if (!header) return null;
+  const match = /^bytes\s+(\d+)-\d+\/(?:\d+|\*)$/i.exec(header.trim());
+  if (!match) return null;
+  const start = Number(match[1]);
+  return Number.isSafeInteger(start) ? start : null;
+}
+
+function isCompleteMeta(meta: MetaRecord): boolean {
+  if (meta.complete === true) return true;
+  return (
+    meta.totalBytes != null &&
+    Number.isFinite(meta.totalBytes) &&
+    meta.receivedBytes >= meta.totalBytes
+  );
+}
+
+/**
+ * Reads and validates the persisted chunks. A metadata record is not trusted
+ * on its own: a browser may evict an individual chunk, or a previous write
+ * may have been interrupted between the chunk and metadata transactions.
+ * Returning undefined makes the caller discard the record and start safely.
+ */
+async function readCachedChunks(
+  db: IDBDatabase,
+  url: string,
+  meta: MetaRecord,
+): Promise<Blob[] | undefined> {
+  if (
+    !Number.isSafeInteger(meta.receivedBytes) ||
+    meta.receivedBytes < 0 ||
+    !Number.isSafeInteger(meta.chunkCount) ||
+    meta.chunkCount < 0
+  ) {
+    return undefined;
+  }
+
+  const parts: Blob[] = [];
+  let bytes = 0;
+  for (let i = 0; i < meta.chunkCount; i++) {
+    const part = await idbGet<Blob>(db, CHUNK_STORE, chunkKey(url, i));
+    if (!(part instanceof Blob)) return undefined;
+    bytes += part.size;
+    if (!Number.isSafeInteger(bytes)) return undefined;
+    parts.push(part);
+  }
+
+  if (bytes !== meta.receivedBytes) return undefined;
+  if (meta.totalBytes != null && bytes > meta.totalBytes) return undefined;
+  if (meta.complete === true && meta.totalBytes != null && bytes !== meta.totalBytes) {
+    return undefined;
+  }
+  return parts;
+}
+
+async function deleteCachedDownload(
+  db: IDBDatabase,
+  url: string,
+  meta?: MetaRecord,
+): Promise<void> {
+  const chunkCount = meta?.chunkCount ?? 0;
+  for (let i = 0; i < chunkCount; i++) {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(CHUNK_STORE, "readwrite");
+      tx.objectStore(CHUNK_STORE).delete(chunkKey(url, i));
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error("IndexedDB delete failed"));
+      tx.onabort = () => reject(tx.error ?? new Error("IndexedDB delete aborted"));
+    });
+  }
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(META_STORE, "readwrite");
+    tx.objectStore(META_STORE).delete(url);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("IndexedDB metadata delete failed"));
+    tx.onabort = () => reject(tx.error ?? new Error("IndexedDB metadata delete aborted"));
+  });
+}
+
 async function readMeta(db: IDBDatabase, url: string): Promise<MetaRecord | undefined> {
   return idbGet<MetaRecord>(db, META_STORE, url);
 }
 
-/** Drops every trace of a download — used on completion and on reset. */
+/** Drops every trace of a download when a cached artifact must be reset. */
 export async function clearModelDownload(url: string): Promise<void> {
+  let db: IDBDatabase | undefined;
   try {
-    const db = await openDb();
+    db = await openDb();
     const meta = await readMeta(db, url);
-    if (meta) {
-      for (let i = 0; i < meta.chunkCount; i++) {
-        await new Promise<void>((resolve) => {
-          const tx = db.transaction(CHUNK_STORE, "readwrite");
-          tx.objectStore(CHUNK_STORE).delete(chunkKey(url, i));
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => resolve();
-        });
-      }
-    }
-    await new Promise<void>((resolve) => {
-      const tx = db.transaction(META_STORE, "readwrite");
-      tx.objectStore(META_STORE).delete(url);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => resolve();
-    });
-    db.close();
+    await deleteCachedDownload(db, url, meta);
   } catch {
     // Best effort — a failure to tidy up must never block a fresh download.
+  } finally {
+    db?.close();
   }
 }
 
 /** How much of this model is already on disk, for UI that wants to say
  *  "resume" rather than "download" before the user commits. */
 export async function getPartialBytes(url: string): Promise<number> {
+  let db: IDBDatabase | undefined;
   try {
-    const db = await openDb();
+    db = await openDb();
     const meta = await readMeta(db, url);
-    db.close();
-    return meta?.receivedBytes ?? 0;
+    return meta && !isCompleteMeta(meta) ? meta.receivedBytes : 0;
   } catch {
     return 0;
+  } finally {
+    db?.close();
   }
 }
 
@@ -179,182 +249,223 @@ export async function downloadModel(
    */
   expectedBytes?: number,
 ): Promise<Blob> {
-  const db = await openDb();
-  let meta = await readMeta(db, url);
+  let db: IDBDatabase | undefined;
+  try {
+    db = await openDb();
+    let meta = await readMeta(db, url);
+    let cachedChunks: Blob[] | undefined;
 
-  // A stale record whose chunks were evicted would resume from the wrong
-  // offset and produce a corrupt file, so treat a missing first chunk as no
-  // progress at all.
-  if (meta && meta.chunkCount > 0) {
-    const first = await idbGet<Blob>(db, CHUNK_STORE, chunkKey(url, 0));
-    if (!first) meta = undefined;
-  }
-
-  const startByte = meta?.receivedBytes ?? 0;
-  const resumed = startByte > 0;
-
-  // A resume already has most of its budget on disk; only a fresh download
-  // risks committing to a multi-gigabyte fetch the origin has no room to
-  // land. storage.estimate() is itself an estimate, so this only fires on a
-  // clear shortfall — never a close call — and it fires before any bytes
-  // move rather than after gigabytes of wasted transfer.
-  if (!resumed && expectedBytes) {
-    const estimate = await navigator.storage?.estimate?.();
-    if (
-      estimate?.quota != null &&
-      estimate?.usage != null &&
-      estimate.quota - estimate.usage < expectedBytes
-    ) {
-      db.close();
-      throw new DOMException("Not enough storage quota available for this download.", "QuotaExceededError");
-    }
-  }
-
-  // Always request a range, even from zero. Content-Length is not exposed to
-  // browser JS by HuggingFace, but Content-Range is — and it carries the total
-  // after the slash ("bytes 0-/2008432640"), which is the only way to get an
-  // exact size and therefore a truthful progress bar.
-  const headers: Record<string, string> = { Range: `bytes=${startByte}-` };
-  // Pin a resume to the exact file version the existing bytes came from. A
-  // server that ignores If-Range on a changed file answers 200 (whole file),
-  // which the serverHonouredRange===false branch below already treats as
-  // "discard and restart" — so this is enough to stop a file replacement
-  // from splicing old and new bytes into one corrupt blob.
-  if (resumed && meta?.validator) {
-    headers["If-Range"] = meta.validator;
-  }
-
-  const res = await fetch(url, { headers, signal });
-  if (!res.ok && res.status !== 206) {
-    db.close();
-    throw new Error(`Model download failed: HTTP ${res.status}`);
-  }
-
-  // A server that ignores Range answers 200 with the whole file; honouring
-  // that means discarding what we had rather than corrupting the result.
-  const serverHonouredRange = res.status === 206;
-  const effectiveStart = serverHonouredRange ? startByte : 0;
-  if (!serverHonouredRange && startByte > 0) {
-    await clearModelDownload(url);
-    meta = undefined;
-  }
-
-  const totalBytes =
-    parseContentRangeTotal(res.headers.get("Content-Range")) ??
-    contentLengthTotal(res.headers.get("Content-Length"), effectiveStart) ??
-    meta?.totalBytes ??
-    expectedBytes ??
-    null;
-
-  // Captured so a later resume can pin its Range request to this exact file
-  // version via If-Range above. ETag is preferred; Last-Modified is the
-  // fallback for hosts that omit it. Falls back to whatever was already
-  // stored so a response that happens to omit both headers doesn't erase a
-  // validator learned earlier in this same download.
-  const validator =
-    res.headers.get("ETag") ?? res.headers.get("Last-Modified") ?? meta?.validator ?? undefined;
-
-  let received = effectiveStart;
-  let chunkIndex = serverHonouredRange ? (meta?.chunkCount ?? 0) : 0;
-  let buffered: BlobPart[] = [];
-  let bufferedBytes = 0;
-
-  const flush = async (): Promise<void> => {
-    if (!bufferedBytes) return;
-    try {
-      await idbPut(db, CHUNK_STORE, chunkKey(url, chunkIndex), new Blob(buffered));
-    } catch (err) {
-      // A full origin storage quota surfaces here as a DOMException. Rethrow
-      // it exactly as IndexedDB threw it — llm.ts tells "disk is full" apart
-      // from a GPU fault by matching /quota/i on err.name/message, so this
-      // must never become a generic Error.
-      if (isQuotaExceededError(err)) {
-        console.warn(`[model-download] storage quota exceeded after ${received} bytes`);
+    if (meta) {
+      cachedChunks = await readCachedChunks(db, url, meta);
+      if (!cachedChunks) {
+        await deleteCachedDownload(db, url, meta);
+        meta = undefined;
       }
+    }
+
+    // A completed artifact is self-contained. Reassemble it directly from
+    // IndexedDB and do not issue a validation request: returning to the app
+    // must not trigger another multi-gigabyte HTTP transfer.
+    if (meta && cachedChunks && isCompleteMeta(meta)) {
+      const totalBytes = meta.totalBytes ?? meta.receivedBytes;
+      onProgress({
+        receivedBytes: meta.receivedBytes,
+        totalBytes,
+        fraction: totalBytes ? 1 : null,
+        resumed: true,
+      });
+      return new Blob(cachedChunks);
+    }
+
+    let startByte = meta?.receivedBytes ?? 0;
+    let resumed = startByte > 0;
+
+    // A resume already has most of its budget on disk; only a fresh download
+    // risks committing to a multi-gigabyte fetch the origin has no room to
+    // land. storage.estimate() is itself an estimate, so this only fires on a
+    // clear shortfall — never a close call — and it fires before any bytes
+    // move rather than after gigabytes of wasted transfer.
+    if (!resumed && expectedBytes) {
+      const estimate =
+        typeof navigator !== "undefined" ? await navigator.storage?.estimate?.() : undefined;
+      if (
+        estimate?.quota != null &&
+        estimate?.usage != null &&
+        estimate.quota - estimate.usage < expectedBytes
+      ) {
+        throw new DOMException("Not enough storage quota available for this download.", "QuotaExceededError");
+      }
+    }
+
+    // Retry a stale/incompatible range once from byte zero. This handles
+    // HTTP 416, malformed 206 Content-Range responses, and servers that
+    // changed the object between an interrupted attempt and its resume.
+    let resetAttempted = false;
+    let res: Response;
+    for (;;) {
+      const headers: Record<string, string> = { Range: `bytes=${startByte}-` };
+      if (startByte > 0 && meta?.validator) headers["If-Range"] = meta.validator;
+      res = await fetch(url, { headers, signal });
+
+      const rangeStart = parseContentRangeStart(res.headers.get("Content-Range"));
+      const invalidRange =
+        (res.status === 206 && rangeStart !== startByte) ||
+        (res.status === 416 && startByte > 0);
+      if (invalidRange && !resetAttempted) {
+        await deleteCachedDownload(db, url, meta);
+        meta = undefined;
+        cachedChunks = undefined;
+        startByte = 0;
+        resumed = false;
+        resetAttempted = true;
+        continue;
+      }
+      break;
+    }
+
+    if (!res.ok && res.status !== 206) {
+      throw new Error(`Model download failed: HTTP ${res.status}`);
+    }
+
+    // A server that ignores Range answers 200 with the whole file; discard
+    // the partial chunks before appending the response so old and new bytes
+    // can never be spliced together.
+    const serverHonouredRange = res.status === 206;
+    const effectiveStart = serverHonouredRange ? startByte : 0;
+    if (!serverHonouredRange && startByte > 0) {
+      await deleteCachedDownload(db, url, meta);
+      meta = undefined;
+      startByte = 0;
+      resumed = false;
+    }
+
+    let totalBytes =
+      parseContentRangeTotal(res.headers.get("Content-Range")) ??
+      contentLengthTotal(res.headers.get("Content-Length"), effectiveStart) ??
+      meta?.totalBytes ??
+      expectedBytes ??
+      null;
+
+    // Captured so a later resume can pin its Range request to this exact file
+    // version via If-Range above. ETag is preferred; Last-Modified is the
+    // fallback for hosts that omit it.
+    const validator =
+      res.headers.get("ETag") ?? res.headers.get("Last-Modified") ?? meta?.validator ?? undefined;
+
+    let received = effectiveStart;
+    let chunkIndex = serverHonouredRange ? (meta?.chunkCount ?? 0) : 0;
+    let buffered: BlobPart[] = [];
+    let bufferedBytes = 0;
+
+    const writeMeta = async (complete = false): Promise<void> => {
+      const record: MetaRecord = {
+        url,
+        totalBytes,
+        receivedBytes: received,
+        chunkCount: chunkIndex,
+        updatedAt: Date.now(),
+        validator,
+        complete,
+      };
+      await idbPut(db!, META_STORE, url, record);
+    };
+
+    const flush = async (): Promise<void> => {
+      if (!bufferedBytes) return;
+      try {
+        await idbPut(db!, CHUNK_STORE, chunkKey(url, chunkIndex), new Blob(buffered));
+      } catch (err) {
+        if (isQuotaExceededError(err)) {
+          console.warn(`[model-download] storage quota exceeded after ${received} bytes`);
+        }
+        throw err;
+      }
+      chunkIndex += 1;
+      buffered = [];
+      bufferedBytes = 0;
+      await writeMeta();
+    };
+
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error("Model download failed: response has no body");
+
+    onProgress({
+      receivedBytes: received,
+      totalBytes,
+      fraction: totalBytes ? received / totalBytes : null,
+      resumed,
+    });
+
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        // Bank the chunk BEFORE honouring an abort. Checking first would throw
+        // away bytes that had already arrived over the network, which is
+        // exactly the waste this whole module exists to prevent.
+        buffered.push(value);
+        bufferedBytes += value.byteLength;
+        received += value.byteLength;
+        if (signal?.aborted) {
+          await flush(); // keep what arrived so the next attempt resumes
+          throw new DOMException("Aborted", "AbortError");
+        }
+        if (bufferedBytes >= FLUSH_BYTES) await flush();
+        onProgress({
+          receivedBytes: received,
+          totalBytes,
+          fraction: totalBytes ? received / totalBytes : null,
+          resumed,
+        });
+      }
+      // When the server supplied no size, stream completion is the first
+      // trustworthy total. Set it before the final chunk metadata write so
+      // even a later completion-bit write failure leaves a record that can be
+      // recognised as complete on the next visit.
+      if (totalBytes == null) totalBytes = received;
+      await flush();
+    } catch (err) {
+      // Preserve any bytes already received in memory before rethrowing. This
+      // applies to network failures as well as AbortError: a short final
+      // buffer should not be lost merely because the reader failed before the
+      // normal flush threshold.
+      if (bufferedBytes) await flush();
       throw err;
     }
-    chunkIndex += 1;
-    buffered = [];
-    bufferedBytes = 0;
-    const record: MetaRecord = {
-      url,
-      totalBytes,
+    if (received !== totalBytes) {
+      throw new Error(`Model download incomplete: received ${received} of ${totalBytes} bytes`);
+    }
+    // If the final bytes exactly filled a flush boundary, flush() already
+    // persisted the chunks but not the completion bit. Mark completion in a
+    // separate metadata transaction so future visits can reconstruct locally.
+    await writeMeta(true);
+    onProgress({
       receivedBytes: received,
-      chunkCount: chunkIndex,
-      updatedAt: Date.now(),
-      validator,
-    };
-    await idbPut(db, META_STORE, url, record);
-  };
+      totalBytes,
+      fraction: totalBytes ? 1 : null,
+      resumed,
+    });
 
-  const reader = res.body?.getReader();
-  if (!reader) {
-    db.close();
-    throw new Error("Model download failed: response has no body");
-  }
-
-  onProgress({
-    receivedBytes: received,
-    totalBytes,
-    fraction: totalBytes ? received / totalBytes : null,
-    resumed,
-  });
-
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      // Bank the chunk BEFORE honouring an abort. Checking first would throw
-      // away bytes that had already arrived over the network, which is
-      // exactly the waste this whole module exists to prevent.
-      buffered.push(value);
-      bufferedBytes += value.byteLength;
-      received += value.byteLength;
-      if (signal?.aborted) {
-        await flush(); // keep what arrived so the next attempt resumes
-        throw new DOMException("Aborted", "AbortError");
+    // Reassemble. Blob parts are disk-backed in Chrome, so this does not pull
+    // the whole model into an ArrayBuffer.
+    const parts: Blob[] = [];
+    for (let i = 0; i < chunkIndex; i++) {
+      const part = await idbGet<Blob>(db, CHUNK_STORE, chunkKey(url, i));
+      if (!(part instanceof Blob)) {
+        await deleteCachedDownload(db, url, {
+          url,
+          totalBytes,
+          receivedBytes: received,
+          chunkCount: chunkIndex,
+          updatedAt: Date.now(),
+          validator,
+        });
+        throw new Error("Model download failed: cached chunk missing");
       }
-      if (bufferedBytes >= FLUSH_BYTES) await flush();
-      onProgress({
-        receivedBytes: received,
-        totalBytes,
-        fraction: totalBytes ? received / totalBytes : null,
-        resumed,
-      });
+      parts.push(part);
     }
-    await flush();
-  } catch (err) {
-    // reader.read() itself rejects with AbortError the instant the signal
-    // fires, which skips the polled check above (and the flush it guards) —
-    // up to FLUSH_BYTES of chunks already off the network would otherwise be
-    // discarded silently. Bank them before honouring the abort, same as the
-    // polled path does.
-    if (err instanceof DOMException && err.name === "AbortError") {
-      try {
-        await flush();
-      } catch (flushErr) {
-        // More actionable than the abort that triggered it — surface it
-        // unchanged instead of masking it with the AbortError.
-        db.close();
-        throw flushErr;
-      }
-    }
-    db.close();
-    throw err;
+    return new Blob(parts);
+  } finally {
+    db?.close();
   }
-
-  // Reassemble. Blob parts are disk-backed in Chrome, so this does not pull
-  // the whole model into memory.
-  const parts: Blob[] = [];
-  for (let i = 0; i < chunkIndex; i++) {
-    const part = await idbGet<Blob>(db, CHUNK_STORE, chunkKey(url, i));
-    if (!part) {
-      db.close();
-      await clearModelDownload(url);
-      throw new Error("Model download failed: cached chunk missing");
-    }
-    parts.push(part);
-  }
-  db.close();
-  return new Blob(parts);
 }

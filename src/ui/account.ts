@@ -42,12 +42,24 @@ function renderLoggedIn(container: HTMLElement, ctx: AppContext): void {
   const logoutBtn = document.createElement("button");
   logoutBtn.className = "btn btn-outline btn-block";
   logoutBtn.textContent = t("account.signOut");
+  const logoutStatus = document.createElement("p");
+  logoutStatus.className = "muted-prose llm-error";
+  logoutStatus.setAttribute("role", "status");
   logoutBtn.addEventListener("click", async () => {
-    await logout();
-    ctx.user = null;
-    renderAccount(container, ctx);
+    logoutBtn.disabled = true;
+    logoutStatus.textContent = "";
+    try {
+      const response = await logout();
+      if (!response.ok) throw new Error(response.error ?? "Logout failed");
+      ctx.user = null;
+      renderAccount(container, ctx);
+    } catch {
+      logoutStatus.textContent = t("account.signOutFailed");
+      logoutBtn.disabled = false;
+    }
   });
   container.appendChild(logoutBtn);
+  container.appendChild(logoutStatus);
 }
 
 function renderLoggedOut(container: HTMLElement, _ctx: AppContext): void {

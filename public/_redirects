@@ -1,2 +1,9 @@
 /favicon.ico /favicon.svg 302
-/about /index.html 200
+/about / 200
+/about/sources / 200
+/search / 200
+/location / 200
+/sources / 200
+/account / 200
+/observations / 200
+/detail/* / 200

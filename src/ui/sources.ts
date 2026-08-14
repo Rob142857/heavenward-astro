@@ -124,7 +124,7 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
         <button type="button" class="source-info-button" aria-label="${t("settings.dataSources.infoAriaLabel", { label: src.label })}">i</button>
       </div>
       <label class="toggle">
-        <input type="checkbox" ${prefs.enabledSources.includes(src.key) ? "checked" : ""} data-source="${src.key}">
+        <input type="checkbox" aria-label="${src.label}" ${prefs.enabledSources.includes(src.key) ? "checked" : ""} data-source="${src.key}">
         <span class="slider"></span>
       </label>
     `;
@@ -160,7 +160,7 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
   magRow.className = "toggle-row";
   magRow.innerHTML = `
     <span class="toggle-label">${t("settings.magnitudeLimit.label")}</span>
-    <input type="number" class="input" style="width:80px" value="${prefs.magnitudeLimit}" min="1" max="15" step="0.5">
+    <input type="number" class="input" aria-label="${t("settings.magnitudeLimit.label")}" style="width:80px" value="${prefs.magnitudeLimit}" min="1" max="15" step="0.5">
   `;
   const magInput = magRow.querySelector("input")!;
   magInput.addEventListener("change", () => {
