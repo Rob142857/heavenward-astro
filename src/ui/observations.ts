@@ -11,6 +11,7 @@ import {
   type SavedObservationSummary,
 } from "../services/observations.js";
 import { navigate } from "./router.js";
+import { trackInsight } from "../services/analytics.js";
 
 const observationRenderVersions = new WeakMap<HTMLElement, number>();
 
@@ -117,15 +118,19 @@ export function openObservationsModal(ctx: AppContext): void {
   modal.querySelector("[data-copy]")?.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(preview.textContent ?? "");
+      trackInsight("observation_copy");
       status.textContent = t("observations.copiedStatus");
     } catch {
+      trackInsight("observation_copy_error");
       status.textContent = t("observations.copyFailedStatus");
     }
   });
 
   modal.querySelector("[data-save]")?.addEventListener("click", async () => {
+    trackInsight("observation_save_start");
     status.textContent = t("observations.savingStatus");
     const result = await saveSessionToAccount(session!);
+    trackInsight(result.ok ? "observation_save_success" : "observation_save_error");
     status.textContent = result.ok
       ? t("observations.savedStatus")
       : result.error

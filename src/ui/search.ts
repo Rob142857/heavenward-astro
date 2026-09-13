@@ -4,7 +4,7 @@ import { loadStarCatalog, type StarEntry } from "../catalog/stars.js";
 import { METEOR_SHOWERS } from "../catalog/meteors.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
-import { trackEvent } from "../services/analytics.js";
+import { trackEvent, trackInsight } from "../services/analytics.js";
 import { t, detectLocale } from "../i18n/translations.js";
 import type { Locale } from "../i18n/translations.js";
 import {
@@ -378,6 +378,9 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
   }
 
   let queryToken = 0;
+  let searchObserved = false;
+  let resultsObserved = false;
+  let emptyObserved = false;
   async function refresh(): Promise<void> {
     paintField();
     paintPalette();
@@ -390,10 +393,12 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
     }
 
     let entries: SearchEntry[];
+    if (!searchObserved) { searchObserved = true; trackInsight("search_start"); }
     try {
       entries = await buildIndex();
     } catch {
       if (myToken !== queryToken || !page.isConnected) return;
+      trackInsight("search_error");
       results.innerHTML = "";
       const message = document.createElement("p");
       message.className = "search-empty";
@@ -441,6 +446,9 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
     }
 
     paintResults(matches);
+    // One outcome of each kind per search-screen visit; never every keystroke.
+    if (matches.length && !resultsObserved) { resultsObserved = true; trackInsight("search_results"); }
+    if (!matches.length && !emptyObserved) { emptyObserved = true; trackInsight("search_empty"); }
   }
 
   function paintResults(matches: SearchEntry[]): void {

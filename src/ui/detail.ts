@@ -38,6 +38,7 @@ import type { SkyConversation } from "../services/llm.js";
 import { navigate } from "./router.js";
 import { SORT_OPTIONS } from "./filterOptions.js";
 import { savePrefs } from "../services/prefs.js";
+import { trackInsight } from "../services/analytics.js";
 import { recordObservation } from "../services/observations.js";
 import { t, detectLocale } from "../i18n/translations.js";
 import { mythologySummary } from "../catalog/mythology.js";
@@ -1506,6 +1507,7 @@ function appendLLMSection(
         answer.classList.remove("llm-generating");
         answer.setAttribute("aria-busy", "false");
         skyChat = chat;
+        trackInsight(chat.opening ? "guide_result" : "guide_error");
         if (!chat.opening) {
           answer.textContent = t("detail.emptyResponse");
         } else {
@@ -1520,6 +1522,7 @@ function appendLLMSection(
           answer.setAttribute("aria-busy", "false");
           const msg = err instanceof Error ? err.message : String(err);
           console.error("[LLM generate]", err);
+          trackInsight("guide_error");
           answer.textContent = t("detail.generateError", {
             msg,
             diagnostics: formatLLMDiagnostics(),
@@ -1553,6 +1556,7 @@ function appendLLMSection(
       .catch((err: unknown) => {
         if (abort.signal.aborted) return;
         console.error("[AI Sky Guide] Could not build context", err);
+        trackInsight("guide_error");
         progress.style.display = "none";
         fill.classList.remove("indeterminate");
         progressBar.removeAttribute("aria-valuetext");
@@ -1575,6 +1579,7 @@ function appendLLMSection(
     downloadSignal: AbortSignal | undefined,
     focusProgress: boolean,
   ): void => {
+    trackInsight("model_load_start");
     progress.style.display = "block";
     if (focusProgress) progress.focus({ preventScroll: true });
 
@@ -1607,6 +1612,7 @@ function appendLLMSection(
     }, downloadSignal)
       .then((ok) => {
         if (abort.signal.aborted) return;
+        trackInsight(ok ? "model_load_success" : "model_load_error");
         progress.style.display = "none";
         fill.classList.remove("indeterminate");
         progressBar.removeAttribute("aria-valuetext");
@@ -1629,6 +1635,7 @@ function appendLLMSection(
       .catch((err: unknown) => {
         if (abort.signal.aborted) return;
         console.error("[AI Sky Guide] Model load failed", err);
+        trackInsight("model_load_error");
         progress.style.display = "none";
         fill.classList.remove("indeterminate");
         progressBar.removeAttribute("aria-valuetext");
@@ -1647,6 +1654,7 @@ function appendLLMSection(
     e.preventDefault();
     const question = followupInput.value.trim();
     if (!question || !skyChat) return;
+    trackInsight("guide_followup_start");
 
     followupInput.value = "";
     followupInput.disabled = true;
@@ -1671,6 +1679,7 @@ function appendLLMSection(
       )
       .then((text) => {
         if (abort.signal.aborted) return;
+        trackInsight(text ? "guide_followup_result" : "guide_followup_error");
         answer.classList.remove("llm-generating");
         answer.setAttribute("aria-busy", "false");
         if (!text) answer.textContent = t("detail.emptyResponse");
@@ -1681,6 +1690,7 @@ function appendLLMSection(
           answer.setAttribute("aria-busy", "false");
           const msg = err instanceof Error ? err.message : String(err);
           console.error("[LLM follow-up]", err);
+          trackInsight("guide_followup_error");
           answer.textContent = t("detail.generateError", {
             msg,
             diagnostics: formatLLMDiagnostics(),
@@ -1710,6 +1720,7 @@ function appendLLMSection(
     // a failure that redisplays this button (see startLoadThenGenerate's
     // !ok path), and it needs a listener already in place when that happens.
     btn.addEventListener("click", () => {
+      trackInsight("guide_start");
       btn.style.display = "none";
       // A retry after a failed load/generation starts clean — old error
       // text and a stale failed answer turn would otherwise sit above the

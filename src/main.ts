@@ -20,7 +20,7 @@ import { renderAccount, tryLoadUser } from "./ui/account.js";
 import { renderAbout } from "./ui/about.js";
 import { renderObservations } from "./ui/observations.js";
 import { renderSearch } from "./ui/search.js";
-import { initAnalytics } from "./services/analytics.js";
+import { initAnalytics, trackInsight } from "./services/analytics.js";
 import { initPWA } from "./services/pwa.js";
 import { isSocialInAppBrowser } from "./services/browser.js";
 import { initI18n } from "./i18n/i18n.js";
@@ -118,6 +118,7 @@ async function boot(): Promise<void> {
   });
 
   startRouter();
+  trackInsight("app_ready");
 
   // Request GPS with timeout for better UX
   if (!savedLocation && !isSocialInAppBrowser()) {

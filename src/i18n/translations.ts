@@ -404,6 +404,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"about.sources.intro": "Everything you see in Heavenward is real observation. Each catalog below is a reservoir of meticulous measurement — orbits refined over centuries, positions taken plate by plate and frame by frame, brightnesses logged on cold nights at the eyepiece and across modern surveys. Heavenward is the front end; these are its substance.",
 		"about.privacy.heading": "Privacy",
 		"about.privacy.description": "Every astronomical calculation happens on your device. Ephemeris, rise and set times, visibility — all of it runs in your browser, and <strong>your precise coordinates are never sent anywhere</strong>, even when you are signed in. There is exactly one exception, and we would rather name it than hide it: when you save an observation, your position is first rounded to roughly 11 km and only then sent to a geocoding service, purely so the entry can say where you were watching from. A figure that coarse can name your town; it cannot find your house. The AI sky guide also runs entirely in your browser via WebGPU — no cloud, no tracking.",
+
+		"about.analytics.description": "Cloudflare records content-free usage categories to improve this hosted app. Analytics contains no coordinates, observation notes, search text, AI prompts, account identity or full URLs. Random tab sessions expire after 30 minutes of measured inactivity; journey events are retained for 30 days. Do Not Track and Global Privacy Control are respected. Existing Cloudflare Web Analytics measures browser performance.",
 		"about.license.heading": "Source &amp; License",
 		"about.license.description": "Heavenward is open source under the {apacheLink}. The source code is available on {githubLink}. Contributions, bug reports, and feature ideas are welcome.",
 		"about.license.apacheLinkText": "Apache 2.0 License",
@@ -859,6 +861,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"about.sources.intro": "Tout ce que vous voyez dans Heavenward est une observation réelle. Chaque catalogue ci-dessous est un réservoir de mesures méticuleuses — orbites affinées au fil des siècles, positions prises plaque par plaque et image par image, luminosités consignées lors de nuits froides à l'oculaire et par les relevés modernes. Heavenward n'est que la façade ; voici sa substance.",
 		"about.privacy.heading": "Confidentialité",
 		"about.privacy.description": "Tous les calculs astronomiques se font sur votre appareil. Éphémérides, heures de lever et de coucher, visibilité — tout s'exécute dans votre navigateur, et <strong>vos coordonnées précises ne sont jamais transmises</strong>, même lorsque vous êtes connecté. Il existe exactement une exception, et nous préférons la nommer plutôt que la dissimuler : lorsque vous enregistrez une observation, votre position est d'abord arrondie à environ 11 km, puis seulement envoyée à un service de géocodage, uniquement pour que la note indique d'où vous observiez. Une valeur aussi grossière peut nommer votre ville ; elle ne peut pas trouver votre maison. Le guide du ciel par IA fonctionne lui aussi entièrement dans votre navigateur via WebGPU — pas de cloud, pas de suivi.",
+
+		"about.analytics.description": "Cloudflare enregistre des catégories d’utilisation sans contenu pour améliorer cette application hébergée. Les statistiques ne contiennent ni coordonnées, notes d’observation, recherches, prompts IA, identité du compte, ni URL complètes. Les sessions aléatoires par onglet expirent après 30 minutes d’inactivité mesurée ; les événements sont conservés 30 jours. Do Not Track et Global Privacy Control sont respectés. Cloudflare Web Analytics mesure les performances du navigateur.",
 		"about.license.heading": "Code source &amp; licence",
 		"about.license.description": "Heavenward est open source sous la {apacheLink}. Le code source est disponible sur {githubLink}. Contributions, rapports de bogues et idées de fonctionnalités sont les bienvenus.",
 		"about.license.apacheLinkText": "licence Apache 2.0",
@@ -1314,6 +1318,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"about.sources.intro": "Heavenwardで目にするものはすべて実際の観測データです。以下の各カタログは、何世紀にもわたって精緻化された軌道、乾板や画像1枚ずつ記録された位置、寒い夜の接眼レンズ越しや現代のサーベイで記録された明るさなど、緻密な測定の集積です。Heavenwardはその表側にすぎず、これらがその中身です。",
 		"about.privacy.heading": "プライバシー",
 		"about.privacy.description": "天文計算はすべてお使いの端末上で行われます。暦計算、出没時刻、可視性 — いずれもブラウザ内で完結し、サインインしていても<strong>正確な座標が送信されることはありません</strong>。例外はひとつだけで、隠さずに明記します。観測記録を保存すると、まず位置情報が約11kmの精度に丸められ、そのうえで地名を取得するためだけにジオコーディングサービスへ送信されます。この粗さでは町の名前はわかっても、住まいを特定することはできません。AI空ガイドもWebGPUを使ってブラウザ内で完全に動作します — クラウドも追跡もありません。",
+
+		"about.analytics.description": "このホスト版アプリの改善のため、Cloudflareに操作の種類を記録します。座標、観測メモ、検索語、AIへの入力、アカウント情報、完全なURLは解析に含めません。タブごとのランダムなセッションは、計測対象の操作が30分間ないと期限切れになり、操作イベントは30日間保持されます。Do Not TrackとGlobal Privacy Controlに対応しています。既存のCloudflare Web Analyticsはブラウザの性能を計測します。",
 		"about.license.heading": "ソースコードとライセンス",
 		"about.license.description": "Heavenwardは{apacheLink}のもとで公開されているオープンソースソフトウェアです。ソースコードは{githubLink}で公開されています。コントリビューション、バグ報告、機能アイデアを歓迎します。",
 		"about.license.apacheLinkText": "Apache 2.0ライセンス",
@@ -1769,6 +1775,8 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"about.sources.intro": "你在Heavenward中看到的一切都是真实观测数据。下面每个星表都凝聚着严谨的测量成果——历经数世纪不断精修的轨道，逐张底片、逐帧影像记录下的位置，以及在寒夜目镜前和现代巡天中记录下的亮度。Heavenward只是前端界面，这些才是它的根基。",
 		"about.privacy.heading": "隐私",
 		"about.privacy.description": "所有天文计算都在你的设备上完成。历表、升落时间、可见性——全部在浏览器内运行，即使你已登录，<strong>你的精确坐标也绝不会被发送出去</strong>。只有一个例外，我们宁愿说明也不愿隐瞒：当你保存一条观测记录时，你的位置会先被粗化到约11公里精度，然后才发送给地理编码服务，仅用于标注你当时的观测地点。这样粗的精度足以说出城镇名称，却无法定位到你的住所。AI观星向导同样完全通过WebGPU在你的浏览器中运行——没有云端处理，没有追踪。",
+
+		"about.analytics.description": "为改进此托管应用，Cloudflare记录不含内容的使用类别。分析不包含坐标、观测笔记、搜索文本、AI提示词、账户身份或完整网址。每个标签页的随机会话在30分钟无计量操作后过期，操作事件保留30天。我们尊重Do Not Track和Global Privacy Control。现有Cloudflare Web Analytics用于测量浏览器性能。",
 		"about.license.heading": "源代码与许可协议",
 		"about.license.description": "Heavenward是基于{apacheLink}开源发布的。源代码托管于{githubLink}。欢迎贡献代码、提交问题反馈和功能建议。",
 		"about.license.apacheLinkText": "Apache 2.0许可协议",

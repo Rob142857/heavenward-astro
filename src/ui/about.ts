@@ -90,6 +90,7 @@ export function renderAbout(
       <p class="about-prose">
         ${t("about.privacy.description")}
       </p>
+      <p class="about-prose">${t("about.analytics.description")}</p>
     </div>
 
     <div class="about-section">
