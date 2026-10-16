@@ -3,6 +3,7 @@ import { requestGPS, saveLocation } from "../services/geolocation.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
 import { t } from "../i18n/translations.js";
+import { trackInsight } from "../services/analytics.js";
 
 export function renderLocation(container: HTMLElement, ctx: AppContext): void {
   container.innerHTML = "";
@@ -75,6 +76,7 @@ export function renderLocation(container: HTMLElement, ctx: AppContext): void {
       return;
     const loc = { lat, lon, elev };
     saveLocation(loc);
+    trackInsight("location_manual_save");
     ctx.location = loc;
     navigate("#/");
   });

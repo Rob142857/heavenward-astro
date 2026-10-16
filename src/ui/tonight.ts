@@ -17,7 +17,7 @@ import { loadStarCatalog } from "../catalog/stars.js";
 import { METEOR_SHOWERS } from "../catalog/meteors.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
-import { trackEvent } from "../services/analytics.js";
+import { trackEvent, trackInsight } from "../services/analytics.js";
 import { savePrefs } from "../services/prefs.js";
 import { fetchAuroraStatus, type AuroraStatus } from "../services/aurora.js";
 import {
@@ -242,8 +242,10 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
         }
       }
     }
+    trackInsight("sky_report_ready");
   }).catch(() => {
     if (!routeIsStillCurrent()) return;
+    trackInsight("sky_report_error");
     cardsHolder.innerHTML = "";
     const message = document.createElement("p");
     message.className = "muted-prose";

@@ -1,4 +1,5 @@
 import type { GeoLocation } from "../types.js";
+import { trackInsight } from "./analytics.js";
 
 const STORAGE_KEY = "heavenward-location";
 
@@ -48,9 +49,11 @@ export function saveLocation(loc: GeoLocation): void {
 }
 
 export function requestGPS(): Promise<GeoLocation> {
+  trackInsight("gps_start");
   const revisionAtRequest = locationRevision;
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
+      trackInsight("gps_error");
       reject(new Error("Geolocation not supported"));
       return;
     }
@@ -65,13 +68,15 @@ export function requestGPS(): Promise<GeoLocation> {
           // Another accepted choice won while the browser was locating. In
           // practice this is usually the manual form, and explicit input must
           // outrank an older background request.
+          trackInsight("gps_success");
           resolve(getSavedLocation() ?? loc);
           return;
         }
         saveLocation(loc);
+        trackInsight("gps_success");
         resolve(loc);
       },
-      (err) => reject(new Error(err.message)),
+      (err) => { trackInsight("gps_error"); reject(new Error(err.message)); },
       { enableHighAccuracy: false, timeout: 10_000 },
     );
   });
