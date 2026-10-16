@@ -33,11 +33,11 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@cloudflare/workers-types": "^4.20260509.1",
-    "@hono/node-server": "^2.0.2",
+    "@hono/node-server": "^2.0.10",
     "@litert-lm/core": "^0.15.0",
     "@mlc-ai/web-llm": "^0.2.83",
     "astronomy-engine": "^2.1.19",
-    "hono": "^4.12.18",
+    "hono": "^4.13.7",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
     "vite-plugin-pwa": "^1.3.0",
@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.6.2",
-    "sharp": "^0.34.5"
+    "sharp": "^0.35.5"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
