@@ -218,6 +218,8 @@ function sourceIcon(key: string): string {
       return "☄️";
     case "celestrak-satellites":
       return "🛰️";
+    case "weather":
+      return "☁️";
     case "images":
       return "🔭";
     case "webllm":

@@ -384,6 +384,33 @@ export const CATALOG_PROVENANCE: CatalogProvenance[] = [
       "Thank you to NOAA SWPC and the OVATION Prime authors for keeping our sense of the geomagnetic sky public and free.",
   },
   {
+    key: "weather",
+    label: "Cloud Forecast",
+    icon: "cloud",
+    status: "active",
+    kind: "runtime",
+    // Not a Tonight source toggle: it only scores and shades, never adds objects.
+    enabledSource: false,
+    summary:
+      "Hourly low, mid and high cloud and visibility for tonight, for a 0.1\u00b0 (about 11 km) grid square around you. Heavenward's own server asks Open-Meteo once per square per hour and caches the answer; it logs no location. Shown in \u201cIs it clear?\u201d on Tonight, in the cloud part of Tonight's Best scores, and as shading on the altitude chart.",
+    maintainer: "Open-Meteo.com",
+    primaryUrl: "https://open-meteo.com/",
+    license: "CC BY 4.0 (free non-commercial API)",
+    output: "Pages Function /api/weather (functions/weather/core.ts); client src/services/weather.ts",
+    importJob: null,
+    upstreams: [
+      {
+        name: "Open-Meteo Forecast API",
+        url: "https://open-meteo.com/en/docs",
+        maintainer: "Open-Meteo.com, from national weather services' models",
+        license: "CC BY 4.0",
+        role: "Hourly cloud_cover_low, cloud_cover_mid, cloud_cover_high, cloud_cover and visibility for two days.",
+      },
+    ],
+    gratitude:
+      "Weather data by Open-Meteo.com. Thank you for keeping a good forecast free for non-commercial projects like this one.",
+  },
+  {
     key: "images",
     label: "Sky Images and Survey Plates",
     icon: "image",

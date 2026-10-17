@@ -18,6 +18,7 @@ Heavenward answers the question every stargazer asks at dusk: _what's up there r
 
 - **Tonight view** — everything above (and below) your horizon, sorted by brightness, altitude, or angular size
 - **Twilight bar** — sunset → civil/nautical/astronomical dusk → dark sky hours → dawn → sunrise, collapsible
+- **Is it clear?** — hourly low, mid and high cloud for tonight's dark hours ([Open-Meteo](https://open-meteo.com/), CC BY 4.0). The same forecast feeds the cloud part of Tonight's Best's score and shades the altitude chart on object pages. Offline or on any failure the app works exactly as without it
 - **Planets** — Mercury through Neptune with rise/set/transit, magnitude, phase, distance, constellation
 - **Moon** — illumination, phase, libration, distance, next quarters
 - **Deep-sky objects** — hundreds of galaxies, nebulae, and clusters from the Messier, Caldwell, and NGC/IC catalogs, with surface brightness, imaging notes, and morphology
@@ -95,7 +96,7 @@ The mobile suite runs offline with a frozen clock (20:30 AEDT, 18 Oct 2026), an 
 
 ## How it works
 
-All astronomy computation runs **client-side** — the server never sees your coordinates or computes any ephemeris. The Cloudflare Workers API handles authentication, user preferences, and API key management only.
+All astronomy computation runs **client-side** — the server never computes any ephemeris and never sees your precise coordinates. The Cloudflare Workers API handles authentication, user preferences, API key management, and one public route: `GET /api/weather?lat=..&lon=..`. The browser sends that route a position already rounded to 0.1° (about 11 km); the Function rounds again, fetches Open-Meteo's hourly cloud cover by level and visibility for that grid cell, and keeps it in the Cloudflare Cache API for the rest of the hour, so Open-Meteo sees at most one call per cell per hour. It logs no location and answers 502 JSON if Open-Meteo fails. Logic and tests: `functions/weather/core.ts`, `src/engine/cloud.ts`, `test/weather.test.ts`, `test/cloud.test.ts`.
 
 Every astronomical object maps to a universal `CelestialEvent` shape with an `extra: Record<string, unknown>` field for source-specific metadata. Engine functions are pure: `(GeoLocation, Date) → typed result`. No classes unless stateful. No `any`.
 
@@ -160,6 +161,10 @@ Heavenward draws on the same public, open-science datasets that power [Stellariu
 
 - **IAU constellations** with the 1928 Delporte boundaries — official partition of the sky used by Stellarium's modern Western sky culture
 
+### Weather
+
+- **[Open-Meteo](https://open-meteo.com/)** (CC BY 4.0, free non-commercial API) — hourly cloud cover (low, mid, high, total) and visibility for tonight. "Weather data by Open-Meteo.com" is shown next to the forecast and on About. Heavenward is non-commercial, so the free tier applies.
+
 ### Imagery & commentary
 
 - **[NASA SkyView](https://skyview.gsfc.nasa.gov/)** — DSS2 Red survey plate fallback images on detail pages
@@ -171,7 +176,7 @@ See [`src/catalog/provenance.ts`](src/catalog/provenance.ts) for the canonical m
 
 ## Privacy
 
-Your GPS location is used only for calculations and **never leaves your device**. All computation runs client-side. The optional AI model also runs entirely in your browser via WebGPU — no cloud, no tracking.
+Your precise GPS location is used only for calculations and **never leaves your device**. All computation runs client-side. Two features send a coarse position (rounded to about 11 km): saving an observation (for a place name) and tonight's cloud forecast, which goes through Heavenward's own `/api/weather` Function to Open-Meteo and logs no location. The optional AI model also runs entirely in your browser via WebGPU — no cloud, no tracking.
 
 ## Deploy your own
 

@@ -28,3 +28,14 @@ Use: Heavenward is a non-commercial project (confirmed by the owner, 18 Oct
 2026). Data sources whose terms allow non-commercial use only may therefore
 be added, each attributed here and on the About page with its licence. None
 is bundled as of v1.1.0.
+
+Weather data (fetched at runtime, not bundled)
+----------------------------------------------
+Weather data by Open-Meteo.com (https://open-meteo.com/), licensed under
+Creative Commons Attribution 4.0 International (CC BY 4.0,
+https://creativecommons.org/licenses/by/4.0/). Used from v1.4.0 through
+Open-Meteo's free non-commercial API for the cloud forecast: "Is it clear?"
+on Tonight, the cloud part of Tonight's Best scores, and the altitude chart
+background. The Pages Function /api/weather fetches hourly cloud cover by
+level and visibility for a 0.1 degree grid cell and caches it for up to an
+hour. Attribution is shown next to the forecast and on the About page.
