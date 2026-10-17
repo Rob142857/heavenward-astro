@@ -2787,8 +2787,8 @@ body.search-typing .nav {
 .search-chip-suggest {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 4px;
+  padding: 8px 10px;
   min-height: 44px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2807,8 +2807,13 @@ body.search-typing .nav {
   display: none;
 }
 .search-chip-more {
+  min-width: 44px;
+  justify-content: center;
+  padding: 0;
   color: var(--text-muted, #9aa3b8);
   border-style: dashed;
+  font-size: 1.2rem;
+  line-height: 1;
 }
 .search-chip-suggest.active {
   background: rgba(79, 195, 247, 0.15);

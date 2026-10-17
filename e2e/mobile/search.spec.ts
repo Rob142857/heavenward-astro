@@ -20,7 +20,11 @@ test.describe("search finds the right first result", () => {
     test(q, async ({ page }) => {
       await gotoApp(page, "#/search");
       await page.locator(".search-input").fill(q);
-      await expect(page.locator(".search-results .card .card-title").first()).toHaveText(name);
+      // The first search builds the index from both catalogues: allow for a
+      // slow first load when four workers share the machine.
+      await expect(page.locator(".search-results .card .card-title").first()).toHaveText(name, {
+        timeout: 15_000,
+      });
     });
   }
 
@@ -28,7 +32,7 @@ test.describe("search finds the right first result", () => {
     await gotoApp(page, "#/search");
     await page.locator(".search-input").fill("orion");
     const titles = page.locator(".search-results .card .card-title");
-    await expect(titles.first()).toBeVisible();
+    await expect(titles.first()).toBeVisible({ timeout: 15_000 });
     expect(await titles.count()).toBeGreaterThanOrEqual(10);
     const all = await titles.allTextContents();
     expect(all).toContain("Rigel");

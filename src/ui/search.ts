@@ -211,6 +211,11 @@ interface SearchState {
 const RESULT_LIMIT = 50;
 
 export function renderSearch(container: HTMLElement, ctx: AppContext): void {
+  // A re-render while typing (e.g. a late GPS fix re-routes) must not drop
+  // the keyboard: the query survives via the URL, the focus is restored below.
+  const wasTyping =
+    document.activeElement instanceof HTMLInputElement &&
+    document.activeElement.classList.contains("search-input");
   container.innerHTML = "";
   renderHeader(container, ctx);
   renderNav("#/search");
@@ -363,9 +368,12 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
         btn.setAttribute("aria-pressed", active ? "true" : "false");
         btn.hidden = Boolean(btn.dataset.more) && !showAllChips && !active;
       });
-    moreBtn.textContent = showAllChips
-      ? t("search.fewerFilters")
-      : t("search.moreFilters");
+    // A compact "+" so the three quick chips and this toggle fit one row
+    // on a 360 px phone; the label is for screen readers and tooltips.
+    const label = showAllChips ? t("search.fewerFilters") : t("search.moreFilters");
+    moreBtn.textContent = showAllChips ? "−" : "+";
+    moreBtn.setAttribute("aria-label", label);
+    moreBtn.title = label;
     moreBtn.setAttribute("aria-expanded", showAllChips ? "true" : "false");
   }
 
@@ -467,7 +475,10 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
   void refresh();
   // Focus only where it costs nothing: a mouse-and-keyboard screen with an
   // empty box. On touch screens the user taps the field when they want it.
-  if (!state.query && window.matchMedia?.("(pointer: fine)").matches) {
+  if (wasTyping) {
+    input.focus({ preventScroll: true });
+    input.setSelectionRange(input.value.length, input.value.length);
+  } else if (!state.query && window.matchMedia?.("(pointer: fine)").matches) {
     input.focus({ preventScroll: true });
   }
 }
