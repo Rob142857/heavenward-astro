@@ -102,8 +102,10 @@ export function renderTonightsBest(
     loadCandidates()
       .then((cands) => {
         if (mine !== run || !section.isConnected) return;
-        // Let the chip/select state paint before the (short) ranking pass.
-        requestAnimationFrame(() => {
+        // Yield a task so the chip/select state can paint before the short
+        // ranking pass. Not requestAnimationFrame: it never fires in a
+        // background tab, which left the list on "Working out…".
+        setTimeout(() => {
           if (mine !== run || !section.isConnected) return;
           const opts = { equipment: equipmentOf(ctx), groups: groupsOf(ctx), minAlt: MIN_ALT };
           const key = [
@@ -117,7 +119,7 @@ export function renderTonightsBest(
             cache?.key === key ? cache.result : rankTonightsBest(cands, ctx.location, now, opts);
           cache = { key, result };
           paintRows(list, status, when, result, opts, zone);
-        });
+        }, 0);
       })
       .catch(() => {
         if (mine !== run || !section.isConnected) return;

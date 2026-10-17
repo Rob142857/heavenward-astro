@@ -255,16 +255,17 @@ function trackNavHeight(nav: HTMLElement): void {
     if (next) root.style.setProperty("--nav-h", next);
     else root.style.removeProperty("--nav-h");
   };
-  // Write on the next frame, never inside the observer callback: changing
-  // layout there trips WebKit's "ResizeObserver loop" error.
+  // Write in a later task, never inside the observer callback: changing
+  // layout there trips WebKit's "ResizeObserver loop" error. (Not
+  // requestAnimationFrame, which never fires in a background tab.)
   let queued = false;
   const schedule = (): void => {
     if (queued) return;
     queued = true;
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       queued = false;
       apply();
-    });
+    }, 0);
   };
   apply();
   if (typeof ResizeObserver !== "undefined") new ResizeObserver(schedule).observe(nav);
