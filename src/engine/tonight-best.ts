@@ -544,6 +544,9 @@ function refine(
 
 // ── "Why" line ───────────────────────────────────────────────────────
 
+/** The why line says "well clear of the Moon" only from this far away. */
+export const MOON_CLEAR_DEG = 45;
+
 export interface WhyPart {
   key: string;
   params?: Record<string, string | number>;
@@ -563,7 +566,9 @@ export function whyParts(row: BestRow, opts: Pick<BestOptions, "minAlt" | "equip
   if (row.cand.group !== "planets") {
     const illum = Math.round(row.moonIllum * 100);
     if (row.moonUpFraction === 0 || row.moonMinSep === null) out.push({ key: "best.why.moonDown" });
-    else if (row.parts.moon < 0.75)
+    // "Well clear" is about distance, not the penalty: a double star barely
+    // minds the Moon, but 15° away is still not "well clear".
+    else if (row.parts.moon < 0.75 || row.moonMinSep < MOON_CLEAR_DEG)
       out.push({ key: "best.why.moonClose", params: { illum, sep: Math.round(row.moonMinSep) } });
     else out.push({ key: "best.why.moonFar", params: { sep: Math.round(row.moonMinSep) } });
   }

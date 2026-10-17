@@ -225,6 +225,16 @@ test("why line starts with the dark hours and mentions the Moon", () => {
   assert.equal(whyParts(moonRow, { minAlt: 30, equipment: "binoculars" })[0].key, "best.why.twilightHours");
 });
 
+test("why line: a Moon 15° away is never 'well clear', even for a double star", () => {
+  const base = night.rows.find((r) => r.cand.pos.kind === "radec")!;
+  const dbl = { ...base, cand: byId("star-algedi"), moonUpFraction: 1, moonMinSep: 15, parts: { ...base.parts, moon: 0.99 } };
+  const keys = whyParts(dbl, { minAlt: 30, equipment: "binoculars" }).map((p) => p.key);
+  assert.ok(keys.includes("best.why.moonClose"), keys.join());
+  assert.ok(!keys.includes("best.why.moonFar"));
+  const far = { ...dbl, moonMinSep: 120 };
+  assert.ok(whyParts(far, { minAlt: 30, equipment: "binoculars" }).some((p) => p.key === "best.why.moonFar"));
+});
+
 test("sparkline: altitude every 15 minutes from sunset to sunrise", () => {
   const r = night.rows[0];
   assert.ok(r.spark.length > 30);
