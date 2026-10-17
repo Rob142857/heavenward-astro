@@ -348,53 +348,152 @@ export interface RiseSetTransit {
   transit: Date | null;
 }
 
+/** One point of an altitude curve. `t` is epoch ms; angles in degrees. */
+export interface AltSample {
+  t: number;
+  alt: number;
+  az: number;
+}
+
+/** Default spacing of altitude curves: 5 minutes. */
+export const CURVE_STEP_MIN = 5;
+
+/**
+ * Altitude and azimuth of a fixed RA/Dec every `stepMin` minutes from `from`
+ * to `to` (both ends included). The one sampler behind the rise/set search
+ * and the object-page altitude chart, so the page computes it once.
+ */
+export function getAltitudeCurveForRaDec(
+  ra: number,
+  dec: number,
+  loc: GeoLocation,
+  from: Date,
+  to: Date,
+  stepMin = CURVE_STEP_MIN,
+): AltSample[] {
+  const obs = makeObserver(loc);
+  return sampleCurve(from, to, stepMin, (t) => {
+    const hor = Astronomy.Horizon(t, obs, ra, dec, "normal");
+    return { alt: hor.altitude, az: hor.azimuth };
+  });
+}
+
+/** The same for a Solar System body, which moves against the stars. */
+export function getAltitudeCurveForBody(
+  body: Astronomy.Body,
+  loc: GeoLocation,
+  from: Date,
+  to: Date,
+  stepMin = CURVE_STEP_MIN,
+): (AltSample & { ra: number; dec: number })[] {
+  const obs = makeObserver(loc);
+  return sampleCurve(from, to, stepMin, (t) => {
+    const eq = Astronomy.Equator(body, t, obs, true, true);
+    const hor = Astronomy.Horizon(t, obs, eq.ra, eq.dec, "normal");
+    return { alt: hor.altitude, az: hor.azimuth, ra: eq.ra, dec: eq.dec };
+  });
+}
+
+function sampleCurve<T extends { alt: number; az: number }>(
+  from: Date,
+  to: Date,
+  stepMin: number,
+  at: (t: Date) => T,
+): (T & { t: number })[] {
+  const out: (T & { t: number })[] = [];
+  const startMs = from.getTime();
+  const endMs = to.getTime();
+  const step = stepMin * 60_000;
+  for (let ms = startMs; ; ms = Math.min(ms + step, endMs)) {
+    out.push({ ...at(new Date(ms)), t: ms });
+    if (ms >= endMs) break;
+  }
+  return out;
+}
+
+/**
+ * Bisect a sign change of `f` between t1 and t2 (ms) to under a second.
+ * `f(t1)` and `f(t2)` must be on opposite sides of zero.
+ */
+export function bisectCrossing(
+  f: (ms: number) => number,
+  t1: number,
+  t2: number,
+): number {
+  const up = f(t1) <= 0;
+  for (let i = 0; i < 16; i++) {
+    const mid = (t1 + t2) / 2;
+    const above = f(mid) > 0;
+    if (above === up) t2 = mid;
+    else t1 = mid;
+  }
+  return (t1 + t2) / 2;
+}
+
+/** Every crossing of `threshold` in a curve, refined with `altAt`. */
+export function curveCrossings(
+  samples: AltSample[],
+  threshold: number,
+  altAt: (ms: number) => number,
+): { kind: "rise" | "set"; at: number }[] {
+  const out: { kind: "rise" | "set"; at: number }[] = [];
+  for (let i = 1; i < samples.length; i++) {
+    const a = samples[i - 1].alt - threshold;
+    const b = samples[i].alt - threshold;
+    if (a <= 0 && b > 0) {
+      out.push({ kind: "rise", at: bisectCrossing((ms) => altAt(ms) - threshold, samples[i - 1].t, samples[i].t) });
+    } else if (a > 0 && b <= 0) {
+      out.push({ kind: "set", at: bisectCrossing((ms) => altAt(ms) - threshold, samples[i - 1].t, samples[i].t) });
+    }
+  }
+  return out;
+}
+
+/** Altitude of a fixed RA/Dec at an instant (ms), refraction included. */
+export function raDecAltAt(
+  ra: number,
+  dec: number,
+  loc: GeoLocation,
+): (ms: number) => number {
+  const obs = makeObserver(loc);
+  return (ms) => Astronomy.Horizon(new Date(ms), obs, ra, dec, "normal").altitude;
+}
+
 /**
  * Compute rise, set, and transit times for a fixed RA/Dec coordinate
- * over a 24-hour window starting at the given date's midnight (local).
- * Uses 5-minute stepping with binary-search refinement to ~1s accuracy.
+ * over a 36-hour window from the device's yesterday noon. Uses the shared
+ * 5-minute curve with bisection to about a second; the samples come back
+ * too, so callers that also draw the curve need not sample again.
  */
 export function getRiseSetForRaDec(
   ra: number,
   dec: number,
   loc: GeoLocation,
   date: Date,
-): RiseSetTransit {
-  const obs = makeObserver(loc);
+): RiseSetTransit & { samples: AltSample[] } {
   const start = new Date(date);
   start.setHours(12, 0, 0, 0); // start at noon to capture tonight's window
   start.setDate(start.getDate() - 1); // from yesterday noon → today noon spans tonight
+  const end = new Date(start.getTime() + 36 * 3_600_000);
 
-  let rise: Date | null = null;
-  let set: Date | null = null;
+  const samples = getAltitudeCurveForRaDec(ra, dec, loc, start, end);
   let transit: Date | null = null;
   let maxAlt = -Infinity;
-  let prevAlt: number | null = null;
-
-  const STEP = 5; // minutes
-  const TOTAL = 36 * 60; // 36 hours to cover the full night window
-
-  for (let m = 0; m <= TOTAL; m += STEP) {
-    const t = new Date(start.getTime() + m * 60_000);
-    const hor = Astronomy.Horizon(t, obs, ra, dec, "normal");
-
-    if (hor.altitude > maxAlt) {
-      maxAlt = hor.altitude;
-      transit = t;
+  for (const s of samples) {
+    if (s.alt > maxAlt) {
+      maxAlt = s.alt;
+      transit = new Date(s.t);
     }
-
-    if (prevAlt !== null) {
-      const prevTime = new Date(start.getTime() + (m - STEP) * 60_000);
-      if (prevAlt <= 0 && hor.altitude > 0 && !rise) {
-        rise = refineAltCrossing(obs, ra, dec, prevTime, t, true);
-      }
-      if (prevAlt > 0 && hor.altitude <= 0 && !set) {
-        set = refineAltCrossing(obs, ra, dec, prevTime, t, false);
-      }
-    }
-    prevAlt = hor.altitude;
   }
-
-  return { rise, set, transit };
+  const crossings = curveCrossings(samples, 0, raDecAltAt(ra, dec, loc));
+  const rise = crossings.find((c) => c.kind === "rise");
+  const set = crossings.find((c) => c.kind === "set");
+  return {
+    rise: rise ? new Date(rise.at) : null,
+    set: set ? new Date(set.at) : null,
+    transit,
+    samples,
+  };
 }
 
 // ── Tonight's rise and set (night window) ─────────────────────────
@@ -444,7 +543,7 @@ export interface NightRiseSet {
 }
 
 /** Circumpolar or never-rises for a fixed declination (geometric horizon). */
-function polarState(lat: number, dec: number): NightState | null {
+export function polarState(lat: number, dec: number): NightState | null {
   if (lat >= 0) {
     if (dec > 90 - lat) return "always-up";
     if (dec < lat - 90) return "never-rises";
