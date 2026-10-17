@@ -3,6 +3,7 @@ import { handle } from "hono/cloudflare-pages";
 import auth from "./auth/handler.js";
 import api from "./api/handler.js";
 import admin from "./admin/handler.js";
+import { handleWeather, type CacheLike } from "./weather/core.ts";
 import { verifyJWT, parseCookie } from "./middleware/auth.js";
 
 interface Env {
@@ -152,6 +153,19 @@ app.post("/api/event", async (c) => {
 
   return c.json({ ok: true });
 });
+
+// ── Public cloud forecast (no auth): one Open-Meteo call per 0.1° cell per
+// hour, kept in the Cache API. Registered before the /api sub-app so its
+// auth middleware never runs for it. ──
+app.get("/api/weather", (c) =>
+  handleWeather(c.req.raw, {
+    // DOM typings shadow the Workers CacheStorage, which adds `default`.
+    cache: typeof caches !== "undefined" ? (caches as unknown as { default: CacheLike }).default : null,
+    fetch: (url) => fetch(url, { headers: { Accept: "application/json" } }),
+    now: () => Date.now(),
+    waitUntil: (p) => c.executionCtx.waitUntil(p),
+  }),
+);
 
 app.route("/auth", auth);
 app.route("/api", api);
