@@ -5,7 +5,7 @@ import { test, expect, gotoApp } from "./fixtures";
 // Refresh after an intended UI change: `pnpm test:mobile:update`.
 
 const SHOTS: { name: string; hash: string; ready: string }[] = [
-  { name: "tonight", hash: "#/", ready: ".card-grid .card:not(.skeleton)" },
+  { name: "tonight", hash: "#/", ready: ".best-row:not(.skeleton)" },
   { name: "search", hash: "#/search", ready: ".search-palette" },
   { name: "about", hash: "#/about", ready: ".about-version" },
   { name: "star-detail", hash: "#/detail/star-sirius", ready: "header.header" },

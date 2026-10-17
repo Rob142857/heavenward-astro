@@ -24,6 +24,7 @@ import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
 import { trackEvent, trackInsight } from "../services/analytics.js";
 import { savePrefs } from "../services/prefs.js";
+import { renderTonightsBest } from "./tonight-best.ts";
 import { fetchAuroraStatus, type AuroraStatus } from "../services/aurora.js";
 import {
   CATEGORY_OPTIONS,
@@ -123,6 +124,48 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
   container.appendChild(auroraSlot);
   void renderAuroraBanner(auroraSlot, ctx.location);
 
+  // Tonight's Best answers "what should I look at tonight?" first, day or
+  // night: at 2 pm it is tonight's plan, not a "the Sun is up" wall.
+  renderTonightsBest(container, ctx, now, displayZone);
+
+  // The full catalogue sits behind one tap. It is built only when opened,
+  // which also spares every visit the cost of ~2,600 cards.
+  const everything = document.createElement("details");
+  everything.className = "everything";
+  const summary = document.createElement("summary");
+  summary.className = "everything-toggle";
+  summary.textContent = t("best.everything");
+  everything.appendChild(summary);
+  const body = document.createElement("div");
+  body.className = "everything-body";
+  everything.appendChild(body);
+  container.appendChild(everything);
+  const open = (): void => {
+    if (!routeIsStillCurrent()) return;
+    renderEverything(body, ctx, now);
+  };
+  everything.addEventListener("toggle", () => {
+    everythingOpen = everything.open;
+    if (everything.open && !body.childElementCount) open();
+  });
+  if (everythingOpen) {
+    everything.open = true;
+    open();
+  }
+}
+
+/** "Everything up now" stays open across re-renders (filter taps, links). */
+let everythingOpen = false;
+
+const everythingVersions = new WeakMap<HTMLElement, number>();
+
+/** The full list: every object above (and below) the horizon right now. */
+function renderEverything(body: HTMLElement, ctx: AppContext, now: Date): void {
+  const version = (everythingVersions.get(body) ?? 0) + 1;
+  everythingVersions.set(body, version);
+  const isCurrent = () => everythingVersions.get(body) === version && body.isConnected;
+  body.innerHTML = "";
+
   // Placeholder for cards while async data loads
   const cardsHolder = document.createElement("div");
   cardsHolder.className = "card-grid";
@@ -132,11 +175,12 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
     skel.style.setProperty("--i", String(i));
     cardsHolder.appendChild(skel);
   }
-  container.appendChild(cardsHolder);
+  body.appendChild(cardsHolder);
+  const rerender = () => renderEverything(body, ctx, now);
 
   // Collect all events (sync + async) then render together
   collectAllEvents(ctx, now).then((events) => {
-    if (!routeIsStillCurrent()) return;
+    if (!isCurrent()) return;
     cardsHolder.remove();
 
     // Apply equipment mag filter + category filter
@@ -164,11 +208,8 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
       .filter((e) => (e.altitude ?? -1) <= 0)
       .sort(sortFn);
 
-    // Controls bar (equipment + limit)
-    renderControls(container, ctx, directional.length, events.length, () => {
-      // Re-render on filter change
-      renderTonight(container, ctx);
-    });
+    // Controls bar (equipment + limit); a change re-renders this list only.
+    renderControls(body, ctx, directional.length, events.length, rerender);
 
     // ── Daytime gate ───────────────────────────────────────────────
     const sunAlt = getSunAltitude(ctx.location, now);
@@ -193,9 +234,9 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
       `;
       banner.querySelector(".daylight-peek")!.addEventListener("click", () => {
         daylightOverride = true;
-        renderTonight(container, ctx);
+        rerender();
       });
-      container.appendChild(banner);
+      body.appendChild(banner);
     } else {
       const sectionLabel = isDaytime
         ? t("tonight.aboveHorizonDaytimePeek", { count: visible.length })
@@ -204,16 +245,16 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
       const section = document.createElement("h3");
       section.className = "section-title";
       section.textContent = sectionLabel;
-      container.appendChild(section);
+      body.appendChild(section);
 
       const visibleSlice = limit > 0 ? visible.slice(0, limit) : visible;
       visibleRendered = visibleSlice.length;
-      renderEventCards(container, visibleSlice, 0, ctx.location, now);
+      renderEventCards(body, visibleSlice, 0, ctx.location, now);
 
       const remaining = limit > 0 ? visible.length - limit : 0;
       if (remaining > 0) {
         renderShowMore(
-          container,
+          body,
           visible,
           visibleSlice.length,
           0,
@@ -232,7 +273,7 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
         belowSection.textContent = t("tonight.belowHorizon", {
           count: below.length,
         });
-        container.appendChild(belowSection);
+        body.appendChild(belowSection);
 
         // Each section gets its own budget. Sharing one — `limit -
         // visible.length` — silently clamped to zero whenever the visible
@@ -241,7 +282,7 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
         // button beneath it.
         const belowSlice = limit > 0 ? below.slice(0, limit) : below;
         renderEventCards(
-          container,
+          body,
           belowSlice,
           visibleRendered,
           ctx.location,
@@ -250,7 +291,7 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
 
         if (below.length > belowSlice.length) {
           renderShowMore(
-            container,
+            body,
             below,
             belowSlice.length,
             visibleRendered,
@@ -262,7 +303,7 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
     }
     trackInsight("sky_report_ready");
   }).catch(() => {
-    if (!routeIsStillCurrent()) return;
+    if (!isCurrent()) return;
     trackInsight("sky_report_error");
     cardsHolder.innerHTML = "";
     const message = document.createElement("p");
@@ -272,7 +313,7 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
     retry.type = "button";
     retry.className = "btn btn-outline";
     retry.textContent = t("common.tryAgain");
-    retry.addEventListener("click", () => renderTonight(container, ctx));
+    retry.addEventListener("click", rerender);
     cardsHolder.appendChild(message);
     cardsHolder.appendChild(retry);
   });

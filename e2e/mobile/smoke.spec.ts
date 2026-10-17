@@ -3,11 +3,12 @@ import {
   expect,
   gotoApp,
   horizontalOverflow,
+  openEverything,
   smallTapTargets,
 } from "./fixtures";
 
 const PAGES: { name: string; hash: string; ready: string }[] = [
-  { name: "tonight", hash: "#/", ready: ".card-grid" },
+  { name: "tonight", hash: "#/", ready: ".best-row:not(.skeleton)" },
   { name: "search", hash: "#/search", ready: ".search-input" },
   { name: "sources", hash: "#/sources", ready: "header.header" },
   { name: "location", hash: "#/location", ready: "header.header" },
@@ -61,7 +62,7 @@ test.describe("tap targets", () => {
 
   test("bottom nav and header controls are at least 44px", async ({ page }) => {
     await gotoApp(page, "#/");
-    await expect(page.locator(".card-grid").first()).toBeVisible();
+    await expect(page.locator(".best-row:not(.skeleton)").first()).toBeVisible();
     const small = await smallTapTargets(
       page,
       "nav a, nav button, header button, header a",
@@ -71,6 +72,7 @@ test.describe("tap targets", () => {
 
   test("tonight filter controls are at least 44px", async ({ page }) => {
     await gotoApp(page, "#/");
+    await openEverything(page);
     await expect(page.locator(".tonight-controls")).toBeVisible();
     // Open Filters so the equipment/category pills and selects are measured too.
     await page.locator(".filters-toggle").click();
@@ -78,6 +80,13 @@ test.describe("tap targets", () => {
       page,
       ".tonight-controls button, .tonight-controls select, .tonight-controls summary, .twilight-toggle",
     );
+    expect(small, small.join("\n")).toEqual([]);
+  });
+
+  test("Tonight's Best chips, equipment select and rule toggle are at least 44px", async ({ page }) => {
+    await gotoApp(page, "#/");
+    await expect(page.locator(".best-row:not(.skeleton)").first()).toBeVisible();
+    const small = await smallTapTargets(page, ".best-chip, .best-eq-select, .best-rule summary, .everything-toggle, .best-row");
     expect(small, small.join("\n")).toEqual([]);
   });
 

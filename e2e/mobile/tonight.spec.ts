@@ -1,4 +1,4 @@
-import { test, expect, gotoApp } from "./fixtures";
+import { test, expect, gotoApp, openEverything } from "./fixtures";
 
 // Tonight's cards show only tonight's rise and set (sunset to sunrise), in
 // the order they happen. The fixtures freeze 20:30 AEDT on 18 Oct 2026 at an
@@ -15,6 +15,7 @@ function afterNoon(text: string): number {
 
 test("rise and set times on Tonight's cards are tonight's, in order", async ({ page }) => {
   await gotoApp(page, "#/");
+  await openEverything(page);
   await expect(page.locator(".card-grid .card:not(.skeleton)").first()).toBeVisible();
   const rows = await page.locator(".card-grid .card .card-times").allTextContents();
   expect(rows.length).toBeGreaterThan(10);
@@ -38,6 +39,7 @@ test("rise and set times on Tonight's cards are tonight's, in order", async ({ p
 
 test("Canopus shows tonight's rise (no daytime set) and Acrux is always up", async ({ page }) => {
   await gotoApp(page, "#/");
+  await openEverything(page);
   const canopus = page.locator(".card", { has: page.locator(".card-title", { hasText: /^Canopus$/ }) });
   await expect(canopus).toBeVisible();
   const text = (await canopus.locator(".card-times").textContent()) ?? "";

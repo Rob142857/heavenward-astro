@@ -80,6 +80,10 @@ export interface UserPrefs {
   displayLimit: number;
   sortBy: SortBy;
   directionFilter: DirectionFilter;
+  /** Tonight's Best: the equipment the list is for. */
+  bestEquipment?: "naked-eye" | "binoculars" | "small-scope" | "smart-scope";
+  /** Tonight's Best: object types to show; empty means all. */
+  bestGroups?: ("planets" | "galaxies" | "nebulae" | "clusters" | "doubles")[];
 }
 
 export interface ApiKey {

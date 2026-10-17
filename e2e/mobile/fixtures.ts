@@ -152,3 +152,12 @@ export async function isInViewport(
     minVisiblePx,
   );
 }
+
+/** Opens Tonight's "Everything up now" list and waits for real cards. */
+export async function openEverything(page: Page): Promise<void> {
+  const details = page.locator("details.everything");
+  if (!(await details.evaluate((d) => (d as HTMLDetailsElement).open))) {
+    await page.locator(".everything-toggle").click();
+  }
+  await expect(page.locator(".everything .card-grid .card:not(.skeleton)").first()).toBeVisible();
+}

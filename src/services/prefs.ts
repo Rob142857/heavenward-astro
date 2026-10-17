@@ -121,6 +121,25 @@ function normalizeDirectionFilter(
   return [];
 }
 
+const BEST_EQUIPMENT = ["naked-eye", "binoculars", "small-scope", "smart-scope"] as const;
+const BEST_GROUPS = ["planets", "galaxies", "nebulae", "clusters", "doubles"] as const;
+
+/** Binoculars by default: most people own a pair, and the list then holds
+ *  naked-eye showpieces plus the best binocular targets. */
+function normalizeBestEquipment(v: unknown): NonNullable<UserPrefs["bestEquipment"]> {
+  return (BEST_EQUIPMENT as readonly unknown[]).includes(v)
+    ? (v as NonNullable<UserPrefs["bestEquipment"]>)
+    : "binoculars";
+}
+
+function normalizeBestGroups(v: unknown): NonNullable<UserPrefs["bestGroups"]> {
+  if (!Array.isArray(v)) return [];
+  const out = v.filter((g): g is (typeof BEST_GROUPS)[number] =>
+    (BEST_GROUPS as readonly unknown[]).includes(g),
+  );
+  return out.length === BEST_GROUPS.length ? [] : [...new Set(out)];
+}
+
 export function loadPrefs(): UserPrefs {
   try {
     const raw = localStorage.getItem(PREFS_KEY);
@@ -139,6 +158,8 @@ export function loadPrefs(): UserPrefs {
         enabledCategories: normalizeCategories(prefs.enabledCategories),
         sortBy: normalizeSort(prefs.sortBy),
         directionFilter: normalizeDirectionFilter(prefs.directionFilter),
+        bestEquipment: normalizeBestEquipment(prefs.bestEquipment),
+        bestGroups: normalizeBestGroups(prefs.bestGroups),
       };
     }
     return { ...DEFAULT_PREFS };
