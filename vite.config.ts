@@ -96,11 +96,16 @@ export default defineConfig({
         ],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/api\.open-meteo\.com\/.*/i,
+            // Cloud forecast from our own Function (which caches Open-Meteo
+            // per cell per hour). The browser never calls Open-Meteo itself.
+            // Offline, the last answer (up to 3 h old) still shades tonight.
+            urlPattern: /^https?:\/\/[^/]+\/api\/weather(?:\?|$)/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "weather-cache",
-              expiration: { maxEntries: 10, maxAgeSeconds: 3600 },
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 10, maxAgeSeconds: 3 * 3600 },
+              cacheableResponse: { statuses: [200] },
             },
           },
           {

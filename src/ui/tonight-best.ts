@@ -18,6 +18,9 @@ import {
   type BestRow,
 } from "../engine/tonight-best.ts";
 import { EQUIPMENT_CLASSES, type EquipmentClass } from "../engine/equipment.ts";
+import { cloudOption, type CloudForecast } from "../engine/cloud.ts";
+import { fetchCloudForecast, forecastWithin } from "../services/weather.ts";
+import { paintCloudBlock } from "./cloud.ts";
 import { formatClock } from "../services/sky-time.js";
 import { savePrefs } from "../services/prefs.js";
 import { trackEvent } from "../services/analytics.js";
@@ -25,6 +28,10 @@ import { navigate } from "./router.js";
 import { t } from "../i18n/translations.js";
 
 const MIN_ALT = 30;
+
+/** How long the list waits for the cloud forecast before ranking without it.
+ *  A later answer re-ranks once. */
+const FORECAST_WAIT_MS = 2_500;
 
 let candidates: Promise<BestCandidate[]> | null = null;
 function loadCandidates(): Promise<BestCandidate[]> {
@@ -50,6 +57,13 @@ export function renderTonightsBest(
   now: Date,
   zone: string | undefined,
 ): void {
+  // "Is it clear?" sits above the list; hidden until a forecast covers tonight.
+  const cloudBlock = document.createElement("section");
+  cloudBlock.className = "cloud-block";
+  cloudBlock.setAttribute("aria-labelledby", "cloud-title");
+  cloudBlock.hidden = true;
+  container.appendChild(cloudBlock);
+
   const section = document.createElement("section");
   section.className = "best-section";
   section.setAttribute("aria-labelledby", "best-title");
@@ -99,26 +113,39 @@ export function renderTonightsBest(
   const update = (): void => {
     const mine = ++run;
     list.setAttribute("aria-busy", "true");
-    loadCandidates()
-      .then((cands) => {
+    const forecast = fetchCloudForecast(ctx.location);
+    Promise.all([loadCandidates(), forecastWithin(ctx.location, FORECAST_WAIT_MS)])
+      .then(([cands, fc]) => {
+        // The forecast came after the wait: rank again once it lands.
+        if (!fc)
+          void forecast.then((late) => {
+            if (late && mine === run && section.isConnected) update();
+          });
         if (mine !== run || !section.isConnected) return;
         // Yield a task so the chip/select state can paint before the short
         // ranking pass. Not requestAnimationFrame: it never fires in a
         // background tab, which left the list on "Working out…".
         setTimeout(() => {
           if (mine !== run || !section.isConnected) return;
-          const opts = { equipment: equipmentOf(ctx), groups: groupsOf(ctx), minAlt: MIN_ALT };
+          const opts = {
+            equipment: equipmentOf(ctx),
+            groups: groupsOf(ctx),
+            minAlt: MIN_ALT,
+            cloud: cloudOption(fc),
+          };
           const key = [
             ctx.location.lat.toFixed(3),
             ctx.location.lon.toFixed(3),
             Math.floor(now.getTime() / 600_000),
             opts.equipment,
             opts.groups.join(","),
+            fc ? `${fc.cell.lat},${fc.cell.lon},${fc.fetchedAt}` : "no-cloud",
           ].join("|");
           const result =
             cache?.key === key ? cache.result : rankTonightsBest(cands, ctx.location, now, opts);
           cache = { key, result };
           paintRows(list, status, when, result, opts, zone);
+          paintCloud(cloudBlock, fc, result, zone);
         }, 0);
       })
       .catch(() => {
@@ -175,6 +202,16 @@ function paintRows(
   list.removeAttribute("aria-busy");
   status.textContent = result.rows.length ? "" : t("best.empty");
   for (const row of result.rows) list.appendChild(buildRow(row, result, opts, fmt));
+}
+
+function paintCloud(
+  el: HTMLElement,
+  fc: CloudForecast | null,
+  result: BestResult,
+  zone: string | undefined,
+): void {
+  const g = result.grid;
+  paintCloudBlock(el, fc, g.dark ?? g.night, (ms) => formatClock(new Date(ms), zone), zone);
 }
 
 function typeLabel(row: BestRow): string {

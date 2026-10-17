@@ -3440,3 +3440,92 @@ details.detail-collapsible > summary::after {
 details.detail-collapsible[open] > summary::after {
   content: "▴";
 }
+
+/* ── Is it clear? (cloud forecast on Tonight) ────────── */
+.cloud-block {
+  margin-top: 8px;
+}
+.cloud-block[hidden] {
+  display: none;
+}
+.cloud-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cloud-title {
+  color: var(--gold);
+  font-size: 0.85rem;
+  flex: 1 1 auto;
+}
+.cloud-verdict {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.cloud-verdict.cloud-clear,
+.cloud-verdict.cloud-mostlyClear {
+  color: var(--success);
+}
+.cloud-verdict.cloud-mostlyCloudy,
+.cloud-verdict.cloud-cloudy {
+  color: var(--text-dim);
+}
+.cloud-summary {
+  margin: 2px 0 6px;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.cloud-grid-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.cloud-grid {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+}
+.cloud-grid th {
+  font-weight: 500;
+  padding: 0 2px;
+  white-space: nowrap;
+  text-align: center;
+}
+.cloud-grid tbody th {
+  text-align: left;
+  padding-right: 4px;
+}
+.cloud-cell {
+  min-width: 26px;
+  height: 22px;
+  text-align: center;
+  border-radius: 4px;
+  color: var(--text);
+  background: rgba(176, 190, 214, calc(0.08 + var(--cover, 0) * 0.62));
+  font-variant-numeric: tabular-nums;
+}
+.cloud-credit {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+}
+
+/* Cloud on the object page's altitude chart. */
+.alt-cloud { fill: #b0bed6; }
+.alt-legend .sw-cloud { background: rgba(176, 190, 214, 0.45); }
+.alt-cloud-credit {
+  margin: 0 0 8px;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+}
+.cloud-block .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

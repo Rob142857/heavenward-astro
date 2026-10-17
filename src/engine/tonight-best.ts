@@ -32,8 +32,10 @@
  *   brightness 20  equipment.ts brightnessScore(): magnitude margin for
  *                  stars and clusters, magnitude and surface brightness
  *                  margins averaged for galaxies and nebulae
- *   cloud      10  1 - mean cloud cover over the window; 1 when there is no
- *                  forecast, so a missing forecast changes no order
+ *   cloud      10  1 - mean cloud cover over the window (Open-Meteo total
+ *                  cover via /api/weather, interpolated in engine/cloud.ts);
+ *                  1 when there is no forecast, so a missing forecast changes
+ *                  no order
  * Moon sensitivity by type: galaxies and nebulae 1, planetary nebulae and
  * globular clusters 0.5, open clusters 0.3, double stars 0.1, planets 0.
  *
@@ -554,7 +556,8 @@ export interface WhyPart {
 
 /**
  * The reasons behind a row, most telling first, as translation keys. The UI
- * joins the first three with " · ".
+ * joins the first three with " · ". With a forecast, cloud comes second, so
+ * "Cloud 40%" is always in the three shown.
  */
 export function whyParts(row: BestRow, opts: Pick<BestOptions, "minAlt" | "equipment">): WhyPart[] {
   const out: WhyPart[] = [];
@@ -563,6 +566,8 @@ export function whyParts(row: BestRow, opts: Pick<BestOptions, "minAlt" | "equip
     key: row.cand.pos.kind === "body" ? "best.why.twilightHours" : "best.why.darkHours",
     params: { hours: h, min: opts.minAlt },
   });
+  if (row.cloudMean !== null)
+    out.push({ key: "best.why.cloud", params: { pct: Math.round(row.cloudMean * 100) } });
   if (row.cand.group !== "planets") {
     const illum = Math.round(row.moonIllum * 100);
     if (row.moonUpFraction === 0 || row.moonMinSep === null) out.push({ key: "best.why.moonDown" });
@@ -587,8 +592,6 @@ export function whyParts(row: BestRow, opts: Pick<BestOptions, "minAlt" | "equip
     (row.cand.target.size ?? 0) > 80
   )
     out.push({ key: "best.why.wide" });
-  if (row.cloudMean !== null)
-    out.push({ key: "best.why.cloud", params: { pct: Math.round(row.cloudMean * 100) } });
   return out;
 }
 
