@@ -268,7 +268,10 @@ function trackNavHeight(nav: HTMLElement): void {
     }, 0);
   };
   apply();
-  if (typeof ResizeObserver !== "undefined") new ResizeObserver(schedule).observe(nav);
+  // border-box: the home-indicator inset is padding, which a content-box
+  // observer would miss.
+  if (typeof ResizeObserver !== "undefined")
+    new ResizeObserver(schedule).observe(nav, { box: "border-box" });
   window.addEventListener("resize", schedule);
 }
 
