@@ -29,9 +29,19 @@ import {
 } from "./filterOptions.js";
 import type { DirectionFilter, SortBy } from "../types.js";
 import { t } from "../i18n/translations.js";
-import { getSavedLocation } from "../services/geolocation.js";
+import {
+  formatClock,
+  viewTime,
+  viewZone,
+  zonedDayKey,
+  zonedMonthDay,
+} from "../services/sky-time.js";
 
 const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
+
+/** The clock times on this page are printed in: a deep link's zone, else
+ *  the device's (undefined). Set at the top of every render. */
+let displayZone: string | undefined;
 
 /** Daytime peek: user chose to see objects despite sunlight (resets on reload) */
 let daylightOverride = false;
@@ -94,10 +104,10 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
   const routeIsStillCurrent = () =>
     isCurrentRender() && renderMarker.isConnected;
 
-  const now = ctx.at ?? new Date();
+  const now = viewTime(ctx);
+  displayZone = viewZone(ctx);
   const twilight = getTwilightTimes(ctx.location, now);
 
-  if (ctx.at || ctx.linkedLocation) renderLinkedSkyBar(container, ctx, now);
   renderTwilightBar(container, twilight);
 
   // Reserved slot for the aurora banner so it always sits between the
@@ -719,8 +729,7 @@ async function collectAllEvents(
 
   // Meteors (sync)
   if (ctx.prefs.enabledSources.includes("meteors")) {
-    const month = now.getMonth() + 1;
-    const day = now.getDate();
+    const { month, day } = zonedMonthDay(now, viewZone(ctx));
     const active = METEOR_SHOWERS.filter((s) => isShowerActive(s, month, day));
     const meteorEvents = active.map((s): CelestialEvent => {
       const hor = getAltAzForRaDec(
@@ -874,6 +883,7 @@ async function renderAuroraBanner(
   if (!status || !status.worthSurfacing) return;
 
   const peakLocal = new Date(status.forecastPeakAt).toLocaleString([], {
+    ...(displayZone ? { timeZone: displayZone } : {}),
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
@@ -923,48 +933,6 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-/** Shown when a deep link set the place or time, with a way back to the
- *  user's own sky. */
-function renderLinkedSkyBar(
-  container: HTMLElement,
-  ctx: AppContext,
-  now: Date,
-): void {
-  const bar = document.createElement("div");
-  bar.className = "linked-sky-bar";
-  const text = document.createElement("span");
-  const when = now.toLocaleString([], {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    ...(ctx.atZone ? { timeZone: ctx.atZone } : {}),
-  });
-  text.textContent = t("tonight.linkedSky", {
-    when,
-    lat: ctx.location.lat.toFixed(2),
-    lon: ctx.location.lon.toFixed(2),
-  });
-  const reset = document.createElement("button");
-  reset.type = "button";
-  reset.className = "btn btn-ghost linked-sky-reset";
-  reset.textContent = t("tonight.linkedSkyReset");
-  reset.addEventListener("click", () => {
-    ctx.at = null;
-    ctx.atZone = null;
-    if (ctx.linkedLocation) {
-      ctx.location = getSavedLocation() ?? ctx.location;
-      ctx.linkedLocation = false;
-    }
-    invalidateTonightCache();
-    renderTonight(container, ctx);
-  });
-  bar.appendChild(text);
-  bar.appendChild(reset);
-  container.appendChild(bar);
 }
 
 function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {
@@ -1022,7 +990,7 @@ function ensureRiseSet(
 ): void {
   if (ev.rise !== null || ev.set !== null) return;
   if (ev.ra === null || ev.dec === null) return;
-  const dayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+  const dayKey = zonedDayKey(now, displayZone);
   const key = `${ev.id}|${dayKey}`;
   let rs = riseSetCache.get(key);
   if (!rs) {
@@ -1086,12 +1054,11 @@ function renderEventCards(
 }
 
 function fmt(d: Date | null): string {
-  if (!d) return "—";
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return formatClock(d, displayZone);
 }
 
 function fmtShort(d: Date): string {
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return formatClock(d, displayZone);
 }
 
 function isShowerActive(

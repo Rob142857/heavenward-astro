@@ -1,9 +1,14 @@
 import type { GeoLocation, AppContext } from "../types.js";
-import { navigate } from "./router.js";
+import { navigate, reroute } from "./router.js";
 import { bindInstallPrompt } from "../services/pwa.js";
 import { openObservationsModal } from "./observations.js";
 import { isSocialInAppBrowser } from "../services/browser.js";
-import { isLocationConfirmed } from "../services/geolocation.js";
+import {
+  getSavedLocation,
+  isLocationConfirmed,
+} from "../services/geolocation.js";
+import { stripSkyLink } from "../services/deep-link.js";
+import { formatWhen, viewTime, viewZone } from "../services/sky-time.js";
 import { t } from "../i18n/translations.js";
 
 let currentCtx: AppContext | null = null;
@@ -132,9 +137,44 @@ export function renderHeader(container: HTMLElement, ctx: AppContext): void {
   header.appendChild(actions);
   container.insertBefore(header, container.firstChild);
   container.insertBefore(renderInstallPrompt(), header.nextSibling);
+  // Every page computed for a linked place or time says so, with a way back.
+  if (ctx.at || ctx.linkedLocation) {
+    container.insertBefore(renderLinkedSkyBar(ctx), header.nextSibling);
+  }
   if (isSocialInAppBrowser()) {
     container.insertBefore(renderInAppBrowserNotice(), header.nextSibling);
   }
+}
+
+/** "Viewing <place> at <time> (link) · Use my sky now", on every page while
+ *  a deep link sets the place or time. */
+function renderLinkedSkyBar(ctx: AppContext): HTMLElement {
+  const bar = document.createElement("div");
+  bar.className = "linked-sky-bar";
+  bar.setAttribute("role", "status");
+  const text = document.createElement("span");
+  text.textContent = t("tonight.linkedSky", {
+    when: formatWhen(viewTime(ctx), viewZone(ctx)),
+    lat: ctx.location.lat.toFixed(2),
+    lon: ctx.location.lon.toFixed(2),
+  });
+  const reset = document.createElement("button");
+  reset.type = "button";
+  reset.className = "btn btn-ghost linked-sky-reset";
+  reset.textContent = t("tonight.linkedSkyReset");
+  reset.addEventListener("click", () => {
+    ctx.at = null;
+    ctx.atZone = null;
+    if (ctx.linkedLocation) {
+      ctx.location = getSavedLocation() ?? ctx.location;
+      ctx.linkedLocation = false;
+    }
+    history.replaceState(history.state, "", stripSkyLink(window.location.href));
+    reroute();
+  });
+  bar.appendChild(text);
+  bar.appendChild(reset);
+  return bar;
 }
 
 function renderInstallPrompt(): HTMLElement {

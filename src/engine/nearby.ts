@@ -24,6 +24,7 @@ import {
   constellationName,
 } from "../catalog/constellations.js";
 import { t } from "../i18n/translations.js";
+import { zonedMonthDay } from "../services/sky-time.js";
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -227,12 +228,14 @@ export async function buildSkyContext(
   date: Date,
   radiusDeg = 20,
   maxResults = 12,
+  /** IANA zone of a deep link, so the calendar date matches its clock. */
+  zone?: string,
 ): Promise<SkyContext> {
   const targetRA = event.ra;
   const targetDec = event.dec;
 
   if (targetRA === null || targetDec === null) {
-    return emptyContext(event, loc, date);
+    return emptyContext(event, loc, date, zone);
   }
 
   // Normalise first: the star/DSO catalogs store the IAU code ("UMa") while
@@ -362,8 +365,7 @@ export async function buildSkyContext(
   }
 
   // Active meteor shower radiants
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
+  const { month, day } = zonedMonthDay(date, zone);
   for (const m of METEOR_SHOWERS) {
     if (m.id === event.id.replace("meteor-", "")) continue;
     if (!isShowerActive(m, month, day)) continue;
@@ -441,7 +443,7 @@ export async function buildSkyContext(
 
   return {
     observer: describeObserver(loc),
-    night: describeNight(loc, date),
+    night: describeNight(loc, date, zone),
     target: {
       name: event.name,
       lookDirection: compass,
@@ -488,10 +490,14 @@ function describeObserver(loc: GeoLocation): SkyContext["observer"] {
 
 const SEASONS_NORTH = ["winter", "spring", "summer", "autumn"] as const;
 
-function describeNight(loc: GeoLocation, date: Date): SkyContext["night"] {
+function describeNight(
+  loc: GeoLocation,
+  date: Date,
+  zone?: string,
+): SkyContext["night"] {
   // Meteorological quarters (Dec-Feb, Mar-May, ...) — right-enough naming
   // for prose, flipped for the southern hemisphere.
-  const quarter = Math.floor(((date.getMonth() + 1) % 12) / 3);
+  const quarter = Math.floor((zonedMonthDay(date, zone).month % 12) / 3);
   const season =
     loc.lat < 0 ? SEASONS_NORTH[(quarter + 2) % 4] : SEASONS_NORTH[quarter];
   const moon = getMoonSummary(date);
@@ -500,7 +506,11 @@ function describeNight(loc: GeoLocation, date: Date): SkyContext["night"] {
     ((utcMinutes + loc.lon * 4) % 1440 + 1440) % 1440,
   );
   return {
-    date: date.toLocaleDateString("en-GB", { day: "numeric", month: "long" }),
+    date: date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      ...(zone ? { timeZone: zone } : {}),
+    }),
     season,
     moonPhaseName: moon.phaseName,
     moonIllumination: moon.illumination,
@@ -643,10 +653,11 @@ function emptyContext(
   event: CelestialEvent,
   loc: GeoLocation,
   date: Date,
+  zone?: string,
 ): SkyContext {
   return {
     observer: describeObserver(loc),
-    night: describeNight(loc, date),
+    night: describeNight(loc, date, zone),
     target: {
       name: event.name,
       lookDirection: "unknown",

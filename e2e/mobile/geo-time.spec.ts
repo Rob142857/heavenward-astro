@@ -74,17 +74,11 @@ test.describe("time zone", () => {
     await expect(bar).toBeVisible();
     await expect(bar).toContainText("-27.47, 153.03");
     await expect(bar).toContainText(/09:30\s*pm|21:30/i);
-    // Params are stripped from the address bar after reading.
-    expect(page.url()).not.toContain("lat=");
+    // Params stay in the address bar so reload and share keep them.
+    expect(page.url()).toContain("lat=-27.47");
   });
 
   test("deep link twilight times are on the link's clock, not the device's", async ({ page }) => {
-    test.info().annotations.push({
-      type: "known-bug",
-      description:
-        "TODO(feature worker): twilight fmt() in src/ui/tonight.ts ignores ctx.atZone, so a Brisbane link opened in Sydney (AEDT) shows sunset an hour later than the Brisbane clock in the linked-sky bar.",
-    });
-    test.fail();
     await page.goto(
       "/?lat=-27.47&lng=153.03&date=2026-11-10&time=21:30&tz=Australia/Brisbane#/",
     );
@@ -92,5 +86,70 @@ test.describe("time zone", () => {
     const sunset = await sunsetMinutes(page);
     // Brisbane sunset in November is about 6:15 pm AEST (no DST).
     expect(sunset).toBeLessThan(18 * 60 + 45);
+  });
+});
+
+/** The value cell beside a detail-page label, e.g. "Altitude". */
+function detailValue(page: Page, label: string) {
+  return page
+    .locator(".detail-item", { has: page.locator(".label", { hasText: new RegExp(`^${label}$`) }) })
+    .first()
+    .locator(".value");
+}
+
+async function altitudeOf(page: Page): Promise<number> {
+  const value = detailValue(page, "Altitude");
+  await expect(value).toContainText("°");
+  return parseFloat((await value.textContent()) ?? "NaN");
+}
+
+test.describe("linked place and time on other pages", () => {
+  const JUNE = "/?lat=-30.7&lng=152.98&date=2026-06-20&time=12:00&tz=Australia/Sydney#/detail/dso-M42";
+
+  test("an object page uses the link's moment, keeps it on reload, and clears it", async ({ page }) => {
+    await page.goto(JUNE);
+    await expect(page.locator(".linked-sky-bar")).toContainText("-30.70, 152.98");
+    // Noon on 20 June: M42 is about 64° up in daylight (frozen device clock
+    // would give a different value). Reference in test/sky-time.test.ts.
+    const june = await altitudeOf(page);
+    expect(Math.abs(june - 63.7)).toBeLessThan(1);
+
+    await page.reload();
+    await expect(page.locator(".linked-sky-bar")).toBeVisible();
+    expect(page.url()).toContain("date=2026-06-20");
+    expect(Math.abs((await altitudeOf(page)) - 63.7)).toBeLessThan(1);
+
+    await page.locator(".linked-sky-reset").click();
+    await expect(page.locator(".linked-sky-bar")).toHaveCount(0);
+    expect(page.url()).not.toContain("lat=");
+    expect(page.url()).toContain("#/detail/dso-M42");
+  });
+
+  test("a June 21:00 link shows M42 below the horizon", async ({ page }) => {
+    await page.goto(JUNE.replace("time=12:00", "time=21:00"));
+    expect(await altitudeOf(page)).toBeLessThan(0);
+  });
+
+  test("a December 23:00 link gives a different altitude", async ({ page }) => {
+    await page.goto(JUNE.replace("2026-06-20", "2026-12-20").replace("12:00", "23:00"));
+    expect(Math.abs((await altitudeOf(page)) - 57.5)).toBeLessThan(1);
+  });
+
+  test("in-app navigation keeps the link", async ({ page }) => {
+    await page.goto(JUNE);
+    await expect(page.locator(".linked-sky-bar")).toBeVisible();
+    await page.locator("nav a[href='#/search'], nav [data-hash='#/search']").first().click();
+    await expect(page.locator(".search-input")).toBeVisible();
+    await expect(page.locator(".linked-sky-bar")).toBeVisible();
+    expect(page.url()).toContain("lat=-30.7");
+  });
+
+  test("a Perth link on a Sydney device shows Perth twilight times", async ({ page }) => {
+    await page.goto("/?lat=-31.95&lng=115.86&date=2026-11-10&time=21:30&tz=Australia/Perth#/");
+    await expect(page.locator(".linked-sky-bar")).toBeVisible();
+    // Perth sunset on 10 Nov is 6:49 pm AWST (timeanddate.com); on the
+    // Sydney clock it would read 9:49 pm.
+    const sunset = await sunsetMinutes(page);
+    expect(Math.abs(sunset - (18 * 60 + 49))).toBeLessThanOrEqual(2);
   });
 });

@@ -36,6 +36,12 @@ import {
 } from "../services/llm.js";
 import type { SkyConversation } from "../services/llm.js";
 import { navigate } from "./router.js";
+import {
+  formatClock,
+  viewTime,
+  viewZone,
+  zonedMonthDay,
+} from "../services/sky-time.js";
 import { SORT_OPTIONS } from "./filterOptions.js";
 import { savePrefs } from "../services/prefs.js";
 import { trackInsight } from "../services/analytics.js";
@@ -223,8 +229,12 @@ function tagList(items: string[]): string {
   return `<div class="detail-tags">${items.map((i) => `<span class="tag">${i}</span>`).join("")}</div>`;
 }
 
+/** Clock times on detail pages: a deep link's zone, else the device's.
+ *  Set at the top of every detail render. */
+let detailZone: string | undefined;
+
 function fmtTime(d: Date): string {
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return formatClock(d, detailZone);
 }
 
 // ── Base event detail (planets, moon, etc.) ────────────────────────
@@ -900,9 +910,8 @@ function renderMeteorDetailFull(
   renderHeader(container, ctx);
   renderNav("#/");
 
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
+  const now = viewTime(ctx);
+  const { month, day } = zonedMonthDay(now, viewZone(ctx));
   const isPeak = month === shower.peakMonth && day === shower.peakDay;
   const daysFromPeak = daysBetween(
     month,
@@ -1074,7 +1083,14 @@ function appendSkyContext(
   const loadGuide = (): void => {
     if (!wrapper.isConnected) return;
     showLoading();
-    buildSkyContext(event, ctx.location, new Date())
+    buildSkyContext(
+      event,
+      ctx.location,
+      viewTime(ctx),
+      undefined,
+      undefined,
+      viewZone(ctx),
+    )
       .then((skyCtx) => {
         if (!wrapper.isConnected) return;
         // Keep the section title after the skeleton is replaced. Previously
@@ -1545,7 +1561,14 @@ function appendLLMSection(
     progressBar.removeAttribute("aria-valuenow");
     progressBar.setAttribute("aria-valuetext", t("detail.buildingSkyContext"));
 
-    buildSkyContext(event, ctx.location, new Date())
+    buildSkyContext(
+      event,
+      ctx.location,
+      viewTime(ctx),
+      undefined,
+      undefined,
+      viewZone(ctx),
+    )
       .then((skyCtx) => {
         if (abort.signal.aborted) return;
         progress.style.display = "none";
@@ -1818,7 +1841,8 @@ export function renderDetail(
   eventId: string,
 ): void {
   detailRenderVersion += 1;
-  const now = new Date();
+  detailZone = viewZone(ctx);
+  const now = viewTime(ctx);
   const event = findEvent(ctx, eventId, now);
   if (!event) {
     container.innerHTML = "";
@@ -1887,7 +1911,8 @@ export async function renderDSODetail(
     container.innerHTML += `<p style="padding:20px;color:var(--text-dim)">${t("detail.objectNotFound")}</p>`;
     return;
   }
-  const now = new Date();
+  detailZone = viewZone(ctx);
+  const now = viewTime(ctx);
   const hor = getAltAzForRaDec(entry.ra, entry.dec, ctx.location, now);
   const rs = getRiseSetForRaDec(entry.ra, entry.dec, ctx.location, now);
   const event: CelestialEvent = {
@@ -1962,7 +1987,8 @@ export async function renderStarDetail(
     container.innerHTML += `<p style="padding:20px;color:var(--text-dim)">${t("detail.starNotFound")}</p>`;
     return;
   }
-  const now = new Date();
+  detailZone = viewZone(ctx);
+  const now = viewTime(ctx);
   const hor = getAltAzForRaDec(entry.ra, entry.dec, ctx.location, now);
   const rs = getRiseSetForRaDec(entry.ra, entry.dec, ctx.location, now);
   const event: CelestialEvent = {

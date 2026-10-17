@@ -12,6 +12,7 @@ import {
   getPlanetEvents,
   getMoonEvent,
 } from "../engine/astro.js";
+import { viewTime } from "../services/sky-time.js";
 
 /* ── Search index ─────────────────────────────────────────────────
  *
@@ -552,7 +553,7 @@ async function hydrateAltAz(
   const slot = card.querySelector<HTMLElement>("[data-altaz]");
   if (!slot) return;
 
-  const now = new Date();
+  const now = viewTime(ctx);
   let alt: number | null = null;
   let az: number | null = null;
 

@@ -37,7 +37,7 @@ Heavenward answers the question every stargazer asks at dusk: _what's up there r
 
 ### Deep links
 
-`/?lat=-31.95&lng=115.86&date=2026-11-10&time=21:30&tz=Australia/Perth` opens the sky report for that place and moment (Trip Companion's "Open in Sky" uses it). `lng` also accepts `lon`; `time` defaults to 21:00; `tz` is an IANA zone (without it the browser's own clock is used). The place applies to that visit only and is never saved over your location; a bar shows the linked place and time with **Use my sky now** to go back. Parsing lives in `src/services/deep-link.ts` (`pnpm test`).
+`/?lat=-31.95&lng=115.86&date=2026-11-10&time=21:30&tz=Australia/Perth` opens the sky report for that place and moment (Trip Companion's "Open in Sky" uses it). `lng` also accepts `lon`; `time` defaults to 21:00; `tz` is an IANA zone (without it the browser's own clock is used). The place applies to that visit only and is never saved over your location. Every page (Tonight, object pages, search, the sky guide and AI context) is computed for the linked moment and prints times on the link's clock; a bar on every page shows "Viewing <place> at <time> (link)" with **Use my sky now** to go back. The params stay in the address bar across in-app navigation, so reload, share and bookmarks keep them; any route works after them, e.g. `/?lat=…&date=…#/detail/dso-M42`. Parsing lives in `src/services/deep-link.ts`, the clock helpers in `src/services/sky-time.ts` (`pnpm test`).
 
 ## Stack
 
