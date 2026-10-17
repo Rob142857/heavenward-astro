@@ -3,10 +3,12 @@ import {
   getPlanetEvents,
   getMoonEvent,
   getAltAzForRaDec,
-  getRiseSetForRaDec,
   azimuthToCompassShort,
   altitudeDescription,
 } from "../engine/astro.js";
+import { buildAltitudeModel } from "../engine/altitude-curve.ts";
+import type { AltitudeModel, CurveTarget } from "../engine/altitude-curve.ts";
+import { mountAltitudeChart } from "../chart/altitude.ts";
 import { loadDSOCatalog, getDSOById } from "../catalog/dso.js";
 import type { DSOEntry } from "../catalog/dso.js";
 import { loadStarCatalog, getStarById } from "../catalog/stars.js";
@@ -237,6 +239,52 @@ function fmtTime(d: Date): string {
   return formatClock(d, detailZone);
 }
 
+// ── Altitude chart ────────────────────────────────────────────────
+
+/** Each page's altitude model, computed once when the event is built. Its
+ *  rise/transit/set fill the event, and the chart draws its samples. */
+const altModels = new WeakMap<CelestialEvent, AltitudeModel>();
+
+/** Build the model for `target` and copy its rise/transit/set onto `event`. */
+function attachAltitudeModel(
+  event: CelestialEvent,
+  target: CurveTarget,
+  ctx: AppContext,
+  at: Date,
+): void {
+  try {
+    const model = buildAltitudeModel(target, ctx.location, at);
+    altModels.set(event, model);
+    event.rise = model.rise !== null ? new Date(model.rise) : null;
+    event.set = model.set !== null ? new Date(model.set) : null;
+    event.transit = model.transit !== null ? new Date(model.transit) : null;
+  } catch (err) {
+    console.error("[Detail] altitude model failed", err);
+  }
+}
+
+const ALT_SLOT = `<div class="alt-chart-slot"></div>`;
+
+function mountAltitude(
+  content: HTMLElement,
+  ctx: AppContext,
+  event: CelestialEvent,
+): void {
+  const slot = content.querySelector<HTMLElement>(".alt-chart-slot");
+  const model = altModels.get(event);
+  if (!slot) return;
+  if (!model) {
+    slot.remove();
+    return;
+  }
+  mountAltitudeChart(slot, {
+    model,
+    zone: detailZone,
+    now: viewTime(ctx).getTime(),
+    linked: !!ctx.at,
+  });
+}
+
 // ── Base event detail (planets, moon, etc.) ────────────────────────
 
 function renderEventDetail(
@@ -253,15 +301,16 @@ function renderEventDetail(
     ${renderBreadcrumb(event.name)}
     <h2 class="detail-title">${event.name}</h2>
     <p class="detail-brief">${event.brief}</p>
+    ${altModels.has(event) ? ALT_SLOT : ""}
     <div class="detail-grid">
       ${detailItem(t("detail.label.altitude"), event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
       ${detailItem(t("detail.label.azimuth"), event.azimuth !== null ? `${event.azimuth.toFixed(0)}° ${azimuthToCompassShort(event.azimuth ?? 0)}` : "—")}
       ${detailItem(t("detail.label.magnitude"), event.magnitude !== null ? event.magnitude.toFixed(1) : "—")}
       ${detailItem(t("detail.label.constellation"), event.constellation ? wikiLink(constellationWikiTitle(event.constellation) ?? event.constellation, constellationName(event.constellation) ?? event.constellation) : "—")}
       ${detailSourceItem(event)}
-      ${event.rise ? detailItem(t("detail.label.rise"), fmtTime(event.rise)) : ""}
-      ${event.set ? detailItem(t("detail.label.set"), fmtTime(event.set)) : ""}
-      ${event.transit ? detailItem(t("detail.label.transit"), fmtTime(event.transit)) : ""}
+      ${!altModels.has(event) && event.rise ? detailItem(t("detail.label.rise"), fmtTime(event.rise)) : ""}
+      ${!altModels.has(event) && event.set ? detailItem(t("detail.label.set"), fmtTime(event.set)) : ""}
+      ${!altModels.has(event) && event.transit ? detailItem(t("detail.label.transit"), fmtTime(event.transit)) : ""}
       ${event.distanceAU !== null ? detailItem(t("detail.label.distance"), `${event.distanceAU.toFixed(3)} AU`) : ""}
       ${event.illumination !== null ? detailItem(t("detail.label.phase"), `${(event.illumination * 100).toFixed(0)}%`) : ""}
       ${event.angularSize !== null ? detailItem(t("detail.label.size"), `${event.angularSize.toFixed(1)}'`) : ""}
@@ -269,6 +318,7 @@ function renderEventDetail(
   `;
   container.appendChild(content);
   attachBreadcrumbHandlers(container);
+  mountAltitude(content, ctx, event);
 
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
@@ -305,6 +355,7 @@ function renderDSODetailFull(
     <h2 class="detail-title">${displayName}</h2>
     ${catalogId ? `<div class="detail-catalog-id">${catalogId}${caldwellText ? ` \u00b7 ${caldwellText}` : ""}</div>` : caldwellText ? `<div class="detail-catalog-id">${caldwellText}</div>` : ""}
     ${curatedBrief(entry.description)}
+    ${ALT_SLOT}
   `;
 
   // Position & Visibility
@@ -391,6 +442,7 @@ function renderDSODetailFull(
   content.innerHTML = html;
   container.appendChild(content);
   attachBreadcrumbHandlers(container);
+  mountAltitude(content, ctx, event);
 
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
@@ -428,6 +480,7 @@ function renderStarDetailFull(
     <h2 class="detail-title">${entry.name}</h2>
     ${designation ? `<div class="detail-catalog-id">${designation}</div>` : ""}
     ${curatedBrief(entry.description)}
+    ${ALT_SLOT}
   `;
 
   // Position & Visibility
@@ -548,6 +601,7 @@ function renderStarDetailFull(
   content.innerHTML = html;
   container.appendChild(content);
   attachBreadcrumbHandlers(container);
+  mountAltitude(content, ctx, event);
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
   // AI guide last: it is opt-in, costs a large download, and is the one
@@ -936,6 +990,7 @@ function renderMeteorDetailFull(
       : `<span class="tag">${t("detail.activeTag")}</span>`;
 
   html += `<div class="detail-tags" style="margin-bottom:16px">${statusTag}</div>`;
+  html += ALT_SLOT;
 
   // Observing info
   html += detailSection(
@@ -1006,6 +1061,7 @@ function renderMeteorDetailFull(
   content.innerHTML = html;
   container.appendChild(content);
   attachBreadcrumbHandlers(container);
+  mountAltitude(content, ctx, event);
 
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
@@ -1914,7 +1970,6 @@ export async function renderDSODetail(
   detailZone = viewZone(ctx);
   const now = viewTime(ctx);
   const hor = getAltAzForRaDec(entry.ra, entry.dec, ctx.location, now);
-  const rs = getRiseSetForRaDec(entry.ra, entry.dec, ctx.location, now);
   const event: CelestialEvent = {
     id: dsoId,
     name: entry.commonName || entry.name,
@@ -1925,9 +1980,9 @@ export async function renderDSODetail(
       magnitude: entry.magnitude.toFixed(1),
       constellation: entry.constellation,
     }),
-    rise: rs.rise,
-    set: rs.set,
-    transit: rs.transit,
+    rise: null,
+    set: null,
+    transit: null,
     altitude: hor.altitude,
     azimuth: hor.azimuth,
     magnitude: entry.magnitude,
@@ -1945,6 +2000,7 @@ export async function renderDSODetail(
       distancePC: entry.distancePC,
     },
   };
+  attachAltitudeModel(event, { kind: "radec", ra: entry.ra, dec: entry.dec }, ctx, now);
   recordObservation({
     id: event.id,
     name: event.name,
@@ -1990,7 +2046,6 @@ export async function renderStarDetail(
   detailZone = viewZone(ctx);
   const now = viewTime(ctx);
   const hor = getAltAzForRaDec(entry.ra, entry.dec, ctx.location, now);
-  const rs = getRiseSetForRaDec(entry.ra, entry.dec, ctx.location, now);
   const event: CelestialEvent = {
     id: starId,
     name: entry.name,
@@ -2001,9 +2056,9 @@ export async function renderStarDetail(
       magnitude: entry.magnitude.toFixed(2),
       constellation: entry.constellation,
     }),
-    rise: rs.rise,
-    set: rs.set,
-    transit: rs.transit,
+    rise: null,
+    set: null,
+    transit: null,
     altitude: hor.altitude,
     azimuth: hor.azimuth,
     magnitude: entry.magnitude,
@@ -2022,6 +2077,7 @@ export async function renderStarDetail(
       distancePC: entry.distancePC,
     },
   };
+  attachAltitudeModel(event, { kind: "radec", ra: entry.ra, dec: entry.dec }, ctx, now);
   recordObservation({
     id: event.id,
     name: event.name,
@@ -2037,10 +2093,16 @@ function findEvent(
   id: string,
   date: Date,
 ): CelestialEvent | null {
-  if (id === "moon") return getMoonEvent(ctx.location, date);
+  if (id === "moon") {
+    const moon = getMoonEvent(ctx.location, date);
+    attachAltitudeModel(moon, { kind: "body", body: "Moon" }, ctx, date);
+    return moon;
+  }
   if (id.startsWith("planet-")) {
     const planets = getPlanetEvents(ctx.location, date);
-    return planets.find((p) => p.id === id) ?? null;
+    const planet = planets.find((p) => p.id === id) ?? null;
+    if (planet) attachAltitudeModel(planet, { kind: "body", body: planet.name }, ctx, date);
+    return planet;
   }
   if (id.startsWith("meteor-")) {
     const sid = id.replace("meteor-", "");
@@ -2052,21 +2114,15 @@ function findEvent(
       ctx.location,
       date,
     );
-    const rs = getRiseSetForRaDec(
-      shower.radiantRA,
-      shower.radiantDec,
-      ctx.location,
-      date,
-    );
-    return {
+    const radiant: CelestialEvent = {
       id,
       name: shower.name,
       type: "meteor-shower",
       source: "catalog",
       brief: t("detail.meteorBriefZhrSpeed", { zhr: shower.zhr, speed: shower.speed }),
-      rise: rs.rise,
-      set: rs.set,
-      transit: rs.transit,
+      rise: null,
+      set: null,
+      transit: null,
       altitude: hor.altitude,
       azimuth: hor.azimuth,
       magnitude: null,
@@ -2082,6 +2138,13 @@ function findEvent(
         parentBody: shower.parentBody,
       },
     };
+    attachAltitudeModel(
+      radiant,
+      { kind: "radec", ra: shower.radiantRA, dec: shower.radiantDec },
+      ctx,
+      date,
+    );
+    return radiant;
   }
   return null;
 }
