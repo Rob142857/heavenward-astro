@@ -117,6 +117,11 @@ test("best window: M42 above 30° in full dark, edges on the limits", () => {
   const a70 = analyseNight(m, 70);
   assert.equal(a70.best, null);
   assert.equal(a70.reason, "too-low");
+  // The summary's "highest" is the peak inside the window.
+  for (const lim of [30, 50]) {
+    const w = analyseNight(m, lim).best!;
+    assert.ok(w.peak.t >= w.start && w.peak.t <= w.end, `${lim}: peak ${new Date(w.peak.t).toISOString()}`);
+  }
   // Moon interference is reported.
   assert.ok(a.best!.moonUpFraction >= 0 && a.best!.moonUpFraction <= 1);
 });

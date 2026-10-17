@@ -260,6 +260,8 @@ export interface BestWindow {
   moonUpFraction: number;
   /** Closest Moon approach while it is up in the window (degrees). */
   moonMinSep: number | null;
+  /** Highest point inside the window. */
+  peak: AltSample;
 }
 
 export type NoBestReason =
@@ -319,12 +321,19 @@ export function analyseNight(model: AltitudeModel, minAlt: number): NightAnalysi
             darkness: darkAlt === -18 ? "astro" : "nautical",
             moonUpFraction: 0,
             moonMinSep: null,
+            peak: model.samples[i],
           };
         }
         runStart = null;
       }
     }
     if (best && bestLen < 60_000) best = null;
+    if (best) {
+      const b: BestWindow = best;
+      const inside = model.samples.filter((s) => s.t >= b.start && s.t <= b.end);
+      const edges = [b.start, b.end].map((t) => ({ ...model.samples[nearestSample(model, t)], t, alt: model.altAt(t) }));
+      b.peak = [...edges, ...inside].reduce((p, s) => (s.alt > p.alt ? s : p));
+    }
     if (best && model.moon) {
       let up = 0;
       let n = 0;
@@ -376,7 +385,17 @@ export function chartSummary(
   if (model.polar === "midnight-sun") parts.push(tr("chart.midnightSun"));
   if (model.polar === "polar-night") parts.push(tr("chart.polarNight"));
   if (a.best) {
-    parts.push(tr("chart.best", { start: fmt(a.best.start), end: fmt(a.best.end), ...peak }));
+    // "highest" means inside the window: where to point during it.
+    const p = a.best.peak;
+    parts.push(
+      tr("chart.best", {
+        start: fmt(a.best.start),
+        end: fmt(a.best.end),
+        alt: Math.round(p.alt),
+        time: fmt(p.t),
+        dir: azimuthToCompassShort(p.az),
+      }),
+    );
     if (a.best.darkness === "nautical") parts.push(tr("chart.nauticalOnly"));
     if (model.moon) {
       const illum = Math.round(model.moonIllum * 100);
