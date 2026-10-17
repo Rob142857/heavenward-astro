@@ -15,6 +15,7 @@ import {
 } from "../engine/equipment.ts";
 import type { AltitudeModel, CurveTarget } from "../engine/altitude-curve.ts";
 import { MIN_ALT_EVENT, chartMinAlt, mountAltitudeChart } from "../chart/altitude.ts";
+import { fetchCloudForecast } from "../services/weather.ts";
 import { loadDSOCatalog, getDSOById } from "../catalog/dso.js";
 import type { DSOEntry } from "../catalog/dso.js";
 import { loadStarCatalog, getStarById } from "../catalog/stars.js";
@@ -283,11 +284,20 @@ function mountAltitude(
     slot.remove();
     return;
   }
-  mountAltitudeChart(slot, {
+  const opts = {
     model,
     zone: detailZone,
     now: viewTime(ctx).getTime(),
     linked: !!ctx.at,
+  };
+  mountAltitudeChart(slot, opts);
+  // Shade cloud once the forecast is in (usually already fetched by
+  // Tonight). No forecast: the chart stays exactly as drawn.
+  void fetchCloudForecast(ctx.location).then((cloud) => {
+    if (!cloud || !slot.isConnected) return;
+    const view = model.night ?? model.span24;
+    if (cloud.t[cloud.t.length - 1] < view.start || cloud.t[0] > view.end) return;
+    mountAltitudeChart(slot, { ...opts, cloud });
   });
 }
 

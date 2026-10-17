@@ -6,6 +6,7 @@
  * curve (faint), the best window and a "now" marker. Drag, tap or use the
  * arrow keys to scrub; the readout shows time, altitude, azimuth and the
  * Moon's separation. The summary line under it is the chart's text form.
+ * With a cloud forecast, each hour's total cover shades the background.
  */
 
 import {
@@ -17,6 +18,8 @@ import {
 import type { AltitudeModel, Span } from "../engine/altitude-curve.ts";
 import { azimuthToCompassShort } from "../engine/astro.ts";
 import { formatClock } from "../services/sky-time.ts";
+import type { CloudForecast } from "../engine/cloud.ts";
+import { openMeteoCredit } from "../ui/cloud.ts";
 import { t } from "../i18n/translations.ts";
 
 const W = 360;
@@ -57,6 +60,8 @@ export interface AltitudeChartOptions {
   now: number;
   /** True when `now` came from a deep link, so the marker says so. */
   linked: boolean;
+  /** Hourly cloud forecast to shade the background, if there is one. */
+  cloud?: CloudForecast | null;
 }
 
 const fmtNum = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
@@ -112,6 +117,7 @@ export function mountAltitudeChart(slot: HTMLElement, opts: AltitudeChartOptions
       <figcaption class="alt-summary"></figcaption>
     </figure>
     <div class="alt-legend" aria-hidden="true"></div>
+    <p class="alt-cloud-credit" hidden></p>
     <div class="alt-rts"></div>
   `;
   slot.replaceChildren(section);
@@ -121,6 +127,7 @@ export function mountAltitudeChart(slot: HTMLElement, opts: AltitudeChartOptions
   const summary = section.querySelector<HTMLElement>(".alt-summary")!;
   const legend = section.querySelector<HTMLElement>(".alt-legend")!;
   const rts = section.querySelector<HTMLElement>(".alt-rts")!;
+  const cloudCredit = section.querySelector<HTMLElement>(".alt-cloud-credit")!;
   // TS 6 DOM typings reject a direct Element -> HTMLSelectElement cast.
   const select = section.querySelector(".alt-min-select") as unknown as HTMLSelectElement;
   select.value = String(minAlt);
@@ -139,6 +146,9 @@ export function mountAltitudeChart(slot: HTMLElement, opts: AltitudeChartOptions
     const text = chartSummary(model, a, fmt, t);
     summary.textContent = text;
     plot.innerHTML = svgHtml(model, a.best, view, minAlt, opts, xOf, yOf, zone);
+    const cloudShown = cloudHoursInView(opts.cloud, view).length > 0;
+    cloudCredit.hidden = !cloudShown;
+    cloudCredit.innerHTML = cloudShown ? openMeteoCredit() : "";
 
     section.querySelectorAll<HTMLButtonElement>(".alt-span-btn").forEach((b) => {
       b.setAttribute("aria-pressed", String(b.dataset.span === span));
@@ -150,6 +160,7 @@ export function mountAltitudeChart(slot: HTMLElement, opts: AltitudeChartOptions
       model.moon ? `<span><i class="sw sw-moon"></i>${t("chart.legendMoon", { illum: Math.round(model.moonIllum * 100) })}</span>` : "",
       `<span><i class="sw sw-dark"></i>${t("chart.bandDark")}</span>`,
       `<span><i class="sw sw-twilight"></i>${t("chart.bandTwilight")}</span>`,
+      cloudShown ? `<span><i class="sw sw-cloud"></i>${t("chart.legendCloud")}</span>` : "",
     ].join("");
 
     // Start the scrubber at now when it is on the chart, else the peak.
@@ -283,6 +294,18 @@ function rtsHtml(model: AltitudeModel, fmt: (ms: number) => string): string {
   }
 }
 
+/** Forecast hours (index) whose hour-wide slot overlaps the view. */
+function cloudHoursInView(fc: CloudForecast | null | undefined, view: Span): number[] {
+  if (!fc) return [];
+  const out: number[] = [];
+  for (let i = 0; i < fc.t.length; i++) {
+    if (fc.total[i] === null) continue;
+    if (fc.t[i] + 1_800_000 < view.start || fc.t[i] - 1_800_000 > view.end) continue;
+    out.push(i);
+  }
+  return out;
+}
+
 function pathFor(
   pts: { t: number; alt: number }[],
   view: Span,
@@ -321,6 +344,19 @@ function svgHtml(
     const x1 = clamp(xOf(b.from));
     const x2 = clamp(xOf(b.to));
     out.push(`<rect class="alt-band alt-band-${b.kind}" x="${x1.toFixed(1)}" y="${PAD_T}" width="${Math.max(0, x2 - x1).toFixed(1)}" height="${PH}"/>`);
+  }
+
+  // Cloud: each forecast hour shades the slot centred on it, darker for
+  // more cover. Drawn under everything else, so the curves stay readable.
+  const fc = opts.cloud;
+  if (fc) {
+    for (const i of cloudHoursInView(fc, view)) {
+      const x1 = clamp(xOf(fc.t[i] - 1_800_000));
+      const x2 = clamp(xOf(fc.t[i] + 1_800_000));
+      const op = ((fc.total[i] ?? 0) / 100) * 0.45;
+      if (op <= 0 || x2 <= x1) continue;
+      out.push(`<rect class="alt-cloud" x="${x1.toFixed(1)}" y="${PAD_T}" width="${(x2 - x1).toFixed(1)}" height="${PH}" fill-opacity="${op.toFixed(2)}"/>`);
+    }
   }
 
   // Best window.
