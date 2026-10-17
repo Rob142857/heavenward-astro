@@ -13,7 +13,8 @@ test.describe("search with the on-screen keyboard open", () => {
     await expect(input).toBeFocused();
     await openVirtualKeyboard(page);
     await input.fill("sirius");
-    await expect(page.locator(".search-results .card").first()).toBeAttached();
+    // First search builds the index: allow for a slow load under 4 workers.
+    await expect(page.locator(".search-results .card").first()).toBeAttached({ timeout: 15_000 });
   });
 
   test("the search input stays visible", async ({ page }) => {
@@ -43,7 +44,7 @@ test.describe("search keyboard closes on intent", () => {
     await input.press("Enter");
     await expect(input).not.toBeFocused();
     const first = page.locator(".search-results .card").first();
-    await expect(first).toContainText("Pleiades");
+    await expect(first).toContainText("Pleiades", { timeout: 15_000 });
     // Simulated 300px keyboard: the first result's top must be above it.
     const vp = page.viewportSize()!;
     await page.setViewportSize({ width: vp.width, height: vp.height - 300 });
@@ -55,7 +56,7 @@ test.describe("search keyboard closes on intent", () => {
   test("tapping a chip does not raise the keyboard", async ({ page }) => {
     await gotoApp(page, "#/search");
     await page.locator(".search-chip-suggest[data-key='planet']").tap();
-    await expect(page.locator(".search-results .card").first()).toBeVisible();
+    await expect(page.locator(".search-results .card").first()).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(".search-input")).not.toBeFocused();
   });
 });

@@ -33,6 +33,9 @@ export default defineConfig({
     ["html", { outputFolder: "playwright-report/mobile", open: "never" }],
   ],
   expect: {
+    // The dev server serves ~5 MB of catalogue JSON to four workers at once;
+    // the first search or sky report can take more than the 5 s default.
+    timeout: 15_000,
     toHaveScreenshot: {
       maxDiffPixelRatio: 0.02,
       threshold: 0.25,

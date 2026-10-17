@@ -23,3 +23,8 @@ to the application code that reads them.
 
 Changes: filtered by magnitude, converted to Heavenward's JSON shape, and
 enriched with curated descriptions, common names and aliases.
+
+Use: Heavenward is a non-commercial project (confirmed by the owner, 18 Oct
+2026). Data sources whose terms allow non-commercial use only may therefore
+be added, each attributed here and on the About page with its licence. None
+is bundled as of v1.1.0.
