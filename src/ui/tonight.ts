@@ -11,6 +11,11 @@ import {
   getAltAzForRaDec,
   getRiseSetForRaDec,
   getSunAltitude,
+  getNightWindow,
+  getNightRiseSetForRaDec,
+  getNightRiseSetForBodyName,
+  type NightRiseSet,
+  type NightWindow,
 } from "../engine/astro.js";
 import { loadDSOCatalog } from "../catalog/dso.js";
 import { loadStarCatalog } from "../catalog/stars.js";
@@ -33,7 +38,6 @@ import {
   formatClock,
   viewTime,
   viewZone,
-  zonedDayKey,
   zonedMonthDay,
 } from "../services/sky-time.js";
 
@@ -108,6 +112,7 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
   const now = viewTime(ctx);
   displayZone = viewZone(ctx);
   const twilight = getTwilightTimes(ctx.location, now);
+  currentNight = getNightWindow(ctx.location, now);
 
   renderTwilightBar(container, twilight);
 
@@ -975,32 +980,58 @@ function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {
 
 /* ── Card builder (shared by renderEventCards + showMore) */
 
-// Lazy rise/set cache: catalog items skip the expensive rise/set search
-// in collectAllEvents and only compute it for cards that actually render.
-// Keyed by (id|day) so the result is shared across rerenders within the
-// same evening.
-const riseSetCache = new Map<
-  string,
-  { rise: Date | null; set: Date | null; transit: Date | null }
->();
+// Lazy rise/set cache: catalog items skip the rise/set search in
+// collectAllEvents and only compute it for cards that actually render.
+// Keyed by (id|place|night) so the result is shared across rerenders within
+// the same night.
+const nightCache = new Map<string, NightRiseSet>();
+
+/** Tonight's window for the current render (sunset to sunrise). */
+let currentNight: NightWindow | null = null;
 
 function ensureRiseSet(
   ev: CelestialEvent,
   loc: { lat: number; lon: number; elev: number },
   now: Date,
 ): void {
-  if (ev.rise !== null || ev.set !== null) return;
-  if (ev.ra === null || ev.dec === null) return;
-  const dayKey = zonedDayKey(now, displayZone);
-  const key = `${ev.id}|${dayKey}`;
-  let rs = riseSetCache.get(key);
+  const night = currentNight ?? getNightWindow(loc, now);
+  const key = `${ev.id}|${loc.lat.toFixed(3)},${loc.lon.toFixed(3)}|${night.start.getTime()}`;
+  let rs = nightCache.get(key);
   if (!rs) {
-    rs = getRiseSetForRaDec(ev.ra, ev.dec, loc, now);
-    riseSetCache.set(key, rs);
+    const computed =
+      ev.type === "planet" || ev.type === "moon"
+        ? getNightRiseSetForBodyName(ev.name, loc, night)
+        : ev.ra !== null && ev.dec !== null
+          ? getNightRiseSetForRaDec(ev.ra, ev.dec, loc, night)
+          : null;
+    if (!computed) return;
+    rs = computed;
+    nightCache.set(key, rs);
   }
-  ev.rise = rs.rise;
-  ev.set = rs.set;
-  ev.transit = rs.transit;
+  ev.extra.night = rs;
+}
+
+/** Tonight's rise/set for a card, in the order they happen. */
+function nightTimesHtml(ev: CelestialEvent): string {
+  const rs = ev.extra.night as NightRiseSet | undefined;
+  if (!rs) return "";
+  switch (rs.state) {
+    case "always-up":
+      return `<span>${t("tonight.alwaysUp")}</span>`;
+    case "never-rises":
+      return `<span>${t("tonight.neverRises")}</span>`;
+    case "up-all-night":
+      return `<span>${t("tonight.upAllNight")}</span>`;
+    case "down-all-night":
+      return `<span>${t("tonight.notUpTonight")}</span>`;
+    case "rises-sets":
+      return rs.events
+        .map(
+          (e) =>
+            `<span title="${t(e.kind === "rise" ? "tonight.risesTonight" : "tonight.setsTonight")}">${e.kind === "rise" ? "↑" : "↓"}${fmtShort(e.at)}</span>`,
+        )
+        .join("");
+  }
 }
 
 function buildCard(ev: CelestialEvent, index: number): HTMLElement {
@@ -1030,8 +1061,7 @@ function buildCard(ev: CelestialEvent, index: number): HTMLElement {
     <div class="card-times">
       ${ev.altitude !== null ? `<span>${t("tonight.cardAlt", { value: ev.altitude.toFixed(1) })}</span>` : ""}
       ${ev.azimuth !== null ? `<span>${t("tonight.cardAz", { value: ev.azimuth.toFixed(0) })}</span>` : ""}
-      ${ev.rise ? `<span>↑${fmtShort(ev.rise)}</span>` : ""}
-      ${ev.set ? `<span>↓${fmtShort(ev.set)}</span>` : ""}
+      ${nightTimesHtml(ev)}
     </div>
   `;
   return card;

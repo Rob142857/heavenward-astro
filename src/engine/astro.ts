@@ -397,6 +397,179 @@ export function getRiseSetForRaDec(
   return { rise, set, transit };
 }
 
+// ── Tonight's rise and set (night window) ─────────────────────────
+
+/** Tonight, from sunset to the following sunrise. */
+export interface NightWindow {
+  start: Date;
+  end: Date;
+}
+
+/**
+ * The night `at` belongs to: the sunset before the next sunrise, through
+ * that sunrise. At 2 pm that is tonight; at 3 am it is the night in
+ * progress. Where the Sun does not set or rise (polar day or night) it falls
+ * back to the 12 hours from `at`.
+ */
+export function getNightWindow(loc: GeoLocation, at: Date): NightWindow {
+  const tw = getTwilightTimes(loc, at);
+  if (tw.sunset && tw.sunrise && tw.sunrise > tw.sunset) {
+    return { start: tw.sunset, end: tw.sunrise };
+  }
+  return { start: at, end: new Date(at.getTime() + 12 * 3_600_000) };
+}
+
+export type NightState =
+  /** Crosses the horizon at least once tonight (see `events`). */
+  | "rises-sets"
+  /** Circumpolar at this latitude: never sets. */
+  | "always-up"
+  /** Never clears the horizon at this latitude. */
+  | "never-rises"
+  /** Above the horizon for the whole night, though not circumpolar. */
+  | "up-all-night"
+  /** Below the horizon for the whole night, though it does rise some time. */
+  | "down-all-night";
+
+export interface NightRiseSet {
+  state: NightState;
+  /** Tonight's first rise inside the window, if any. */
+  rise: Date | null;
+  /** Tonight's first set inside the window, if any. */
+  set: Date | null;
+  /** Highest point inside the window. */
+  peak: Date | null;
+  /** Every horizon crossing inside the window, in time order. */
+  events: { kind: "rise" | "set"; at: Date }[];
+}
+
+/** Circumpolar or never-rises for a fixed declination (geometric horizon). */
+function polarState(lat: number, dec: number): NightState | null {
+  if (lat >= 0) {
+    if (dec > 90 - lat) return "always-up";
+    if (dec < lat - 90) return "never-rises";
+  } else {
+    if (dec < -90 - lat) return "always-up";
+    if (dec > 90 + lat) return "never-rises";
+  }
+  return null;
+}
+
+function summarise(
+  events: { kind: "rise" | "set"; at: Date }[],
+  upAtStart: boolean,
+  peak: Date | null,
+  polar: NightState | null,
+): NightRiseSet {
+  events.sort((a, b) => a.at.getTime() - b.at.getTime());
+  const state: NightState =
+    polar ??
+    (events.length
+      ? "rises-sets"
+      : upAtStart
+        ? "up-all-night"
+        : "down-all-night");
+  return {
+    state,
+    rise: events.find((e) => e.kind === "rise")?.at ?? null,
+    set: events.find((e) => e.kind === "set")?.at ?? null,
+    peak,
+    events: polar ? [] : events,
+  };
+}
+
+/**
+ * Rise and set of a fixed RA/Dec inside tonight's window, in the order they
+ * happen. Unlike getRiseSetForRaDec (first crossings anywhere in 36 hours
+ * from the device's yesterday noon) this only reports what happens tonight,
+ * and says when an object is circumpolar or never rises.
+ */
+export function getNightRiseSetForRaDec(
+  ra: number,
+  dec: number,
+  loc: GeoLocation,
+  night: NightWindow,
+): NightRiseSet {
+  const obs = makeObserver(loc);
+  const polar = polarState(loc.lat, dec);
+  const startMs = night.start.getTime();
+  const endMs = night.end.getTime();
+  const STEP = 10 * 60_000;
+  const events: { kind: "rise" | "set"; at: Date }[] = [];
+  let peak: Date | null = null;
+  let peakAlt = -Infinity;
+  let prevAlt: number | null = null;
+  let prevT = startMs;
+  let upAtStart = false;
+  for (let ms = startMs; ; ms = Math.min(ms + STEP, endMs)) {
+    const t = new Date(ms);
+    const alt = Astronomy.Horizon(t, obs, ra, dec, "normal").altitude;
+    if (prevAlt === null) upAtStart = alt > 0;
+    if (alt > peakAlt) {
+      peakAlt = alt;
+      peak = t;
+    }
+    if (prevAlt !== null && !polar) {
+      if (prevAlt <= 0 && alt > 0) {
+        events.push({ kind: "rise", at: refineAltCrossing(obs, ra, dec, new Date(prevT), t, true) });
+      } else if (prevAlt > 0 && alt <= 0) {
+        events.push({ kind: "set", at: refineAltCrossing(obs, ra, dec, new Date(prevT), t, false) });
+      }
+    }
+    prevAlt = alt;
+    prevT = ms;
+    if (ms >= endMs) break;
+  }
+  return summarise(events, upAtStart, peak, polar);
+}
+
+/** The same for a Solar System body (planets, the Moon). */
+export function getNightRiseSetForBody(
+  body: Astronomy.Body,
+  loc: GeoLocation,
+  night: NightWindow,
+): NightRiseSet {
+  const obs = makeObserver(loc);
+  const days = (night.end.getTime() - night.start.getTime()) / 86_400_000;
+  const events: { kind: "rise" | "set"; at: Date }[] = [];
+  for (const [dir, kind] of [[+1, "rise"], [-1, "set"]] as const) {
+    let from = night.start;
+    // At most two crossings of each kind fit in a night.
+    for (let i = 0; i < 2; i++) {
+      const left = (night.end.getTime() - from.getTime()) / 86_400_000;
+      if (left <= 0) break;
+      const hit = Astronomy.SearchRiseSet(body, obs, dir, from, Math.min(left, days));
+      if (!hit || hit.date > night.end) break;
+      events.push({ kind, at: hit.date });
+      from = new Date(hit.date.getTime() + 60_000);
+    }
+  }
+  const altAt = (t: Date) => {
+    const eq = Astronomy.Equator(body, t, obs, true, true);
+    return Astronomy.Horizon(t, obs, eq.ra, eq.dec, "normal").altitude;
+  };
+  const transit = Astronomy.SearchHourAngle(body, obs, 0, night.start, +1);
+  const peak =
+    transit.time.date <= night.end
+      ? transit.time.date
+      : altAt(night.start) >= altAt(night.end)
+        ? night.start
+        : night.end;
+  return summarise(events, altAt(night.start) > 0, peak, null);
+}
+
+/** getNightRiseSetForBody by name ("Jupiter", "Moon"); null if unknown. */
+export function getNightRiseSetForBodyName(
+  name: string,
+  loc: GeoLocation,
+  night: NightWindow,
+): NightRiseSet | null {
+  const body = (Object.values(Astronomy.Body) as string[]).find(
+    (b) => b.toLowerCase() === name.toLowerCase(),
+  ) as Astronomy.Body | undefined;
+  return body ? getNightRiseSetForBody(body, loc, night) : null;
+}
+
 function refineAltCrossing(
   obs: Astronomy.Observer,
   ra: number,
