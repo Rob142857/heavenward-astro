@@ -9,6 +9,7 @@ import {
   BEST_GROUPS,
   SCORE_WEIGHTS,
   buildCandidates,
+  isPinned,
   isShowpiece,
   moonCloseness,
   moonExcludes,
@@ -154,12 +155,15 @@ test("candidate pool: showpieces only, no star-polluted nebulae, curated doubles
 const tw = getTwilightTimes(BELLINGEN, EVENING);
 const night = rankTonightsBest(CANDS, BELLINGEN, EVENING);
 
-test("Bellingen 18 Oct: at most 15 rows, planets and Moon pinned first", () => {
+test("Bellingen 18 Oct: at most 15 rows, Moon and naked-eye planets pinned first", () => {
   assert.ok(night.rows.length >= 10 && night.rows.length <= 15, `${night.rows.length} rows`);
   const firstOther = night.rows.findIndex((r) => !r.pinned);
   assert.ok(firstOther > 0, "something pinned");
-  assert.ok(night.rows.slice(0, firstOther).every((r) => r.cand.group === "planets"));
-  assert.ok(night.rows.slice(firstOther).every((r) => r.cand.group !== "planets"));
+  assert.ok(night.rows.slice(0, firstOther).every((r) => isPinned(r.cand)));
+  assert.ok(night.rows.slice(firstOther).every((r) => !isPinned(r.cand)));
+  // Uranus and Neptune are binocular targets: ranked, not pinned.
+  for (const id of ["planet-uranus", "planet-neptune"]) assert.equal(isPinned(byId(id)), false);
+  assert.equal(isPinned(byId("planet-saturn")), true);
   assert.ok(night.rows.some((r) => r.cand.id === "moon"), "the 49% Moon is up in the evening");
   // Within each block, best score first.
   for (const block of [night.rows.slice(0, firstOther), night.rows.slice(firstOther)])
@@ -169,7 +173,7 @@ test("Bellingen 18 Oct: at most 15 rows, planets and Moon pinned first", () => {
 test("every deep-sky row is at least 30° for at least 1 h of astronomical dark", () => {
   const dusk = tw.astronomicalDusk!.getTime();
   const dawn = tw.astronomicalDawn!.getTime();
-  for (const r of night.rows.filter((x) => !x.pinned)) {
+  for (const r of night.rows.filter((x) => x.cand.pos.kind === "radec")) {
     assert.ok(r.end - r.start >= HOUR - 60_000, `${r.cand.name} ${(r.end - r.start) / HOUR} h`);
     assert.ok(r.start >= dusk - 60_000 && r.end <= dawn + 60_000, `${r.cand.name} inside dark`);
     // Checked against the object page's own model, independently.
@@ -183,7 +187,7 @@ test("every deep-sky row is at least 30° for at least 1 h of astronomical dark"
 
 test("no type takes more than 5 rows when all types show", () => {
   const counts = new Map<string, number>();
-  for (const r of night.rows) if (!r.pinned) counts.set(r.cand.group, (counts.get(r.cand.group) ?? 0) + 1);
+  for (const r of night.rows) if (r.cand.group !== "planets") counts.set(r.cand.group, (counts.get(r.cand.group) ?? 0) + 1);
   for (const [g, n] of counts) assert.ok(n <= 5, `${g}: ${n}`);
 });
 
@@ -212,7 +216,7 @@ test("a nearer Moon lowers the same target's score", () => {
 });
 
 test("why line starts with the dark hours and mentions the Moon", () => {
-  const row = night.rows.find((r) => !r.pinned)!;
+  const row = night.rows.find((r) => r.cand.pos.kind === "radec")!;
   const parts = whyParts(row, { minAlt: 30, equipment: "binoculars" });
   assert.equal(parts[0].key, "best.why.darkHours");
   assert.equal(parts[0].params?.min, 30);

@@ -125,16 +125,16 @@ export function classWithin(need: EquipmentClass, have: EquipmentClass): boolean
 
 /**
  * How comfortably `have` shows the target, 0 (at the limit) to 1 (easy).
- * By type: planets and the Moon are always 1; stars and clusters use the
+ * By type: the Moon is always 1; planets, stars and clusters use the
  * magnitude margin; extended objects average the magnitude and surface
  * brightness margins. A 4-magnitude (or 3 mag/arcsec²) margin counts as easy.
  */
 export function brightnessScore(t: VisualTarget, have: EquipmentClass): number {
-  if (t.kind === "moon" || t.kind === "planet") return 1;
+  if (t.kind === "moon") return 1;
   if (t.mag === null) return 0.5;
   const lim = EQUIPMENT_LIMITS[have];
   const clamp = (x: number) => Math.max(0, Math.min(1, x));
-  const magLimit = t.kind === "star" ? lim.star : lim.dso;
+  const magLimit = t.kind === "dso" ? lim.dso : lim.star;
   const magScore = clamp((magLimit - t.mag) / 4);
   if (!isExtended(t)) return magScore;
   const sb = surfaceBrightness(t);

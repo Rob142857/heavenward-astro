@@ -38,7 +38,7 @@
  * globular clusters 0.5, open clusters 0.3, double stars 0.1, planets 0.
  *
  * ── The list ─────────────────────────────────────────────────────────
- * Planets and the Moon that pass are pinned first. The rest follow by
+ * The Moon and naked-eye planets that pass are pinned first. The rest follow by
  * score. With more than one type showing, no type takes more than
  * `perGroupCap` (5) rows, so 4,000 galaxies cannot crowd out the clusters.
  */
@@ -422,6 +422,12 @@ function fastPass(c: BestCandidate, grid: NightGrid, opts: BestOptions): Fast | 
 
 // ── Ranking ──────────────────────────────────────────────────────────
 
+/** Pinned to the top: the Moon and the naked-eye planets (Mercury to
+ *  Saturn). Uranus and Neptune are binocular targets and rank by score. */
+export function isPinned(c: BestCandidate): boolean {
+  return c.typeKey === "moon" || (c.typeKey === "planet" && (c.target.mag ?? 99) <= 5.5);
+}
+
 /**
  * Rank `cands` for the night `at` belongs to. At 2 pm that is tonight; at
  * 3 am it is the night in progress, so the list doubles as a daytime plan.
@@ -448,7 +454,7 @@ export function rankTonightsBest(
   // Planets and the Moon first, so they are never crowded out; then score.
   scored.sort(
     (x, y) =>
-      Number(y.cand.group === "planets") - Number(x.cand.group === "planets") ||
+      Number(isPinned(y.cand)) - Number(isPinned(x.cand)) ||
       y.score - x.score ||
       x.cand.name.localeCompare(y.cand.name),
   );
@@ -460,8 +466,7 @@ export function rankTonightsBest(
   const rows: BestRow[] = [];
   for (const s of scored) {
     if (rows.length >= opts.limit) break;
-    const isPlanet = s.cand.group === "planets";
-    if (!isPlanet && (perGroup.get(s.cand.group) ?? 0) >= cap) continue;
+    if (!isPinned(s.cand) && (perGroup.get(s.cand.group) ?? 0) >= cap) continue;
     const row = refine(s.cand, s.fast, grid, opts);
     if (!row) continue;
     rows.push(row);
@@ -521,7 +526,7 @@ function refine(
     cand,
     score: totalScore(parts),
     parts,
-    pinned: isBody,
+    pinned: isPinned(cand),
     start,
     end,
     hours,
@@ -552,7 +557,7 @@ export function whyParts(row: BestRow, opts: Pick<BestOptions, "minAlt" | "equip
   const out: WhyPart[] = [];
   const h = Math.round(row.hours * 2) / 2;
   out.push({
-    key: row.pinned ? "best.why.twilightHours" : "best.why.darkHours",
+    key: row.cand.pos.kind === "body" ? "best.why.twilightHours" : "best.why.darkHours",
     params: { hours: h, min: opts.minAlt },
   });
   if (row.cand.group !== "planets") {
@@ -563,7 +568,7 @@ export function whyParts(row: BestRow, opts: Pick<BestOptions, "minAlt" | "equip
     else out.push({ key: "best.why.moonFar", params: { sep: Math.round(row.moonMinSep) } });
   }
   const sep = row.cand.sepArcsec;
-  if (row.cand.group === "planets") out.push({ key: "best.why.planet" });
+  if (row.pinned) out.push({ key: "best.why.planet" });
   else if (row.cand.group === "doubles" && sep)
     out.push(
       sep >= 60

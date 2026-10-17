@@ -41,8 +41,10 @@ test("equipment class of known objects", () => {
   assert.equal(equipmentClass({ kind: "star", mag: 3.1, needs: "small-scope" }), "small-scope", "Albireo");
 });
 
-test("brightness score by type: planets full, clusters by magnitude, galaxies by both", () => {
-  assert.equal(brightnessScore({ kind: "planet", mag: 7.8 }, "naked-eye"), 1);
+test("brightness score by type: Moon full, planets and clusters by magnitude, galaxies by both", () => {
+  assert.equal(brightnessScore({ kind: "moon", mag: -10 }, "naked-eye"), 1);
+  assert.equal(brightnessScore({ kind: "planet", mag: 0.7 }, "naked-eye"), 1, "Saturn");
+  assert.ok(Math.abs(brightnessScore({ kind: "planet", mag: 7.8 }, "binoculars") - 0.3) < 1e-9, "Neptune");
   assert.equal(brightnessScore(dso(4, 20, null, "open-cluster"), "binoculars"), 1);
   assert.equal(brightnessScore(dso(6, 20, null, "open-cluster"), "binoculars"), 0.5);
   const galaxy = brightnessScore(dso(6, 30, 20, "galaxy", 22.5), "binoculars");
