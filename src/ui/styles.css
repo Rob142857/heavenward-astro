@@ -1173,6 +1173,22 @@ body {
 }
 
 /* ── Daylight banner ─────────────────────────────────── */
+.linked-sky-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 4px 4px 4px 12px;
+  border-radius: 10px;
+  background: rgba(120, 160, 255, 0.12);
+  font-size: 0.85rem;
+}
+.linked-sky-reset {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
 .daylight-banner {
   text-align: center;
   padding: 32px 20px;

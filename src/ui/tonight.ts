@@ -29,6 +29,7 @@ import {
 } from "./filterOptions.js";
 import type { DirectionFilter, SortBy } from "../types.js";
 import { t } from "../i18n/translations.js";
+import { getSavedLocation } from "../services/geolocation.js";
 
 const LIMIT_OPTIONS = [30, 50, 100, 0]; // 0 = all
 
@@ -93,9 +94,10 @@ export function renderTonight(container: HTMLElement, ctx: AppContext): void {
   const routeIsStillCurrent = () =>
     isCurrentRender() && renderMarker.isConnected;
 
-  const now = new Date();
+  const now = ctx.at ?? new Date();
   const twilight = getTwilightTimes(ctx.location, now);
 
+  if (ctx.at || ctx.linkedLocation) renderLinkedSkyBar(container, ctx, now);
   renderTwilightBar(container, twilight);
 
   // Reserved slot for the aurora banner so it always sits between the
@@ -921,6 +923,48 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/** Shown when a deep link set the place or time, with a way back to the
+ *  user's own sky. */
+function renderLinkedSkyBar(
+  container: HTMLElement,
+  ctx: AppContext,
+  now: Date,
+): void {
+  const bar = document.createElement("div");
+  bar.className = "linked-sky-bar";
+  const text = document.createElement("span");
+  const when = now.toLocaleString([], {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    ...(ctx.atZone ? { timeZone: ctx.atZone } : {}),
+  });
+  text.textContent = t("tonight.linkedSky", {
+    when,
+    lat: ctx.location.lat.toFixed(2),
+    lon: ctx.location.lon.toFixed(2),
+  });
+  const reset = document.createElement("button");
+  reset.type = "button";
+  reset.className = "btn btn-ghost linked-sky-reset";
+  reset.textContent = t("tonight.linkedSkyReset");
+  reset.addEventListener("click", () => {
+    ctx.at = null;
+    ctx.atZone = null;
+    if (ctx.linkedLocation) {
+      ctx.location = getSavedLocation() ?? ctx.location;
+      ctx.linkedLocation = false;
+    }
+    invalidateTonightCache();
+    renderTonight(container, ctx);
+  });
+  bar.appendChild(text);
+  bar.appendChild(reset);
+  container.appendChild(bar);
 }
 
 function renderTwilightBar(container: HTMLElement, tw: TwilightTimes): void {

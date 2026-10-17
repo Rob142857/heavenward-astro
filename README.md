@@ -35,6 +35,10 @@ Heavenward answers the question every stargazer asks at dusk: _what's up there r
 - **Offline-capable** — service worker + Workbox precaching; works without a connection after first load
 - **Dark theme** — true-dark UI (#0a0e1a) designed for night-time use without ruining your dark adaptation
 
+### Deep links
+
+`/?lat=-31.95&lng=115.86&date=2026-11-10&time=21:30&tz=Australia/Perth` opens the sky report for that place and moment (Trip Companion's "Open in Sky" uses it). `lng` also accepts `lon`; `time` defaults to 21:00; `tz` is an IANA zone (without it the browser's own clock is used). The place applies to that visit only and is never saved over your location; a bar shows the linked place and time with **Use my sky now** to go back. Parsing lives in `src/services/deep-link.ts` (`pnpm test`).
+
 ## Stack
 
 | Layer     | Technology                                                                                                                          |

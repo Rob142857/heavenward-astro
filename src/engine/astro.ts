@@ -43,7 +43,7 @@ function pairedSunset(
     Astronomy.Body.Sun,
     obs,
     -1,
-    before(anchor, 36),
+    before(anchor, 24),
     2,
   );
 }
@@ -59,7 +59,7 @@ function pairedDusk(
     Astronomy.Body.Sun,
     obs,
     -1,
-    before(anchor, 36),
+    before(anchor, 24),
     2,
     altitude,
   );

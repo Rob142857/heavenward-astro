@@ -24,6 +24,7 @@ import { initAnalytics, trackInsight } from "./services/analytics.js";
 import { initPWA } from "./services/pwa.js";
 import { isSocialInAppBrowser } from "./services/browser.js";
 import { initI18n } from "./i18n/i18n.js";
+import { hasSkyLink, parseSkyLink, stripSkyLink } from "./services/deep-link.js";
 
 const DEFAULT_LOCATION = { lat: 51.48, lon: -0.01, elev: 0 }; // Greenwich
 const SERVER_ROUTE_RELEASE_KEY = "heavenward-server-route-release";
@@ -86,6 +87,23 @@ async function boot(): Promise<void> {
     user: null,
   };
 
+  // Deep link from another app (e.g. Trip Companion's "Open in Sky"):
+  // place and time for this visit only. Nothing is saved over the user's
+  // own location, and the params are removed from the address bar.
+  const link = parseSkyLink(window.location.search);
+  if (link.location) {
+    ctx.location = link.location;
+    ctx.linkedLocation = true;
+    markLocationConfirmed();
+  }
+  if (link.at) {
+    ctx.at = link.at;
+    ctx.atZone = link.zone;
+  }
+  if (hasSkyLink(window.location.search)) {
+    history.replaceState(history.state, "", stripSkyLink(window.location.href));
+  }
+
   // Try to load user profile (non-blocking)
   tryLoadUser(ctx);
 
@@ -121,7 +139,9 @@ async function boot(): Promise<void> {
   trackInsight("app_ready");
 
   // Request GPS with timeout for better UX
-  if (!savedLocation && !isSocialInAppBrowser()) {
+  if (ctx.linkedLocation) {
+    // The link chose the place; do not ask for GPS over it.
+  } else if (!savedLocation && !isSocialInAppBrowser()) {
     requestGPS()
       .then((loc) => {
         ctx.location = loc;

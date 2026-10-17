@@ -93,4 +93,11 @@ export interface AppContext {
   location: GeoLocation;
   prefs: UserPrefs;
   user: UserProfile | null;
+  /** Set by a deep link (?date=…): the report is computed for this moment
+   *  instead of now. Cleared by "Use my sky now". */
+  at?: Date | null;
+  /** Time zone the deep link's time was given in. */
+  atZone?: string | null;
+  /** True while `location` came from a deep link rather than the user. */
+  linkedLocation?: boolean;
 }
