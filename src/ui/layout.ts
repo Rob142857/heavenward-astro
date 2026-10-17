@@ -236,6 +236,41 @@ function renderInAppBrowserNotice(): HTMLElement {
   return notice;
 }
 
+/**
+ * Keep --nav-h equal to the bottom bar's real height (home-indicator inset
+ * and the user's text size included), so #app's bottom padding always lets
+ * the last line of a page scroll clear of the bar. On wide screens the nav
+ * is a side rail and the variable is dropped back to the CSS default.
+ */
+function trackNavHeight(nav: HTMLElement): void {
+  const root = document.documentElement;
+  let current = "";
+  const apply = (): void => {
+    const r = nav.getBoundingClientRect();
+    // Wide screens turn the bar into a side rail (flex column, styles.css).
+    const isBottomBar = getComputedStyle(nav).flexDirection !== "column";
+    const next = isBottomBar && r.height > 0 ? `${Math.ceil(r.height)}px` : "";
+    if (next === current) return;
+    current = next;
+    if (next) root.style.setProperty("--nav-h", next);
+    else root.style.removeProperty("--nav-h");
+  };
+  // Write on the next frame, never inside the observer callback: changing
+  // layout there trips WebKit's "ResizeObserver loop" error.
+  let queued = false;
+  const schedule = (): void => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      apply();
+    });
+  };
+  apply();
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(schedule).observe(nav);
+  window.addEventListener("resize", schedule);
+}
+
 export function renderNav(active: string): void {
   let nav = document.querySelector(".nav") as HTMLElement | null;
   if (!nav) {
@@ -252,6 +287,7 @@ export function renderNav(active: string): void {
       e.preventDefault();
       navigate(href);
     });
+    trackNavHeight(nav);
   }
   nav.innerHTML = NAV_ITEMS.map(
     (item) =>

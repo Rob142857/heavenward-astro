@@ -83,10 +83,23 @@ body {
   border-radius: 3px;
 }
 
+/* Height of the fixed bottom nav, including the home-indicator inset.
+   renderNav() measures the real bar (larger system text makes it taller)
+   and overwrites this; the fallback covers the first paint. */
+:root {
+  --nav-h: calc(57px + env(safe-area-inset-bottom, 0px));
+}
+html {
+  /* Focus moves and scrollIntoView stop above the nav, not under it. */
+  scroll-padding-bottom: calc(var(--nav-h) + 8px);
+}
+
 #app {
   max-width: 480px;
   margin: 0 auto;
-  padding: 0 16px 88px;
+  /* Room for the fixed nav plus a gap, so the last line of every page
+     (a chart legend, a button) can scroll clear of it. */
+  padding: 0 16px calc(var(--nav-h) + 32px);
   width: 100%;
 }
 
@@ -646,7 +659,7 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   justify-content: space-around;
-  padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  padding: 6px 0 max(6px, env(safe-area-inset-bottom, 0px));
   z-index: 100;
 }
 .nav a {
@@ -2318,7 +2331,7 @@ body {
 @media (min-width: 768px) {
   #app {
     max-width: 720px;
-    padding: 0 28px 88px;
+    padding: 0 28px calc(var(--nav-h) + 32px);
   }
 
   .card-grid {
