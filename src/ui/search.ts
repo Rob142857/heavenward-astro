@@ -1,9 +1,9 @@
 import type { AppContext, CelestialEvent } from "../types.js";
-import { loadDSOCatalog, type DSOEntry } from "../catalog/dso.js";
-import { loadStarCatalog, type StarEntry } from "../catalog/stars.js";
+import { loadDSOCatalog } from "../catalog/dso.js";
+import { loadStarCatalog } from "../catalog/stars.js";
 import { METEOR_SHOWERS } from "../catalog/meteors.js";
 import { renderHeader, renderNav } from "./layout.js";
-import { navigate } from "./router.js";
+import { hashQuery, navigate, replaceHash } from "./router.js";
 import { trackEvent, trackInsight } from "../services/analytics.js";
 import { t, detectLocale } from "../i18n/translations.js";
 import type { Locale } from "../i18n/translations.js";
@@ -13,28 +13,24 @@ import {
   getMoonEvent,
 } from "../engine/astro.js";
 import { viewTime } from "../services/sky-time.js";
+import {
+  dsoToEntry,
+  normalizeText,
+  planetEntry,
+  rankMatches,
+  starToEntry,
+  uniq,
+  type SearchEntry,
+} from "../services/search-core.js";
 
 /* ── Search index ─────────────────────────────────────────────────
  *
- * One flat array of lightweight entries, built once per session. The
- * `searchText` field is a pre-lowercased blob so a substring match is a
- * single .includes() call \u2014 fast enough for ~10k entries on every keystroke
- * without any external fuzzy-search library.
+ * One flat array of lightweight entries, built once per session. Matching
+ * and ranking live in services/search-core.ts (pure, unit-tested): exact
+ * catalogue IDs and aliases first ("m 42", "ngc 292", "lmc", "pleiades"),
+ * then name prefixes, word prefixes and substrings, with planets and the
+ * Moon ahead of everything else in each tier.
  */
-
-interface SearchEntry {
-  id: string; // detail-route id (e.g. "dso-M1", "star-sirius", "planet-mars")
-  kind: "planet" | "moon" | "star" | "dso" | "meteor";
-  name: string;
-  brief: string;
-  magnitude: number | null;
-  constellation: string;
-  catalogType: string | null;
-  searchText: string;
-  flags: Set<string>;
-  ra: number | null; // hours
-  dec: number | null; // degrees
-}
 
 let indexCache: SearchEntry[] | null = null;
 let indexBuilding: Promise<SearchEntry[]> | null = null;
@@ -57,20 +53,12 @@ async function buildIndex(): Promise<SearchEntry[]> {
     ]);
 
     const entries: SearchEntry[] = [];
+    for (const s of stars) entries.push(starToEntry(s));
+    for (const d of dsos) entries.push(dsoToEntry(d));
 
-    // Stars
-    for (const s of stars) {
-      entries.push(starToEntry(s));
-    }
-
-    // DSOs
-    for (const d of dsos) {
-      entries.push(dsoToEntry(d));
-    }
-
-    // Planets (always 7) \u2014 RA/Dec is location-time-dependent so we leave
+    // Planets (always 7) — RA/Dec is location-time-dependent so we leave
     // ra/dec null here; the result card hydrates azimuth on demand from
-    // getPlanetEvents using current location/time.
+    // getPlanetEvents using the page's location and time.
     for (const name of [
       "Mercury",
       "Venus",
@@ -80,19 +68,9 @@ async function buildIndex(): Promise<SearchEntry[]> {
       "Uranus",
       "Neptune",
     ]) {
-      entries.push({
-        id: `planet-${name.toLowerCase()}`,
-        kind: "planet",
-        name,
-        brief: t("search.planetBrief", undefined, requestedLocale),
-        magnitude: null,
-        constellation: "",
-        catalogType: "planet",
-        searchText: `${name} planet solar system`.toLowerCase(),
-        flags: new Set(["planet"]),
-        ra: null,
-        dec: null,
-      });
+      entries.push(
+        planetEntry(name, t("search.planetBrief", undefined, requestedLocale)),
+      );
     }
 
     // Moon
@@ -104,7 +82,11 @@ async function buildIndex(): Promise<SearchEntry[]> {
       magnitude: null,
       constellation: "",
       catalogType: "moon",
-      searchText: "moon luna earth satellite".toLowerCase(),
+      searchText: "moon luna earth satellite",
+      keys: ["moon", "luna", "the moon"],
+      names: ["moon", "luna"],
+      text: "moon luna earth satellite",
+      notable: true,
       flags: new Set(["moon"]),
       ra: null,
       dec: null,
@@ -112,6 +94,7 @@ async function buildIndex(): Promise<SearchEntry[]> {
 
     // Meteor showers
     for (const shower of METEOR_SHOWERS) {
+      const name = normalizeText(shower.name);
       entries.push({
         id: `meteor-${shower.id}`,
         kind: "meteor",
@@ -130,6 +113,12 @@ async function buildIndex(): Promise<SearchEntry[]> {
         constellation: "",
         catalogType: "meteor-shower",
         searchText: `${shower.name} ${shower.id} meteor shower ${shower.parentBody}`.toLowerCase(),
+        keys: uniq([name, normalizeText(shower.id)]),
+        names: [name],
+        text: normalizeText(
+          `${shower.name} ${shower.id} meteor shower ${shower.parentBody}`,
+        ),
+        notable: true,
         flags: new Set(["meteor"]),
         ra: shower.radiantRA,
         dec: shower.radiantDec,
@@ -150,85 +139,21 @@ async function buildIndex(): Promise<SearchEntry[]> {
   }
 }
 
-function starToEntry(s: StarEntry): SearchEntry {
-  const flags = new Set<string>(["star"]);
-  if (s.isDouble) flags.add("double");
-  if (s.isVariable) flags.add("variable");
-  if (s.hasExoplanets) flags.add("exoplanet-host");
-
-  const parts = [
-    s.name,
-    s.bayerDesignation ?? "",
-    s.flamsteedNumber ? `${s.flamsteedNumber} ${s.constellation}` : "",
-    s.spectralType,
-    s.constellation,
-    s.description,
-    ...s.notableFeatures,
-  ];
-  return {
-    id: `star-${s.id}`,
-    kind: "star",
-    name: s.name,
-    brief: s.description,
-    magnitude: s.magnitude,
-    constellation: s.constellation,
-    catalogType: "star",
-    searchText: parts.join(" ").toLowerCase(),
-    flags,
-    ra: s.ra,
-    dec: s.dec,
-  };
-}
-
-function dsoToEntry(d: DSOEntry): SearchEntry {
-  const flags = new Set<string>(["dso", d.type]);
-  if (d.caldwell) flags.add("caldwell");
-  if (d.id.startsWith("M") && /^M\d+$/.test(d.id)) flags.add("messier");
-
-  // Surface feature keywords found in notableFeatures so chip search hits.
-  const featuresBlob = (d.notableFeatures ?? []).join(" ").toLowerCase();
-  if (/\bpulsar\b/.test(featuresBlob)) flags.add("pulsar");
-  if (/\bquasar\b/.test(featuresBlob)) flags.add("quasar");
-  if (/black hole|smbh|supermassive/.test(featuresBlob))
-    flags.add("black-hole");
-  if (
-    /star.forming|stellar nursery|protostar/.test(featuresBlob) ||
-    d.type === "hii-region"
-  )
-    flags.add("star-forming");
-
-  const parts = [
-    d.name,
-    d.commonName,
-    d.type,
-    d.constellation,
-    d.description,
-    d.morphology ?? "",
-    d.caldwell ?? "",
-    d.caldwell ? `caldwell ${d.caldwell}` : "",
-    ...(d.notableFeatures ?? []),
-    ...(d.subObjects ?? []),
-  ];
-  return {
-    id: `dso-${d.id}`,
-    kind: "dso",
-    name: d.commonName || (d.caldwell ? `${d.name} (${d.caldwell})` : d.name),
-    brief: d.description,
-    magnitude: d.magnitude,
-    constellation: d.constellation,
-    catalogType: d.type,
-    searchText: parts.join(" ").toLowerCase(),
-    flags,
-    ra: d.ra,
-    dec: d.dec,
-  };
+/**
+ * The detail-route id for a name or catalogue ID ("M42", "ngc292", "lmc",
+ * "jupiter", "alpha centauri"), or null. Used by `#/object/:name`.
+ */
+export async function resolveObjectId(nameOrId: string): Promise<string | null> {
+  const entries = await buildIndex();
+  const [best] = rankMatches(entries, nameOrId);
+  return best?.id ?? null;
 }
 
 /* ── Chip taxonomy ─────────────────────────────────────────────── */
 
 interface Chip {
   key: string;
-  // Translation key, not display text \u2014 call t(chip.labelKey) at render
+  // Translation key, not display text — call t(chip.labelKey) at render
   // time so labels stay correct across a locale switch (this array is
   // built once at module load, before the user can have changed locale).
   labelKey: string;
@@ -236,32 +161,34 @@ interface Chip {
   // An entry matches the chip if any flag is set OR any keyword is found.
   flags?: string[];
   keywords?: string[];
+  /** Shown before "More filters" is opened. */
+  quick?: boolean;
 }
 
 const CHIPS: Chip[] = [
   // Solar system
-  { key: "planet", labelKey: "search.chip.planet", icon: "\ud83e\ude90", flags: ["planet"] },
-  { key: "moon", labelKey: "search.chip.moon", icon: "\ud83c\udf11", flags: ["moon"] },
-  { key: "meteor", labelKey: "search.chip.meteor", icon: "\ud83c\udf20", flags: ["meteor"] },
+  { key: "planet", labelKey: "search.chip.planet", icon: "🪐", flags: ["planet"], quick: true },
+  { key: "moon", labelKey: "search.chip.moon", icon: "🌑", flags: ["moon"] },
+  { key: "meteor", labelKey: "search.chip.meteor", icon: "🌠", flags: ["meteor"] },
   // Stars
-  { key: "named-star", labelKey: "search.chip.namedStar", icon: "\u2b50", flags: ["star"] },
-  { key: "double", labelKey: "search.chip.doubleStar", icon: "\u2b50\u2b50", flags: ["double"] },
-  { key: "variable", labelKey: "search.chip.variable", icon: "\ud83d\udcab", flags: ["variable"] },
-  { key: "exoplanet-host", labelKey: "search.chip.exoplanetHost", icon: "\ud83d\udd2d", flags: ["exoplanet-host"] },
+  { key: "named-star", labelKey: "search.chip.namedStar", icon: "⭐", flags: ["star"] },
+  { key: "double", labelKey: "search.chip.doubleStar", icon: "⭐⭐", flags: ["double"] },
+  { key: "variable", labelKey: "search.chip.variable", icon: "💫", flags: ["variable"] },
+  { key: "exoplanet-host", labelKey: "search.chip.exoplanetHost", icon: "🔭", flags: ["exoplanet-host"] },
   // Deep sky
   { key: "messier", labelKey: "search.chip.messier", icon: "M", flags: ["messier"] },
   { key: "caldwell", labelKey: "search.chip.caldwell", icon: "C", flags: ["caldwell"] },
-  { key: "galaxy", labelKey: "search.chip.galaxy", icon: "\ud83c\udf0c", flags: ["galaxy", "galaxy-pair", "galaxy-group"] },
-  { key: "nebula", labelKey: "search.chip.nebula", icon: "\ud83c\udf2b", flags: ["nebula", "emission-nebula", "reflection-nebula", "dark-nebula"] },
-  { key: "planetary-nebula", labelKey: "search.chip.planetaryNebula", icon: "\ud83d\udc8d", flags: ["planetary-nebula"] },
-  { key: "supernova-remnant", labelKey: "search.chip.supernovaRemnant", icon: "\ud83d\udca5", flags: ["supernova-remnant"] },
-  { key: "open-cluster", labelKey: "search.chip.openCluster", icon: "\ud83c\udf1f", flags: ["open-cluster"] },
-  { key: "globular-cluster", labelKey: "search.chip.globularCluster", icon: "\u26ea", flags: ["globular-cluster"] },
-  { key: "hii-region", labelKey: "search.chip.hiiRegion", icon: "\u2728", flags: ["hii-region", "star-forming"] },
+  { key: "galaxy", labelKey: "search.chip.galaxy", icon: "🌌", flags: ["galaxy", "galaxy-pair", "galaxy-group"], quick: true },
+  { key: "nebula", labelKey: "search.chip.nebula", icon: "🌫", flags: ["nebula", "emission-nebula", "reflection-nebula", "dark-nebula", "hii-region"], quick: true },
+  { key: "planetary-nebula", labelKey: "search.chip.planetaryNebula", icon: "💍", flags: ["planetary-nebula"] },
+  { key: "supernova-remnant", labelKey: "search.chip.supernovaRemnant", icon: "💥", flags: ["supernova-remnant"] },
+  { key: "open-cluster", labelKey: "search.chip.openCluster", icon: "🌟", flags: ["open-cluster"] },
+  { key: "globular-cluster", labelKey: "search.chip.globularCluster", icon: "⛪", flags: ["globular-cluster"] },
+  { key: "hii-region", labelKey: "search.chip.hiiRegion", icon: "✨", flags: ["hii-region", "star-forming"] },
   // Phenomenon keywords (full-text)
-  { key: "pulsar", labelKey: "search.chip.pulsar", icon: "\ud83d\udd06", flags: ["pulsar"], keywords: ["pulsar"] },
-  { key: "black-hole", labelKey: "search.chip.blackHole", icon: "\u26ab", flags: ["black-hole"], keywords: ["black hole", "supermassive"] },
-  { key: "quasar", labelKey: "search.chip.quasar", icon: "\ud83d\udca0", flags: ["quasar"], keywords: ["quasar"] },
+  { key: "pulsar", labelKey: "search.chip.pulsar", icon: "🔆", flags: ["pulsar"], keywords: ["pulsar"] },
+  { key: "black-hole", labelKey: "search.chip.blackHole", icon: "⚫", flags: ["black-hole"], keywords: ["black hole", "supermassive"] },
+  { key: "quasar", labelKey: "search.chip.quasar", icon: "💠", flags: ["quasar"], keywords: ["quasar"] },
 ];
 
 function entryMatchesChip(e: SearchEntry, chip: Chip): boolean {
@@ -288,62 +215,121 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
   renderHeader(container, ctx);
   renderNav("#/search");
 
-  const state: SearchState = { query: "", activeChips: new Set() };
+  // `#/search?q=nebula&chips=galaxy` opens prefilled.
+  const params = hashQuery();
+  const state: SearchState = {
+    query: params.get("q") ?? "",
+    activeChips: new Set(
+      (params.get("chips") ?? "")
+        .split(",")
+        .filter((k) => CHIPS.some((c) => c.key === k)),
+    ),
+  };
 
   const page = document.createElement("div");
   page.className = "search-page";
   container.appendChild(page);
 
-  // Combined input + chip-token field (SharePoint people-picker style)
-  const field = document.createElement("div");
-  field.className = "search-field";
-  page.appendChild(field);
+  // A real form so Enter (the keyboard's Search key) submits: that is the
+  // one place the keyboard is dismissed on purpose.
+  const form = document.createElement("form");
+  form.className = "search-field";
+  form.setAttribute("role", "search");
+  form.noValidate = true;
+
+  const tokens = document.createElement("span");
+  tokens.className = "search-tokens";
+  form.appendChild(tokens);
 
   const input = document.createElement("input");
   input.type = "search";
   input.className = "search-input";
   input.placeholder = t("search.inputPlaceholder");
   input.setAttribute("aria-label", t("search.inputAriaLabel"));
+  input.setAttribute("enterkeyhint", "search");
   input.autocomplete = "off";
   input.autocapitalize = "off";
   input.spellcheck = false;
+  input.value = state.query;
+  form.appendChild(input);
 
-  // Chip palette
+  // Chip palette: three quick chips, the rest behind "More filters".
   const palette = document.createElement("div");
   palette.className = "search-palette";
   palette.setAttribute("role", "group");
   palette.setAttribute("aria-label", t("search.suggestedFiltersAriaLabel"));
+  let showAllChips = CHIPS.some((c) => !c.quick && state.activeChips.has(c.key));
   for (const chip of CHIPS) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "search-chip-suggest";
     btn.dataset.key = chip.key;
+    if (!chip.quick) btn.dataset.more = "true";
     btn.innerHTML = `<span class="chip-icon" aria-hidden="true">${chip.icon}</span><span class="chip-label">${escape(t(chip.labelKey))}</span>`;
     btn.addEventListener("click", () => {
       if (state.activeChips.has(chip.key)) state.activeChips.delete(chip.key);
       else state.activeChips.add(chip.key);
-      input.focus();
-      refresh();
+      // No input.focus(): a chip tap is a browse, not a request to type, and
+      // focusing would raise the keyboard over the results.
+      void refresh();
     });
     palette.appendChild(btn);
   }
+  const moreBtn = document.createElement("button");
+  moreBtn.type = "button";
+  moreBtn.className = "search-chip-suggest search-chip-more";
+  moreBtn.addEventListener("click", () => {
+    showAllChips = !showAllChips;
+    paintPalette();
+  });
+  palette.appendChild(moreBtn);
 
-  // Hint / empty state
   const hint = document.createElement("p");
   hint.className = "search-hint";
   hint.textContent = t("search.hint");
   page.appendChild(hint);
-  page.appendChild(field);
+  page.appendChild(form);
   page.appendChild(palette);
 
   const results = document.createElement("div");
   results.className = "search-results";
   page.appendChild(results);
 
-  // Build the field interior
-  function paintField(): void {
-    field.innerHTML = "";
-    // Render token chips for any active selections
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    input.blur();
+    void refresh().then(revealFirstResult);
+  });
+  // While typing on a touch screen the bottom nav would sit on top of the
+  // keyboard and cover the results; tuck it away until the field is left.
+  const coarse = window.matchMedia?.("(pointer: coarse)").matches ?? false;
+  const setTyping = (on: boolean): void => {
+    document.body.classList.toggle("search-typing", on && coarse);
+  };
+  input.addEventListener("focus", () => setTyping(true));
+  input.addEventListener("blur", () => setTyping(false));
+  window.addEventListener("app:navigate", () => setTyping(false), { once: true });
+
+  /** After Enter: make sure the first result is on screen. */
+  function revealFirstResult(): void {
+    const first = results.querySelector<HTMLElement>(".card");
+    if (!first) return;
+    const r = first.getBoundingClientRect();
+    const vv = window.visualViewport;
+    const bottom = (vv ? vv.offsetTop + vv.height : window.innerHeight) - 24;
+    if (r.top > bottom || r.top < 0) {
+      results.scrollIntoView({ block: "start" });
+    }
+  }
+  // Scrolling the results means reading them: put the keyboard away.
+  const dismissKeyboard = (): void => {
+    if (document.activeElement === input) input.blur();
+  };
+  results.addEventListener("touchmove", dismissKeyboard, { passive: true });
+  results.addEventListener("wheel", dismissKeyboard, { passive: true });
+
+  function paintTokens(): void {
+    tokens.innerHTML = "";
     for (const key of state.activeChips) {
       const chip = CHIPS.find((c) => c.key === key);
       if (!chip) continue;
@@ -357,25 +343,39 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
         "aria-label",
         t("search.removeChip", { label: t(chip.labelKey) }),
       );
-      remove.textContent = "\u00d7";
+      remove.textContent = "×";
       remove.addEventListener("click", () => {
         state.activeChips.delete(key);
-        refresh();
+        void refresh();
       });
       token.appendChild(remove);
-      field.appendChild(token);
+      tokens.appendChild(token);
     }
-    field.appendChild(input);
-    input.focus();
   }
 
   function paintPalette(): void {
     palette
-      .querySelectorAll<HTMLButtonElement>(".search-chip-suggest")
+      .querySelectorAll<HTMLButtonElement>(".search-chip-suggest[data-key]")
       .forEach((btn) => {
         const k = btn.dataset.key ?? "";
-        btn.classList.toggle("active", state.activeChips.has(k));
+        const active = state.activeChips.has(k);
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-pressed", active ? "true" : "false");
+        btn.hidden = Boolean(btn.dataset.more) && !showAllChips && !active;
       });
+    moreBtn.textContent = showAllChips
+      ? t("search.fewerFilters")
+      : t("search.moreFilters");
+    moreBtn.setAttribute("aria-expanded", showAllChips ? "true" : "false");
+  }
+
+  /** Keep `#/search?q=…&chips=…` in the address bar for reload and share. */
+  function syncUrl(): void {
+    const q = new URLSearchParams();
+    if (state.query) q.set("q", state.query);
+    if (state.activeChips.size) q.set("chips", [...state.activeChips].join(","));
+    const qs = q.toString();
+    replaceHash(qs ? `#/search?${qs}` : "#/search");
   }
 
   let queryToken = 0;
@@ -383,9 +383,11 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
   let resultsObserved = false;
   let emptyObserved = false;
   async function refresh(): Promise<void> {
-    paintField();
+    paintTokens();
     paintPalette();
     state.query = input.value.trim();
+    hint.hidden = Boolean(state.query) || state.activeChips.size > 0;
+    syncUrl();
 
     const myToken = ++queryToken;
     if (!state.query && state.activeChips.size === 0) {
@@ -416,35 +418,13 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
     if (myToken !== queryToken) return; // a newer keystroke superseded us
     if (!page.isConnected) return;
 
-    const q = state.query.toLowerCase();
     const activeChips = Array.from(state.activeChips)
       .map((k) => CHIPS.find((c) => c.key === k))
       .filter((c): c is Chip => Boolean(c));
-
-    const matches: SearchEntry[] = [];
-    for (const e of entries) {
-      if (q && !e.searchText.includes(q)) continue;
-      let ok = true;
-      for (const chip of activeChips) {
-        if (!entryMatchesChip(e, chip)) {
-          ok = false;
-          break;
-        }
-      }
-      if (ok) matches.push(e);
-    }
-
-    // Sort: prefer name-prefix matches, then by brightness.
-    if (q) {
-      matches.sort((a, b) => {
-        const aHit = a.name.toLowerCase().startsWith(q) ? 0 : 1;
-        const bHit = b.name.toLowerCase().startsWith(q) ? 0 : 1;
-        if (aHit !== bHit) return aHit - bHit;
-        return (a.magnitude ?? 99) - (b.magnitude ?? 99);
-      });
-    } else {
-      matches.sort((a, b) => (a.magnitude ?? 99) - (b.magnitude ?? 99));
-    }
+    const chipFiltered = activeChips.length
+      ? entries.filter((e) => activeChips.every((chip) => entryMatchesChip(e, chip)))
+      : entries;
+    const matches = rankMatches(chipFiltered, state.query);
 
     paintResults(matches);
     // One outcome of each kind per search-screen visit; never every keystroke.
@@ -481,12 +461,15 @@ export function renderSearch(container: HTMLElement, ctx: AppContext): void {
     results.appendChild(grid);
   }
 
-  // Initial paint
-  paintField();
   input.addEventListener("input", () => {
     void refresh();
   });
   void refresh();
+  // Focus only where it costs nothing: a mouse-and-keyboard screen with an
+  // empty box. On touch screens the user taps the field when they want it.
+  if (!state.query && window.matchMedia?.("(pointer: fine)").matches) {
+    input.focus({ preventScroll: true });
+  }
 }
 
 /* ── Result card with lazy alt/az hydration ───────────────────── */
@@ -522,7 +505,7 @@ function buildResultCard(
     e.catalogType ? e.catalogType.replace(/-/g, " ") : "",
   ]
     .filter(Boolean)
-    .join(" \u00b7 ");
+    .join(" · ");
 
   card.innerHTML = `
     <div class="card-header">
@@ -535,7 +518,7 @@ function buildResultCard(
     </div>
   `;
 
-  // Hydrate alt/az lazily \u2014 only after the card is in the DOM.
+  // Hydrate alt/az lazily — only after the card is in the DOM.
   // For stars/DSOs we compute directly; planets/moon use the engine helpers.
   queueMicrotask(() => {
     void hydrateAltAz(card, e, ctx);
@@ -581,6 +564,7 @@ async function hydrateAltAz(
   if (alt === null) return;
   if (!card.isConnected) return;
   const isUp = alt > 0;
+  card.classList.toggle("is-below", !isUp);
   const sub = slot.querySelector("span")?.textContent ?? "";
   slot.innerHTML = `
     ${sub ? `<span>${escape(sub)}</span>` : ""}

@@ -93,7 +93,9 @@ body {
 /* ── Card grid (responsive) ──────────────────────────── */
 .card-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  /* minmax(0, …): a nowrap brief must ellipsis, not widen the column (it
+     made search cards ~750px wide and zoomed phones out). */
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
 }
 .card-grid .card {
@@ -2317,7 +2319,7 @@ body {
   }
 
   .card-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .header {
@@ -2737,34 +2739,54 @@ body {
   font-size: 0.95rem;
 }
 .search-token-x {
-  width: 20px;
-  height: 20px;
+  /* 44px hit area around a 24px visual circle (padding is transparent). */
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px -10px -6px;
+  padding: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08) content-box;
   color: var(--text, #e0e6f0);
   border: 0;
   border-radius: 999px;
   cursor: pointer;
   font-size: 0.95rem;
   line-height: 1;
-  padding: 0;
 }
 .search-token-x:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background-color: rgba(255, 255, 255, 0.18);
 }
 .search-palette {
+  /* One row of quick chips that scrolls sideways, so the results start as
+     high as possible when the keyboard is up. "More filters" wraps. */
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -14px;
+  padding: 0 14px;
+}
+.search-palette::-webkit-scrollbar {
+  display: none;
+}
+.search-palette:has(.search-chip-more[aria-expanded="true"]) {
+  flex-wrap: wrap;
+}
+.search-palette .search-chip-suggest {
+  flex: 0 0 auto;
+}
+body.search-typing .nav {
+  display: none;
 }
 .search-chip-suggest {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  min-height: 36px;
+  padding: 8px 14px;
+  min-height: 44px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text, #e0e6f0);
@@ -2777,6 +2799,13 @@ body {
 }
 .search-chip-suggest:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+.search-chip-suggest[hidden] {
+  display: none;
+}
+.search-chip-more {
+  color: var(--text-muted, #9aa3b8);
+  border-style: dashed;
 }
 .search-chip-suggest.active {
   background: rgba(79, 195, 247, 0.15);
@@ -2798,8 +2827,19 @@ body {
   text-align: center;
   line-height: 1.5;
 }
+.search-results {
+  min-width: 0;
+  /* Keep results clear of the sticky header when scrolled into view. */
+  scroll-margin-top: 72px;
+}
 .search-results .card-grid {
   margin-top: 6px;
+}
+.search-tokens {
+  display: contents;
+}
+.search-results .card.is-below {
+  opacity: 0.65;
 }
 /* Brief visual feedback while a pending filter rebuild is queued */
 .tonight-controls.is-filtering {

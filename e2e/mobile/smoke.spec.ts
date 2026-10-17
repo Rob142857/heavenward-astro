@@ -49,12 +49,6 @@ test.describe("no sideways scroll with search results", () => {
   test.skip(({ isMobile }) => !isMobile, "phone widths only");
 
   test("search results fit the screen width", async ({ page }) => {
-    test.info().annotations.push({
-      type: "known-bug",
-      description:
-        "TODO(feature worker): search result cards render ~750px wide on phones (scrollWidth 781 at 360px), so mobile Chrome zooms the whole page out. Find the unwrapped content in .search-results .card, then delete test.fail().",
-    });
-    test.fail();
     await gotoApp(page, "#/search");
     await page.locator(".search-input").fill("sirius");
     await expect(page.locator(".search-results .card").first()).toBeVisible();
@@ -92,13 +86,9 @@ test.describe("tap targets", () => {
   });
 
   test("search input and filter chips are at least 44px tall", async ({ page }) => {
-    test.info().annotations.push({
-      type: "known-bug",
-      description: "TODO: search filter chips are 38px tall. Delete test.fail() once fixed.",
-    });
-    test.fail();
-    await gotoApp(page, "#/search");
-    const small = await smallTapTargets(page, ".search-field, .search-chip-suggest");
+    await gotoApp(page, "#/search?chips=galaxy");
+    await expect(page.locator(".search-token-x")).toBeVisible();
+    const small = await smallTapTargets(page, ".search-field, .search-chip-suggest, .search-token-x");
     expect(small, small.join("\n")).toEqual([]);
   });
 });

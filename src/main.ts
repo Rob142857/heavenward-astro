@@ -6,7 +6,13 @@ import {
   markLocationConfirmed,
 } from "./services/geolocation.js";
 import { loadPrefs } from "./services/prefs.js";
-import { navigate, reroute, route, startRouter } from "./ui/router.js";
+import {
+  navigate,
+  replaceHash,
+  reroute,
+  route,
+  startRouter,
+} from "./ui/router.js";
 import { renderTonight } from "./ui/tonight.js";
 import {
   renderDetail,
@@ -19,7 +25,7 @@ import { renderLocation } from "./ui/location.js";
 import { renderAccount, tryLoadUser } from "./ui/account.js";
 import { renderAbout } from "./ui/about.js";
 import { renderObservations } from "./ui/observations.js";
-import { renderSearch } from "./ui/search.js";
+import { renderSearch, resolveObjectId } from "./ui/search.js";
 import { initAnalytics, trackInsight } from "./services/analytics.js";
 import { initPWA } from "./services/pwa.js";
 import { isSocialInAppBrowser } from "./services/browser.js";
@@ -112,8 +118,7 @@ async function boot(): Promise<void> {
   // Register routes
   route("/", () => renderTonight(app, ctx));
 
-  route("/detail/:id", (params) => {
-    const id = params.p0;
+  const showDetail = (id: string): void => {
     restoreBreadcrumb();
     if (id.startsWith("dso-")) {
       renderDSODetail(app, ctx, id);
@@ -122,6 +127,30 @@ async function boot(): Promise<void> {
     } else {
       renderDetail(app, ctx, id);
     }
+  };
+  route("/detail/:id", (params) => showDetail(params.p0));
+
+  // Name-based object links for people and agents: #/object/M42,
+  // #/object/lmc, #/object/ngc%20292, #/object/jupiter. Resolved with the
+  // search aliases; an unknown name opens search prefilled with it.
+  route("/object/:name", (params) => {
+    const raw = params.p0;
+    let name = raw;
+    try {
+      name = decodeURIComponent(raw);
+    } catch {
+      /* keep the raw text */
+    }
+    const routeHash = window.location.hash;
+    void resolveObjectId(name).then((id) => {
+      if (window.location.hash !== routeHash) return; // navigated away
+      if (id) {
+        showDetail(id);
+      } else {
+        replaceHash(`#/search?q=${encodeURIComponent(name)}`);
+        renderSearch(app, ctx);
+      }
+    });
   });
 
   route("/sources", () => renderSources(app, ctx));
