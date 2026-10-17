@@ -86,6 +86,10 @@ npm run dev          # Vite dev server on localhost:5173
 | `npm run deploy:preview` | Build + deploy a non-production preview branch       |
 | `npm run catalog:plan`   | Print catalog import plan (sources, outputs, validation) without downloading |
 | `npm run refresh`        | Run catalog importers (pass `-- --stars` or `-- --dso` to scope) |
+| `pnpm test:mobile`       | Playwright phone suite (Pixel 7, Galaxy S24, iPhone 14, Desktop Chrome) against the Vite dev server |
+| `pnpm test:mobile:update`| Refresh the visual baselines in `e2e/mobile/__screenshots__/` after an intended UI change |
+
+The mobile suite runs offline with a frozen clock (20:30 AEDT, 18 Oct 2026), an invented NSW location and the Australia/Sydney time zone. Known bugs are `test.fail()` with a `known-bug` annotation: fix the bug, then delete the `test.fail()` line. First run on a new machine: `pnpm exec playwright install chromium webkit`.
 
 ## How it works
 

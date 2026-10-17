@@ -16,6 +16,9 @@
     "deploy:production": "pnpm run build && wrangler pages deploy dist --branch production",
     "deploy:preview": "pnpm run build && wrangler pages deploy dist --branch preview",
     "test": "node --test test/*.test.ts",
+    "test:mobile": "playwright test",
+    "test:mobile:update": "playwright test --update-snapshots",
+    "test:mobile:report": "playwright show-report playwright-report/mobile",
     "typecheck": "tsc --noEmit && pnpm run check:i18n && pnpm run check:data",
     "check:i18n": "node --experimental-strip-types scripts/check-i18n.ts",
     "check:data": "node --experimental-strip-types scripts/check-sky-data.ts",
@@ -47,6 +50,7 @@
     "wrangler": "^4.151.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@types/node": "^25.9.9",
     "sharp": "^0.35.5"
   },

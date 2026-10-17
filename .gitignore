@@ -10,3 +10,8 @@ dist/
 # Disallow npm/yarn lockfiles — repo uses pnpm exclusively
 package-lock.json
 yarn.lock
+
+# Playwright output (baselines live in e2e/mobile/__screenshots__)
+test-results/
+playwright-report/
+
