@@ -61,6 +61,15 @@ export interface AltitudeChartOptions {
 
 const fmtNum = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 
+/** The minimum altitude the chart (and the page's verdict) uses. */
+export function chartMinAlt(): number {
+  const v = loadNumber(MIN_ALT_KEY, 30);
+  return MIN_ALT_CHOICES.includes(v) ? v : 30;
+}
+
+/** Fired on the chart slot when the reader changes the minimum altitude. */
+export const MIN_ALT_EVENT = "heavenward:minalt";
+
 /** Mount the chart section into `slot`. */
 export function mountAltitudeChart(slot: HTMLElement, opts: AltitudeChartOptions): void {
   const { model, zone } = opts;
@@ -236,6 +245,7 @@ export function mountAltitudeChart(slot: HTMLElement, opts: AltitudeChartOptions
     minAlt = Number(select.value);
     save(MIN_ALT_KEY, String(minAlt));
     draw();
+    slot.dispatchEvent(new CustomEvent(MIN_ALT_EVENT, { bubbles: true, detail: minAlt }));
   });
 
   draw();

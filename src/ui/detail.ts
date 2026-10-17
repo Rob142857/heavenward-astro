@@ -6,9 +6,15 @@ import {
   azimuthToCompassShort,
   altitudeDescription,
 } from "../engine/astro.js";
-import { buildAltitudeModel } from "../engine/altitude-curve.ts";
+import { analyseNight, buildAltitudeModel } from "../engine/altitude-curve.ts";
+import {
+  bestMonth,
+  equipmentClass,
+  seasonFor,
+  type VisualTarget,
+} from "../engine/equipment.ts";
 import type { AltitudeModel, CurveTarget } from "../engine/altitude-curve.ts";
-import { mountAltitudeChart } from "../chart/altitude.ts";
+import { MIN_ALT_EVENT, chartMinAlt, mountAltitudeChart } from "../chart/altitude.ts";
 import { loadDSOCatalog, getDSOById } from "../catalog/dso.js";
 import type { DSOEntry } from "../catalog/dso.js";
 import { loadStarCatalog, getStarById } from "../catalog/stars.js";
@@ -285,6 +291,144 @@ function mountAltitude(
   });
 }
 
+// ── Verdict row ───────────────────────────────────────────────────
+
+const VERDICT_SLOT = `<div class="verdict-row" role="group"></div>`;
+
+/** "Needs: Binoculars · Best 22:10–02:40, peaks 68° N · Moon 41° away". The
+ *  window uses the chart's own model and minimum altitude, so the two agree. */
+function verdictHtml(
+  event: CelestialEvent,
+  target: VisualTarget | null,
+  minAlt: number,
+): string {
+  const chip = (text: string, cls = "") =>
+    `<span class="verdict-chip${cls ? ` ${cls}` : ""}">${text}</span>`;
+  const chips: string[] = [];
+  if (target) {
+    const eq = equipmentClass(target);
+    chips.push(chip(t("verdict.needs", { eq: t(`best.eq.${eq}`) }), "verdict-eq"));
+  }
+  const model = altModels.get(event);
+  if (model) {
+    const a = analyseNight(model, minAlt);
+    if (a.best) {
+      chips.push(
+        chip(
+          t("verdict.best", {
+            start: fmtTime(new Date(a.best.start)),
+            end: fmtTime(new Date(a.best.end)),
+            alt: Math.round(a.best.peak.alt),
+            dir: azimuthToCompassShort(a.best.peak.az),
+          }),
+        ),
+      );
+      if (model.moon) {
+        chips.push(
+          chip(
+            a.best.moonUpFraction > 0 && a.best.moonMinSep !== null
+              ? t("chart.moonNote", {
+                  illum: Math.round(model.moonIllum * 100),
+                  sep: Math.round(a.best.moonMinSep),
+                })
+              : t("chart.moonDown"),
+          ),
+        );
+      }
+    } else if (a.reason === "never-rises") {
+      chips.push(chip(t("tonight.neverRises"), "verdict-muted"));
+    } else {
+      chips.push(chip(t("verdict.noWindow", { min: minAlt }), "verdict-muted"));
+    }
+  }
+  return chips.join("");
+}
+
+function mountVerdict(
+  scope: HTMLElement,
+  event: CelestialEvent,
+  target: VisualTarget | null,
+): void {
+  const row = scope.querySelector<HTMLElement>(".verdict-row");
+  if (!row) return;
+  row.setAttribute("aria-label", t("verdict.label"));
+  const paint = (minAlt: number): void => {
+    row.innerHTML = verdictHtml(event, target, minAlt);
+    row.hidden = row.innerHTML === "";
+  };
+  paint(chartMinAlt());
+  scope.addEventListener(MIN_ALT_EVENT, (e) => paint((e as CustomEvent<number>).detail));
+}
+
+function dsoTarget(entry: DSOEntry): VisualTarget {
+  return {
+    kind: "dso",
+    mag: entry.magnitude < 90 ? entry.magnitude : null,
+    dsoType: entry.type,
+    size: entry.size,
+    minor: entry.minorAxis,
+    surfaceBrightness: entry.surfaceBrightness,
+  };
+}
+
+/** Catalogue type in words ("Emission nebula (HII)"), translated. */
+function typeLabelFor(type: string): string {
+  const key = `best.type.${type}`;
+  const label = t(key);
+  return label === key ? type.replace(/-/g, " ") : label;
+}
+
+/** "December (summer here)": the month it transits at midnight, by latitude. */
+function bestMonthItem(ra: number, dec: number, ctx: AppContext): string {
+  const lat = ctx.location.lat;
+  const m = bestMonth(ra, dec, lat);
+  const value =
+    m === null
+      ? t("tonight.neverRises")
+      : t("detail.bestMonthValue", {
+          month: new Date(2026, m - 1, 15).toLocaleString(detectLocale(), { month: "long" }),
+          season: t(`season.${seasonFor(m, lat)}`),
+        });
+  return detailItem(t("detail.label.bestSeason"), value);
+}
+
+/** The page top: name, IDs, verdict and chart, in that order. */
+function renderDetailHead(
+  container: HTMLElement,
+  ctx: AppContext,
+  event: CelestialEvent,
+  title: string,
+  idsHtml: string,
+  target: VisualTarget | null,
+): void {
+  const head = document.createElement("div");
+  head.className = "detail-head";
+  head.innerHTML = `
+    ${renderBreadcrumb(title)}
+    <h2 class="detail-title">${title}</h2>
+    ${idsHtml}
+    ${VERDICT_SLOT}
+    ${altModels.has(event) ? ALT_SLOT : ""}
+  `;
+  container.appendChild(head);
+  attachBreadcrumbHandlers(container);
+  mountAltitude(head, ctx, event);
+  mountVerdict(head, event, target);
+}
+
+/** A long section folded away behind its title. */
+function collapsible(title: string, className = ""): { section: HTMLDetailsElement; body: HTMLElement } {
+  const section = document.createElement("details");
+  section.className = `detail-section detail-collapsible${className ? ` ${className}` : ""}`;
+  const summary = document.createElement("summary");
+  summary.innerHTML = `<h3 class="detail-section-title">${title}</h3>`;
+  section.appendChild(summary);
+  const body = document.createElement("div");
+  body.className = "detail-collapsible-body";
+  section.appendChild(body);
+  return { section, body };
+}
+
 // ── Base event detail (planets, moon, etc.) ────────────────────────
 
 function renderEventDetail(
@@ -296,12 +440,17 @@ function renderEventDetail(
   renderHeader(container, ctx);
   renderNav("#/");
 
+  const target: VisualTarget | null =
+    event.type === "moon"
+      ? { kind: "moon", mag: event.magnitude }
+      : event.type === "planet"
+        ? { kind: "planet", mag: event.magnitude }
+        : null;
+  renderDetailHead(container, ctx, event, event.name, "", target);
+
   const content = document.createElement("div");
   content.innerHTML = `
-    ${renderBreadcrumb(event.name)}
-    <h2 class="detail-title">${event.name}</h2>
     <p class="detail-brief">${event.brief}</p>
-    ${altModels.has(event) ? ALT_SLOT : ""}
     <div class="detail-grid">
       ${detailItem(t("detail.label.altitude"), event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
       ${detailItem(t("detail.label.azimuth"), event.azimuth !== null ? `${event.azimuth.toFixed(0)}° ${azimuthToCompassShort(event.azimuth ?? 0)}` : "—")}
@@ -317,8 +466,6 @@ function renderEventDetail(
     </div>
   `;
   container.appendChild(content);
-  attachBreadcrumbHandlers(container);
-  mountAltitude(content, ctx, event);
 
   appendFinderAndSkyView(container, event);
   appendSkyContext(container, event, ctx);
@@ -350,12 +497,15 @@ function renderDSODetailFull(
     ? t("detail.caldwellLabel", { code: entry.caldwell })
     : "";
 
+  const idsHtml = catalogId
+    ? `<div class="detail-catalog-id">${catalogId}${caldwellText ? ` \u00b7 ${caldwellText}` : ""} \u00b7 ${typeLabelFor(entry.type)}</div>`
+    : `<div class="detail-catalog-id">${caldwellText ? `${caldwellText} \u00b7 ` : ""}${typeLabelFor(entry.type)}</div>`;
+  // When before what: name, verdict, chart, then the picture, then the facts.
+  renderDetailHead(container, ctx, event, displayName, idsHtml, dsoTarget(entry));
+  appendImage(container, event);
+
   let html = `
-    ${renderBreadcrumb(displayName)}
-    <h2 class="detail-title">${displayName}</h2>
-    ${catalogId ? `<div class="detail-catalog-id">${catalogId}${caldwellText ? ` \u00b7 ${caldwellText}` : ""}</div>` : caldwellText ? `<div class="detail-catalog-id">${caldwellText}</div>` : ""}
     ${curatedBrief(entry.description)}
-    ${ALT_SLOT}
   `;
 
   // Position & Visibility
@@ -366,11 +516,11 @@ function renderDSODetailFull(
       ${detailItem(t("detail.label.altitude"), event.altitude !== null ? `${event.altitude.toFixed(1)}°` : "—")}
       ${detailItem(t("detail.label.azimuth"), event.azimuth !== null ? `${event.azimuth.toFixed(0)}°` : "—")}
       ${detailItem(t("detail.label.magnitudeV"), entry.magnitude.toFixed(1))}
-      ${entry.bMagnitude !== null && entry.bMagnitude !== undefined ? detailItem(t("detail.label.magnitudeB"), entry.bMagnitude.toFixed(1)) : ""}
+      ${entry.bMagnitude !== null && entry.bMagnitude !== undefined && entry.bMagnitude !== entry.magnitude ? detailItem(t("detail.label.magnitudeB"), entry.bMagnitude.toFixed(1)) : ""}
       ${detailItem(t("detail.label.constellation"), wikiLink(constellationWikiTitle(entry.constellation) ?? entry.constellation, constellationName(entry.constellation) ?? entry.constellation))}
       ${detailSourceItem(event)}
-      ${entry.surfaceBrightness ? detailItem(t("detail.label.surfaceBrightness"), `${entry.surfaceBrightness.toFixed(1)} mag/arcmin²`) : ""}
-      ${entry.bestSeason ? detailItem(t("detail.label.bestSeason"), entry.bestSeason) : ""}
+      ${entry.surfaceBrightness ? detailItem(t("detail.label.surfaceBrightness"), `${entry.surfaceBrightness.toFixed(1)} mag/arcsec²`) : ""}
+      ${bestMonthItem(entry.ra, entry.dec, ctx)}
       ${detailItem(
         t("detail.label.apparentSize"),
         entry.minorAxis && entry.minorAxis > 0 && entry.minorAxis < entry.size
@@ -385,7 +535,7 @@ function renderDSODetailFull(
   // Physical Properties
   const physProps: string[] = [];
   if (entry.type)
-    physProps.push(detailItem(t("detail.label.type"), entry.type.replace(/-/g, " ")));
+    physProps.push(detailItem(t("detail.label.type"), typeLabelFor(entry.type)));
   if (entry.morphology)
     physProps.push(detailItem(t("detail.label.morphology"), entry.morphology));
   if (entry.physicalSize)
@@ -441,10 +591,8 @@ function renderDSODetailFull(
 
   content.innerHTML = html;
   container.appendChild(content);
-  attachBreadcrumbHandlers(container);
-  mountAltitude(content, ctx, event);
 
-  appendFinderAndSkyView(container, event);
+  appendFinder(container, event);
   appendSkyContext(container, event, ctx);
   // AI guide last: it is opt-in, costs a large download, and is the one
   // section a reader cannot act on without tapping. The chart, image and
@@ -475,12 +623,18 @@ function renderStarDetailFull(
     .filter(Boolean)
     .join(" ");
 
+  renderDetailHead(
+    container,
+    ctx,
+    event,
+    entry.name,
+    designation ? `<div class="detail-catalog-id">${designation}</div>` : "",
+    { kind: "star", mag: entry.magnitude },
+  );
+  appendImage(container, event);
+
   let html = `
-    ${renderBreadcrumb(entry.name)}
-    <h2 class="detail-title">${entry.name}</h2>
-    ${designation ? `<div class="detail-catalog-id">${designation}</div>` : ""}
     ${curatedBrief(entry.description)}
-    ${ALT_SLOT}
   `;
 
   // Position & Visibility
@@ -495,6 +649,7 @@ function renderStarDetailFull(
       ${detailItem(t("detail.label.constellation"), wikiLink(constellationWikiTitle(entry.constellation) ?? entry.constellation, constellationName(entry.constellation) ?? entry.constellation))}
       ${detailSourceItem(event)}
       ${detailItem(t("detail.label.spectralType"), entry.spectralType || "—")}
+      ${bestMonthItem(entry.ra, entry.dec, ctx)}
     </div>
   `,
   );
@@ -600,9 +755,7 @@ function renderStarDetailFull(
 
   content.innerHTML = html;
   container.appendChild(content);
-  attachBreadcrumbHandlers(container);
-  mountAltitude(content, ctx, event);
-  appendFinderAndSkyView(container, event);
+  appendFinder(container, event);
   appendSkyContext(container, event, ctx);
   // AI guide last: it is opt-in, costs a large download, and is the one
   // section a reader cannot act on without tapping. The chart, image and
@@ -618,6 +771,22 @@ function appendFinderAndSkyView(
   container: HTMLElement,
   event: CelestialEvent,
 ): void {
+  appendFinder(container, event);
+  appendImage(container, event);
+}
+
+/** The object's picture: Wikimedia Commons, else SkyView DSS2, else a link. */
+function appendImage(container: HTMLElement, event: CelestialEvent): void {
+  if (event.ra === null || event.dec === null) return;
+  const imgWrap = document.createElement("div");
+  imgWrap.className = "object-image-wrap skeleton";
+  imgWrap.style.marginTop = "16px";
+  container.appendChild(imgWrap);
+  loadBestImage(event, imgWrap);
+}
+
+/** The 5° finder chart. */
+function appendFinder(container: HTMLElement, event: CelestialEvent): void {
   if (event.ra === null || event.dec === null) return;
 
   const targetRA = event.ra;
@@ -660,14 +829,6 @@ function appendFinderAndSkyView(
     .catch(() => {
       renderFinderChart(canvas, targetRA, targetDec, event.name);
     });
-
-  // Image section: try Wikimedia Commons → SkyView DSS2 → fallback link
-  const imgWrap = document.createElement("div");
-  imgWrap.className = "object-image-wrap skeleton";
-  imgWrap.style.marginTop = "16px";
-  container.appendChild(imgWrap);
-
-  loadBestImage(event, imgWrap);
 }
 
 interface WikiImageResult {
@@ -1193,12 +1354,9 @@ function appendLoreSection(wrapper: HTMLElement, skyCtx: SkyContext): void {
   // sourced — an empty section would imply the sky has no story here.
   if (!myth && history.length === 0) return;
 
-  const section = document.createElement("div");
-  section.className = "detail-section lore-section";
+  const { section, body } = collapsible(t("detail.section.lore"), "lore-section");
 
-  const parts: string[] = [
-    `<h3 class="detail-section-title">${t("detail.section.lore")}</h3>`,
-  ];
+  const parts: string[] = [];
 
   const locale = detectLocale();
 
@@ -1235,7 +1393,7 @@ function appendLoreSection(wrapper: HTMLElement, skyCtx: SkyContext): void {
   }
 
   parts.push(`<p class="lore-coverage">${t("detail.lore.coverage")}</p>`);
-  section.innerHTML = parts.join("");
+  body.innerHTML = parts.join("");
   wrapper.appendChild(section);
 }
 
@@ -1253,12 +1411,10 @@ function appendNamesakesSection(
   const namesakes = skyCtx.target.namesakes;
   if (namesakes.length === 0) return;
 
-  const section = document.createElement("div");
-  section.className = "detail-section lore-section";
+  const { section, body } = collapsible(t("detail.section.namesakes"), "lore-section");
   const locale = detectLocale();
 
   const parts: string[] = [
-    `<h3 class="detail-section-title">${t("detail.section.namesakes")}</h3>`,
     `<p class="lore-coverage namesake-intro">${t("detail.namesakes.intro")}</p>`,
   ];
 
@@ -1278,7 +1434,7 @@ function appendNamesakesSection(
     `);
   }
 
-  section.innerHTML = parts.join("");
+  body.innerHTML = parts.join("");
   wrapper.appendChild(section);
 }
 
@@ -1330,12 +1486,11 @@ function renderSkyContextContent(
 
   // Nearby objects
   if (skyCtx.nearby.length) {
-    const nearbySection = document.createElement("div");
-    nearbySection.className = "detail-section";
+    const nearby = collapsible(t("detail.section.nearbyObjects"), "nearby-section");
+    const nearbySection = nearby.section;
 
     const header = document.createElement("div");
     header.className = "nearby-header";
-    header.innerHTML = `<h3 class="detail-section-title" style="margin:0;border:none;padding:0">${t("detail.section.nearbyObjects")}</h3>`;
 
     // Sort select
     const sortWrap = document.createElement("div");
@@ -1361,7 +1516,7 @@ function renderSkyContextContent(
     }
     sortWrap.appendChild(sortSel);
     header.appendChild(sortWrap);
-    nearbySection.appendChild(header);
+    nearby.body.appendChild(header);
 
     const grid = document.createElement("div");
     grid.className = "nearby-grid";
@@ -1424,19 +1579,17 @@ function renderSkyContextContent(
     });
 
     renderGrid();
-    nearbySection.appendChild(grid);
+    nearby.body.appendChild(grid);
     wrapper.appendChild(nearbySection);
   }
 
   // Photography tips
   if (skyCtx.photographyTips.length) {
-    const photoSection = document.createElement("div");
-    photoSection.className = "detail-section";
-    photoSection.innerHTML = `
-      <h3 class="detail-section-title">${t("detail.section.photography")}</h3>
-      ${skyCtx.photographyTips.map((tip) => `<p class="detail-prose" style="margin-bottom:6px">• ${tip}</p>`).join("")}
-    `;
-    wrapper.appendChild(photoSection);
+    const photo = collapsible(t("detail.section.photography"), "photo-section");
+    photo.body.innerHTML = skyCtx.photographyTips
+      .map((tip) => `<p class="detail-prose" style="margin-bottom:6px">• ${tip}</p>`)
+      .join("");
+    wrapper.appendChild(photo.section);
   }
 }
 
