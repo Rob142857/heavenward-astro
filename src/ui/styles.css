@@ -870,8 +870,8 @@ body {
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
-  min-width: 28px;
-  min-height: 28px;
+  min-width: 44px;
+  min-height: 44px;
 }
 .twilight-toggle:hover {
   color: var(--text);
@@ -940,7 +940,9 @@ body {
   font-size: 0.7rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-height: 32px;
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: center;
 }
 .ctrl-pill:hover {
   border-color: var(--gold);
@@ -954,8 +956,8 @@ body {
 }
 .ctrl-pill.cat-pill {
   opacity: 0.5;
-  padding: 4px 7px;
-  min-height: 28px;
+  padding: 4px 9px;
+  min-height: 44px;
   font-size: 0.68rem;
 }
 .ctrl-pill.cat-pill.active {
@@ -1003,7 +1005,7 @@ body {
   padding: 4px 8px;
   font-size: 0.72rem;
   cursor: pointer;
-  min-height: 30px;
+  min-height: 44px;
 }
 .ctrl-select:focus {
   outline: 1px solid var(--gold);
@@ -1024,8 +1026,9 @@ body {
 }
 
 .direction-pill {
-  min-width: 30px;
-  min-height: 26px;
+  /* 44px: the golden-path control, tapped in the dark with cold hands. */
+  min-width: 44px;
+  min-height: 44px;
   padding: 3px 8px;
   border: none;
   border-radius: 6px;
@@ -1074,7 +1077,7 @@ body {
   flex: 0 0 auto;
 }
 .filters-toggle {
-  min-height: 32px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

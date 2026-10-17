@@ -70,17 +70,13 @@ test.describe("tap targets", () => {
   });
 
   test("tonight filter controls are at least 44px", async ({ page }) => {
-    test.info().annotations.push({
-      type: "known-bug",
-      description:
-        "TODO: direction pills (30x26), Filters toggle (67x32), equipment/category pills (32-37px) and the Sort/Max selects (30px tall) are under the 44px rule in .github/copilot-instructions.md. Delete test.fail() once fixed.",
-    });
-    test.fail();
     await gotoApp(page, "#/");
     await expect(page.locator(".tonight-controls")).toBeVisible();
+    // Open Filters so the equipment/category pills and selects are measured too.
+    await page.locator(".filters-toggle").click();
     const small = await smallTapTargets(
       page,
-      ".tonight-controls button, .tonight-controls select, .tonight-controls summary",
+      ".tonight-controls button, .tonight-controls select, .tonight-controls summary, .twilight-toggle",
     );
     expect(small, small.join("\n")).toEqual([]);
   });
