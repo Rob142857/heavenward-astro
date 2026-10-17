@@ -242,7 +242,7 @@ function renderInAppBrowserNotice(): HTMLElement {
  * the last line of a page scroll clear of the bar. On wide screens the nav
  * is a side rail and the variable is dropped back to the CSS default.
  */
-function trackNavHeight(nav: HTMLElement): void {
+function trackNavHeight(nav: HTMLElement): () => void {
   const root = document.documentElement;
   let current = "";
   const apply = (): void => {
@@ -267,13 +267,16 @@ function trackNavHeight(nav: HTMLElement): void {
       apply();
     }, 0);
   };
-  apply();
   // border-box: the home-indicator inset is padding, which a content-box
   // observer would miss.
   if (typeof ResizeObserver !== "undefined")
     new ResizeObserver(schedule).observe(nav, { box: "border-box" });
   window.addEventListener("resize", schedule);
+  return apply;
 }
+
+/** Re-measures the nav; set once the bar exists. */
+let measureNav: (() => void) | null = null;
 
 export function renderNav(active: string): void {
   let nav = document.querySelector(".nav") as HTMLElement | null;
@@ -291,7 +294,7 @@ export function renderNav(active: string): void {
       e.preventDefault();
       navigate(href);
     });
-    trackNavHeight(nav);
+    measureNav = trackNavHeight(nav);
   }
   nav.innerHTML = NAV_ITEMS.map(
     (item) =>
@@ -300,6 +303,10 @@ export function renderNav(active: string): void {
         <span class="nav-label">${t(item.labelKey)}</span>
       </a>`,
   ).join("");
+  // Measure with the links in place. The observer alone isn't enough: it
+  // only reports once the page is shown, so a tab opened in the background
+  // would keep the empty bar's height.
+  measureNav?.();
 }
 
 function renderStuffMenu(): HTMLElement {

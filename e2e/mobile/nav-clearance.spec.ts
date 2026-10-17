@@ -81,3 +81,12 @@ test("a taller nav (iPhone home bar, large text) still leaves the page clear", a
   const { gap, who } = await gapAboveNav(page);
   expect(gap, `${who} is ${-gap}px under the nav`).toBeGreaterThanOrEqual(8);
 });
+
+test("--nav-h matches the bar as soon as the page loads", async ({ page }) => {
+  await gotoApp(page, "#/about");
+  const r = await page.evaluate(() => ({
+    v: document.documentElement.style.getPropertyValue("--nav-h"),
+    h: Math.ceil(document.querySelector(".nav")!.getBoundingClientRect().height),
+  }));
+  expect(r.v).toBe(`${r.h}px`);
+});
