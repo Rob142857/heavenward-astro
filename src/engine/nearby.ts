@@ -544,6 +544,8 @@ export function nearbyObjectTypeLabel(type: string): string {
       return t("search.chip.openCluster");
     case "globular-cluster":
       return t("search.chip.globularCluster");
+    case "double-star":
+      return t("search.chip.doubleStar");
     case "hii-region":
       return t("search.chip.hiiRegion");
     case "nebula":

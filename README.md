@@ -184,3 +184,5 @@ Copyright 2024-2026 Rob142857
 Licensed under the Apache License, Version 2.0 — see [LICENSE](LICENSE) for details.
 
 You must retain attribution notices when redistributing this software or derivative works. See [NOTICE](NOTICE) for required attributions.
+
+**Catalogue data is licensed separately.** `src/catalog/dso.json` and `src/catalog/dso-curated.json` (from [OpenNGC](https://github.com/mattiaverga/OpenNGC)) and `src/catalog/stars.json` (from [HYG](https://codeberg.org/astronexus/hyg)) are CC BY-SA 4.0. The share-alike terms apply to those data files and anything derived from them, not to the Apache-2.0 code. Curated additions and corrections (LMC, M45, M40, common names, aliases) live in `dso-curated.json` and are merged at load time; `dso.json` stays importer output.

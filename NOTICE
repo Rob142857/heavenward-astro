@@ -3,3 +3,23 @@ Copyright 2024-2026 Rob142857
 
 This product includes astronomy calculations powered by astronomy-engine
 (https://github.com/cosinekitty/astronomy).
+
+Catalogue data (not covered by the Apache-2.0 licence)
+-------------------------------------------------------
+The Apache License 2.0 in LICENSE covers the Heavenward source code only.
+The catalogue data files below are derived from share-alike sources and are
+licensed under the Creative Commons Attribution-ShareAlike 4.0 International
+licence (CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/).
+Share-alike applies to these data files and anything derived from them, not
+to the application code that reads them.
+
+  src/catalog/dso.json          Derived from OpenNGC by Mattia Verga and
+  src/catalog/dso-curated.json  contributors (https://github.com/mattiaverga/OpenNGC),
+                                CC BY-SA 4.0. dso-curated.json adds entries
+                                from OpenNGC's addendum.csv and Heavenward's
+                                own corrections, names and aliases.
+  src/catalog/stars.json        Derived from the HYG database by AstroNexus
+                                (https://codeberg.org/astronexus/hyg), CC BY-SA 4.0.
+
+Changes: filtered by magnitude, converted to Heavenward's JSON shape, and
+enriched with curated descriptions, common names and aliases.

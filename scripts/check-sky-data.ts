@@ -158,6 +158,35 @@ for (const [index, entry] of namesakes.entries()) {
   }
 }
 
+// dso-curated.json: additions must be complete and sourced, must not shadow
+// an imported id, and every override must point at a real entry.
+const curated = readJson("dso-curated.json") as {
+  add?: JsonRecord[];
+  override?: Record<string, JsonRecord>;
+};
+const dsoIds = new Set(dsos.map((entry) => String(entry.id)));
+for (const [index, entry] of (curated.add ?? []).entries()) {
+  const label = `dso-curated.add[${index}]`;
+  const id = textField(entry, "id", label);
+  if (dsoIds.has(id)) errors.push(`${label}: ${id} already exists in dso.json`);
+  textField(entry, "name", label);
+  textField(entry, "type", label);
+  textField(entry, "description", label);
+  textField(entry, "source", label);
+  for (const field of ["ra", "dec", "magnitude", "size"]) {
+    if (typeof entry[field] !== "number" || !Number.isFinite(entry[field])) {
+      errors.push(`${label}: ${field} must be a number`);
+    }
+  }
+  const code = textField(entry, "constellation", label);
+  if (code && !constellationCodes.has(code)) {
+    errors.push(`${label}: unknown constellation ${code}`);
+  }
+}
+for (const id of Object.keys(curated.override ?? {})) {
+  if (!dsoIds.has(id)) errors.push(`dso-curated.override: unknown id ${id}`);
+}
+
 const prohibited = /\b(?:horoscope|personality categor(?:y|ies|isation|ization)|fortune[- ]?telling|birth sign|star sign compatibility)\b/i;
 for (const [catalog, entries] of [
   ["mythology", mythology],

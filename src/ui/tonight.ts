@@ -63,6 +63,7 @@ const DSO_NEBULA_TYPES = new Set([
 ]);
 const DSO_CLUSTER_TYPES = new Set([
   "cluster",
+  "double-star",
   "globular-cluster",
   "open-cluster",
 ]);
