@@ -127,9 +127,11 @@ export function buildAltitudeModel(
       ? { start: tw.sunset.getTime(), end: tw.sunrise.getTime() }
       : null;
   const mid = night ? (night.start + night.end) / 2 : solarMidnight(obs, at);
+  // Samples sit on whole 5-minute marks, so a 21:00 link reads 21:00.
+  const grid = CURVE_STEP_MIN * 60_000;
   const span24: Span = {
-    start: Math.min(mid - 12 * 3_600_000, night?.start ?? Infinity),
-    end: Math.max(mid + 12 * 3_600_000, night?.end ?? -Infinity),
+    start: Math.floor(Math.min(mid - 12 * 3_600_000, night?.start ?? Infinity) / grid) * grid,
+    end: Math.ceil(Math.max(mid + 12 * 3_600_000, night?.end ?? -Infinity) / grid) * grid,
   };
   const from = new Date(span24.start);
   const to = new Date(span24.end);

@@ -201,3 +201,9 @@ test("the summary prints on the linked zone's clock", () => {
   assert.notEqual(end, endPerth);
   assert.match(syd, /^chart\.best .*"dir":"N"/);
 });
+
+test("samples sit on whole 5-minute marks, so a 21:00 link reads 21:00", () => {
+  const m = buildAltitudeModel(M42, BELLINGEN, new Date("2026-10-18T10:00:00Z"));
+  assert.ok(m.samples.every((s, i) => i === m.samples.length - 1 || s.t % (5 * MIN) === 0));
+  assert.ok(m.samples.some((s) => s.t === Date.parse("2026-10-18T10:00:00Z")));
+});
