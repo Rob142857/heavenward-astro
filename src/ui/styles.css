@@ -3044,3 +3044,130 @@ body.search-typing .nav {
   line-height: 1.5;
   color: var(--text-dim);
 }
+
+/* ── Altitude chart (object pages) ─────────────────────── */
+.alt-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.alt-span {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.alt-span-btn {
+  min-height: 44px;
+  min-width: 56px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.alt-span-btn[aria-pressed="true"] {
+  background: rgba(212, 175, 55, 0.16);
+  color: var(--gold-light);
+}
+.alt-min {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+.alt-min-select {
+  /* Own the look: iOS paints a native select white with our light text. */
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
+  padding: 0 26px 0 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23d4af37' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  background-color: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.85rem;
+}
+.alt-figure {
+  margin: 0;
+}
+.alt-plot {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  border-radius: 10px;
+  cursor: crosshair;
+}
+.alt-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.alt-band-day { fill: #23395a; }
+.alt-band-civil { fill: #1a2c47; }
+.alt-band-nautical { fill: #132139; }
+.alt-band-astro { fill: #0e182b; }
+.alt-band-dark { fill: #060a14; }
+.alt-best { fill: rgba(212, 175, 55, 0.14); }
+.alt-grid { stroke: rgba(123, 134, 156, 0.18); stroke-width: 0.6; }
+.alt-horizon { stroke: #8a95ab; stroke-width: 1.2; }
+.alt-minline { stroke: #b8942e; stroke-width: 1; stroke-dasharray: 4 3; }
+.alt-tick { stroke: #7b869c; stroke-width: 0.8; }
+.alt-axis { fill: #8a95ab; font-size: 9.5px; font-family: var(--font-body); }
+.alt-curve { fill: none; stroke: var(--gold); stroke-width: 2; stroke-linejoin: round; }
+.alt-curve-best { fill: none; stroke: var(--gold-light); stroke-width: 3.2; stroke-linecap: round; }
+.alt-moon { fill: none; stroke: #b8c4d8; stroke-width: 1.2; stroke-dasharray: 2 3; opacity: 0.45; }
+.alt-mark { fill: var(--bg); stroke: var(--gold-light); stroke-width: 1.5; }
+.alt-mark-label { fill: var(--text); font-size: 9.5px; font-family: var(--font-body); }
+.alt-note { fill: var(--text-dim); font-size: 11px; font-family: var(--font-body); }
+.alt-now { stroke: var(--accent); stroke-width: 1.2; }
+.alt-now-label { fill: var(--accent); font-size: 9.5px; font-family: var(--font-body); }
+.alt-scrub line { stroke: var(--text); stroke-width: 1; opacity: 0.7; }
+.alt-scrub circle { fill: var(--text); stroke: var(--bg); stroke-width: 1.5; }
+.alt-plot:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.alt-readout {
+  min-height: 1.4em;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.alt-summary {
+  margin-top: 2px;
+  font-size: 0.88rem;
+  color: var(--gold-light);
+  line-height: 1.45;
+}
+.alt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 6px 0 8px;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+.alt-legend .sw {
+  display: inline-block;
+  width: 12px;
+  height: 8px;
+  margin-right: 4px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+.alt-legend .sw-curve { background: var(--gold); height: 3px; }
+.alt-legend .sw-best { background: rgba(212, 175, 55, 0.35); }
+.alt-legend .sw-moon { border-top: 2px dotted #b8c4d8; height: 0; opacity: 0.7; }
+.alt-legend .sw-dark { background: #060a14; border: 1px solid var(--border); }
+.alt-legend .sw-twilight { background: #1a2c47; }
+.alt-rts-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 0; }
+.alt-sub { color: var(--text-dim); font-size: 0.8rem; }
