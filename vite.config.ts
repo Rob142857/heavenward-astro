@@ -83,6 +83,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,json}"],
+        // Cloudflare Pages config files are never served (404). One 404 in the
+        // precache list fails the whole service-worker install.
+        globIgnores: ["**/node_modules/**", "_routes.json", "_headers", "_redirects"],
         maximumFileSizeToCacheInBytes: 7 * 1024 * 1024, // WebLLM worker/runtime chunks are large
         skipWaiting: true,
         clientsClaim: true,
