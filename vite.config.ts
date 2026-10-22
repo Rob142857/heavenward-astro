@@ -5,7 +5,7 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 const pkg = JSON.parse(
-  readFileSync(resolve(__dirname, "package.json"), "utf8"),
+  readFileSync(resolve(import.meta.dirname, "package.json"), "utf8"),
 ) as { version: string };
 
 function gitShortSha(): string {
@@ -32,11 +32,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": resolve(__dirname, "src"),
-      "@engine": resolve(__dirname, "src/engine"),
-      "@catalog": resolve(__dirname, "src/catalog"),
-      "@ui": resolve(__dirname, "src/ui"),
-      "@api": resolve(__dirname, "src/api"),
+      "@": resolve(import.meta.dirname, "src"),
+      "@engine": resolve(import.meta.dirname, "src/engine"),
+      "@catalog": resolve(import.meta.dirname, "src/catalog"),
+      "@ui": resolve(import.meta.dirname, "src/ui"),
+      "@api": resolve(import.meta.dirname, "src/api"),
     },
   },
   build: {
@@ -44,7 +44,7 @@ export default defineConfig({
     sourcemap: true,
     target: "es2022",
     rollupOptions: {
-      input: resolve(__dirname, "index.html"),
+      input: resolve(import.meta.dirname, "index.html"),
       output: {
         // Content hashes normally make chunks immutable, but a custom-domain
         // edge once cached the SPA's HTML fallback at a not-yet-propagated

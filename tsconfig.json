@@ -21,9 +21,7 @@
       "@catalog/*": ["./src/catalog/*"],
       "@ui/*": ["./src/ui/*"],
       "@api/*": ["./src/api/*"]
-    },
-    "ignoreDeprecations": "6.0",
-    "baseUrl": "."
+    }
   },
   "include": [
     "src/**/*.ts",
