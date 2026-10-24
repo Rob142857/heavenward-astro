@@ -72,9 +72,16 @@ export default defineConfig({
         start_url: "/",
         icons: [
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
           {
             src: "/icons/icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            // Full-bleed background, artwork inside the 80% safe zone, so the
+            // OS can crop it to a circle or squircle without clipping.
+            src: "/icons/icon-maskable-512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
@@ -85,7 +92,10 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,svg,png,json}"],
         // Cloudflare Pages config files are never served (404). One 404 in the
         // precache list fails the whole service-worker install.
-        globIgnores: ["**/node_modules/**", "_routes.json", "_headers", "_redirects"],
+        // The AI sky guide's runtime and worker (~12 MB, used only after a person
+        // opts in) are cached on first use (see runtimeCaching), not downloaded on
+        // every first visit and every update.
+        globIgnores: ["**/node_modules/**", "_routes.json", "_headers", "_redirects", "assets/lib-*.js", "assets/webllm-worker-*.js"],
         maximumFileSizeToCacheInBytes: 7 * 1024 * 1024, // WebLLM worker/runtime chunks are large
         skipWaiting: true,
         clientsClaim: true,
@@ -98,6 +108,19 @@ export default defineConfig({
           /^\/cdn-cgi\/access(?:\/|$)/,
         ],
         runtimeCaching: [
+          {
+            // WebLLM runtime and its worker; fetched on first use of the AI
+            // sky guide, then served from cache (also offline).
+            urlPattern: ({ url, sameOrigin }: { url: URL; sameOrigin: boolean }) =>
+              sameOrigin &&
+              /^\/assets\/(?:lib|webllm-worker)-[^/]+\.js$/.test(url.pathname),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "ai-runtime",
+              expiration: { maxEntries: 4, maxAgeSeconds: 86400 * 60 },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
           {
             // Cloud forecast from our own Function (which caches Open-Meteo
             // per cell per hour). The browser never calls Open-Meteo itself.
