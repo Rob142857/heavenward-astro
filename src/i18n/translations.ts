@@ -20,6 +20,7 @@ const LOCALE_STORAGE_KEY = "heavenward-locale";
 export const translations: Record<Locale, Record<string, string>> = {
 	en: {
 		"nav.tonight": "Tonight",
+		"nav.mainLabel": "Main",
 		"nav.search": "Search",
 		"nav.settings": "Settings",
 		"nav.location": "Location",
@@ -597,6 +598,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 	},
 	fr: {
 		"nav.tonight": "Ce soir",
+		"nav.mainLabel": "Principale",
 		"nav.search": "Recherche",
 		"nav.settings": "Paramètres",
 		"nav.location": "Emplacement",
@@ -1174,6 +1176,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 	},
 	ja: {
 		"nav.tonight": "今夜",
+		"nav.mainLabel": "メイン",
 		"nav.search": "検索",
 		"nav.settings": "設定",
 		"nav.location": "現在地",
@@ -1751,6 +1754,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 	},
 	"zh-Hans": {
 		"nav.tonight": "今晚",
+		"nav.mainLabel": "主导航",
 		"nav.search": "搜索",
 		"nav.settings": "设置",
 		"nav.location": "位置",

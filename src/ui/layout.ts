@@ -106,7 +106,7 @@ export function renderHeader(container: HTMLElement, ctx: AppContext): void {
 
   const logoContainer = document.createElement("div");
   logoContainer.className = "logo-container";
-  logoContainer.innerHTML = `${SEBA_SVG}<span class="logo-text">${t("layout.appName")}</span>`;
+  logoContainer.innerHTML = `${SEBA_SVG}<span class="logo-text" role="heading" aria-level="1">${t("layout.appName")}</span>`;
 
   // A real <button>, not a clickable <span>: this is now the only route to
   // the Location screen, so it has to be reachable by keyboard and announced
@@ -122,9 +122,11 @@ export function renderHeader(container: HTMLElement, ctx: AppContext): void {
   loc.textContent = confirmed
     ? formatLocation(ctx.location)
     : t("layout.locationUnknown");
+  // The accessible name must start with the visible text (WCAG 2.5.3, so a
+  // voice-control user can say what they see); the explanation follows it.
   loc.setAttribute(
     "aria-label",
-    confirmed ? t("layout.changeLocation") : t("layout.locationUnknownAria"),
+    `${loc.textContent}. ${confirmed ? t("layout.changeLocation") : t("layout.locationUnknownAria")}`,
   );
   loc.addEventListener("click", () => navigate("#/location"));
 
@@ -283,6 +285,7 @@ export function renderNav(active: string): void {
   if (!nav) {
     nav = document.createElement("nav");
     nav.className = "nav";
+    nav.setAttribute("aria-label", t("nav.mainLabel"));
     document.body.appendChild(nav);
 
     // Single delegated click handler — all nav links route through navigate()
@@ -298,7 +301,7 @@ export function renderNav(active: string): void {
   }
   nav.innerHTML = NAV_ITEMS.map(
     (item) =>
-      `<a href="${item.hash}" class="${active === item.hash ? "active" : ""}">
+      `<a href="${item.hash}" class="${active === item.hash ? "active" : ""}"${active === item.hash ? ' aria-current="page"' : ""}>
         <span class="nav-icon">${item.icon}</span>
         <span class="nav-label">${t(item.labelKey)}</span>
       </a>`,

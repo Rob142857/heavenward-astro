@@ -229,8 +229,6 @@ function buildRow(
   const li = document.createElement("li");
   li.className = `best-row${row.pinned ? " pinned" : ""}`;
   li.dataset.id = row.cand.id;
-  li.tabIndex = 0;
-  li.setAttribute("role", "link");
   const why = whyParts(row, opts)
     .slice(0, 3)
     .map((p) => t(p.key, p.params))
@@ -238,35 +236,24 @@ function buildRow(
   const dir = compassOf(row);
   const alt = Math.round(row.peakAlt);
   const type = typeLabel(row);
-  li.setAttribute(
-    "aria-label",
-    t("best.rowLabel", {
-      name: row.cand.name,
-      type,
-      start: fmt(row.start),
-      end: fmt(row.end),
-      alt,
-      dir,
-      why,
-    }),
-  );
-  li.innerHTML = `
+  // A real link inside a real list item: the row is announced as a link whose
+  // name is its visible text (name, type, window, peak, why), and Enter works
+  // natively. (A role="link" on the <li> itself is not allowed by ARIA and
+  // broke the list semantics.)
+  li.innerHTML = `<a class="best-link" href="#/detail/${escapeHtml(row.cand.id)}">
     <div class="best-main">
       <div class="best-name"><span class="best-name-text">${escapeHtml(row.cand.name)}</span><span class="best-type">${escapeHtml(type)}</span></div>
       <div class="best-meta"><span class="best-window">${fmt(row.start)}–${fmt(row.end)}</span> · <span class="best-peak">${t("best.peak", { alt, dir })}</span></div>
       <div class="best-why">${escapeHtml(why)}</div>
     </div>
     ${sparkline(row, result, opts.minAlt)}
-  `;
-  const open = () => {
+  </a>`;
+  li.addEventListener("click", (e) => {
+    // Let new-tab / copy-link gestures through; plain taps use the router.
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
     trackEvent("click", `#/detail/${row.cand.id}`, row.cand.name);
     navigate(`#/detail/${row.cand.id}`);
-  };
-  li.addEventListener("click", open);
-  li.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" && e.key !== " ") return;
-    e.preventDefault();
-    open();
   });
   return li;
 }

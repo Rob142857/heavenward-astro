@@ -669,7 +669,7 @@ html {
   gap: 3px;
   text-decoration: none;
   color: var(--text-dim);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   letter-spacing: 0.03em;
   min-width: 60px;
   min-height: 44px;
@@ -774,7 +774,7 @@ html {
   letter-spacing: 0.01em;
 }
 .card-mag {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: var(--gold);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -791,7 +791,7 @@ html {
 .card-times {
   display: flex;
   gap: 10px;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -971,7 +971,7 @@ html {
   opacity: 0.5;
   padding: 4px 9px;
   min-height: 44px;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
 }
 .ctrl-pill.cat-pill.active {
   opacity: 1;
@@ -1004,7 +1004,7 @@ html {
   color: var(--text-dim);
 }
 .ctrl-label {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-dim);
@@ -1067,7 +1067,7 @@ html {
 }
 
 .ctrl-count {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
   padding: 1px 5px;
   background: var(--bg-hover);
@@ -1133,7 +1133,7 @@ html {
   border-radius: 999px;
   background: var(--gold);
   color: var(--bg);
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 .filters-panel {
@@ -1352,7 +1352,7 @@ html {
 }
 .source-modal dt {
   color: var(--gold-light);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -1444,7 +1444,7 @@ html {
   border: 1px solid rgba(212, 175, 55, 0.18);
   border-radius: 999px;
   color: var(--gold-light);
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -1466,7 +1466,7 @@ html {
 }
 .provenance-card dt {
   color: var(--text-dim);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -1694,7 +1694,7 @@ html {
   padding: 5px 0;
 }
 .detail-item .label {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-dim);
@@ -2319,7 +2319,7 @@ html {
 }
 .about-version {
   color: var(--text-dim);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-family: ui-monospace, "Cascadia Mono", Menlo, monospace;
   letter-spacing: 0.04em;
   margin-top: 18px;
@@ -2402,7 +2402,7 @@ html {
   .nav a {
     min-width: auto;
     min-height: 56px;
-    font-size: 0.62rem;
+    font-size: 0.72rem;
   }
 
   .nav a.active::after {
@@ -2473,6 +2473,9 @@ html {
 
 /* ── Accessibility ───────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {
@@ -3270,15 +3273,28 @@ body.search-typing .nav {
 }
 .best-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-left: 3px solid var(--type-dso);
   border-radius: var(--radius);
-  padding: 9px 10px 9px 12px;
   cursor: pointer;
   min-height: 64px;
+}
+/* The whole row is one link; the padding lives here so the entire card is the
+   tap target and the keyboard focus ring hugs it. */
+.best-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px 9px 12px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: calc(var(--radius) - 2px);
+}
+.best-link:focus-visible {
+  outline-offset: -2px;
 }
 .best-row.pinned {
   border-left-color: var(--type-planet);
@@ -3288,7 +3304,7 @@ body.search-typing .nav {
   border-left-color: var(--border);
 }
 .best-row:hover,
-.best-row:focus-visible {
+.best-row:focus-within {
   background: var(--bg-hover);
 }
 .best-main {
@@ -3485,7 +3501,7 @@ details.detail-collapsible[open] > summary::after {
 .cloud-grid {
   border-collapse: separate;
   border-spacing: 2px;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
 }
 .cloud-grid th {
