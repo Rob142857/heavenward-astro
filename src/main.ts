@@ -170,20 +170,38 @@ async function boot(): Promise<void> {
   if (ctx.linkedLocation) {
     // The link chose the place; do not ask for GPS over it.
   } else if (!savedLocation && !isSocialInAppBrowser()) {
-    requestGPS()
-      .then((loc) => {
-        ctx.location = loc;
-        reroute();
-      })
-      .catch(() => {
-        console.log("[GPS] Using saved or fallback location");
-      });
+    // Only use GPS by itself when the person already allowed it. Otherwise no
+    // permission prompt on load: the header shows "Set your location" and the
+    // Location screen asks on a tap (Rob, 25 Oct 2026; Lighthouse flags
+    // geolocation-on-start).
+    void geolocationAlreadyGranted().then((granted) => {
+      if (!granted) { reroute(); return; }
+      requestGPS()
+        .then((loc) => {
+          ctx.location = loc;
+          reroute();
+        })
+        .catch(() => {
+          console.log("[GPS] Using saved or fallback location");
+        });
+    });
   } else if (!savedLocation) {
     console.log("[GPS] Waiting for timeout");
     setTimeout(() => {
       console.log("[GPS] Fallback: rendering without GPS");
       reroute();
     }, 1000);
+  }
+}
+
+/** True only when the browser reports geolocation as already granted (never prompts). */
+export async function geolocationAlreadyGranted(): Promise<boolean> {
+  try {
+    if (!navigator.permissions?.query) return false;
+    const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+    return status.state === "granted";
+  } catch {
+    return false;
   }
 }
 

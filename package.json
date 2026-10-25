@@ -1,6 +1,6 @@
 {
   "name": "heavenward",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Dusk-till-dawn astronomical event report — everything visible tonight, one tap away",
   "type": "module",
   "packageManager": "pnpm@11.1.2",
