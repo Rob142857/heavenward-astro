@@ -273,8 +273,12 @@ function sparkline(row: BestRow, result: BestResult, minAlt: number): string {
     sel.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)},${y(p.alt).toFixed(1)}`).join("");
   const win = pts.filter((p) => p.t >= row.start - 450_000 && p.t <= row.end + 450_000);
   const dark = result.grid.dark;
-  const band = dark
-    ? `<rect class="spark-dark" x="${Math.max(0, x(dark.start)).toFixed(1)}" y="0" width="${(Math.min(SW, x(dark.end)) - Math.max(0, x(dark.start))).toFixed(1)}" height="${SH}"/>`
+  // Clip the dark band to the sparkline; no band when it falls outside
+  // (a negative width is invalid SVG and logs a console error).
+  const bx0 = dark ? Math.max(0, x(dark.start)) : 0;
+  const bx1 = dark ? Math.min(SW, x(dark.end)) : 0;
+  const band = dark && bx1 > bx0
+    ? `<rect class="spark-dark" x="${bx0.toFixed(1)}" y="0" width="${(bx1 - bx0).toFixed(1)}" height="${SH}"/>`
     : "";
   return `<svg class="best-spark" viewBox="0 0 ${SW} ${SH}" width="${SW}" height="${SH}" aria-hidden="true" focusable="false">
     ${band}
