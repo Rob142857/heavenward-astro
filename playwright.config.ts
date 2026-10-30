@@ -25,9 +25,10 @@ export default defineConfig({
   snapshotPathTemplate:
     "{testDir}/__screenshots__/{platform}/{projectName}/{arg}{ext}",
   fullyParallel: true,
-  workers: 4,
+  // 2 since 30 Oct: the shared Cloud PC froze with 4 browser workers plus other builds (rules.md "one heavy job").
+  workers: 2,
   retries: 0,
-  timeout: 45_000,
+  timeout: 60_000,
   reporter: [
     ["list"],
     ["html", { outputFolder: "playwright-report/mobile", open: "never" }],
@@ -35,7 +36,9 @@ export default defineConfig({
   expect: {
     // The dev server serves ~5 MB of catalogue JSON to four workers at once;
     // the first search or sky report can take more than the 5 s default.
-    timeout: 15_000,
+    // 30 s since 30 Oct: on the Cloud PC with 4 workers, Tonight's Best and the
+    // twilight table sometimes took over 15 s (all pass with 1 worker).
+    timeout: 30_000,
     toHaveScreenshot: {
       maxDiffPixelRatio: 0.02,
       threshold: 0.25,
