@@ -4,3 +4,5 @@ allowBuilds:
   workerd: true
 auditConfig:
   ignoreCves: []
+overrides:
+  undici: ^7.30.1
