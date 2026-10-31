@@ -589,7 +589,8 @@ export function whyParts(row: BestRow, opts: Pick<BestOptions, "minAlt" | "equip
   else if (row.parts.brightness < 0.25) out.push({ key: "best.why.faint" });
   if (
     opts.equipment === "smart-scope" &&
-    (row.cand.target.size ?? 0) > 80
+    // Seestar S30 Pro frame is about 4.0 x 2.3 degrees (240 x 135 arcmin).
+    (row.cand.target.size ?? 0) > 240
   )
     out.push({ key: "best.why.wide" });
   return out;

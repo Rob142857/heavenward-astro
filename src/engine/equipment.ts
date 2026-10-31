@@ -46,7 +46,7 @@ export interface VisualTarget {
  * the faintest mag/arcsec² for extended objects. Sources for the round
  * figures: naked-eye stars to ~6 (DSOs ~1 mag brighter, because their light
  * is spread out); 7x50 binoculars to ~9 (DSOs ~8); a 100-150 mm scope to
- * ~12 (DSOs ~11.5); a smart telescope like the Seestar S50 stacks exposures
+ * ~12 (DSOs ~11.5); a smart telescope like the Seestar S30 Pro stacks exposures
  * and reaches the catalogue's mag 14 cut and faint surface brightness.
  */
 export const EQUIPMENT_LIMITS: Record<

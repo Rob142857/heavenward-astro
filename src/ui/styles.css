@@ -3545,3 +3545,10 @@ details.detail-collapsible[open] > summary::after {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* First-open hint on the Location screen. */
+.location-intro {
+  margin: 0 0 12px;
+  color: var(--text-muted, #9aa3b8);
+  line-height: 1.5;
+}

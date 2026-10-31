@@ -3,6 +3,7 @@ import type { AppContext } from "./types.js";
 import {
   requestGPS,
   getSavedLocation,
+  firstLocationAsk,
   markLocationConfirmed,
 } from "./services/geolocation.js";
 import { loadPrefs } from "./services/prefs.js";
@@ -175,7 +176,14 @@ async function boot(): Promise<void> {
     // Location screen asks on a tap (Rob, 25 Oct 2026; Lighthouse flags
     // geolocation-on-start).
     void geolocationAlreadyGranted().then((granted) => {
-      if (!granted) { reroute(); return; }
+      if (!granted) {
+        // First open with no location: show the Location screen once instead
+        // of a default (Greenwich) sky. Deep links to other pages are left alone.
+        const home = window.location.hash === "" || window.location.hash === "#/";
+        if (home && firstLocationAsk()) replaceHash("#/location");
+        reroute();
+        return;
+      }
       requestGPS()
         .then((loc) => {
           ctx.location = loc;

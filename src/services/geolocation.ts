@@ -2,6 +2,22 @@ import type { GeoLocation } from "../types.js";
 import { trackInsight } from "./analytics.js";
 
 const STORAGE_KEY = "heavenward-location";
+const ASKED_KEY = "heavenward-location-asked";
+
+/**
+ * True the first time only: the app opens the Location screen once, so a new
+ * person picks their sky before seeing a default one. Still no permission
+ * prompt until they tap (Trip apps plan, 30 Oct 2026).
+ */
+export function firstLocationAsk(): boolean {
+  try {
+    if (localStorage.getItem(ASKED_KEY)) return false;
+    localStorage.setItem(ASKED_KEY, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Whether the location currently in use is actually the user's, or the

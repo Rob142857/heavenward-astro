@@ -1,5 +1,5 @@
 import type { AppContext } from "../types.js";
-import { requestGPS, saveLocation } from "../services/geolocation.js";
+import { isLocationConfirmed, requestGPS, saveLocation } from "../services/geolocation.js";
 import { renderHeader, renderNav } from "./layout.js";
 import { navigate } from "./router.js";
 import { t } from "../i18n/translations.js";
@@ -14,6 +14,13 @@ export function renderLocation(container: HTMLElement, ctx: AppContext): void {
   title.className = "section-title";
   title.textContent = t("nav.location");
   container.appendChild(title);
+
+  if (!isLocationConfirmed()) {
+    const intro = document.createElement("p");
+    intro.className = "location-intro";
+    intro.textContent = t("location.firstRunIntro");
+    container.appendChild(intro);
+  }
 
   // GPS button
   const gpsBtn = document.createElement("button");

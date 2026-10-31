@@ -20,4 +20,13 @@ test.describe("location is asked on tap, not on load", () => {
     expect(await page.evaluate(() => (window as unknown as { __gpsCalls: number }).__gpsCalls)).toBe(0);
     await expect(page.locator(".location-pill.is-unconfirmed")).toBeVisible();
   });
+
+  test("first open goes to the Location screen once, then not again", async ({ page }) => {
+    await gotoApp(page, "#/");
+    await expect(page).toHaveURL(/#\/location/, { timeout: 15_000 });
+    await expect(page.locator(".location-intro")).toBeVisible();
+    await gotoApp(page, "#/");
+    await page.waitForTimeout(1500);
+    await expect(page).not.toHaveURL(/#\/location/);
+  });
 });
