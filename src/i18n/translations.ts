@@ -35,7 +35,7 @@ export const translations: Record<Locale, Record<string, string>> = {
 		"stuff.panelTitle": "More",
 
 		"location.useGPS": "📍 Use GPS Location",
-		"location.firstRunIntro": "Heavenward needs your location to show your sky. Tap the button to use GPS, or type a place in below. Your choice is saved on this device.",
+		"location.firstRunIntro": "Heavenward needs your location to show your sky. Tap the button to use GPS, or type a place below. Your choice is saved on this device.",
 		"location.locating": "Locating…",
 		"location.gpsFailed": "GPS failed — try manual entry",
 		"location.manualEntry": "Manual Entry",

@@ -179,7 +179,7 @@ async function boot(): Promise<void> {
       if (!granted) {
         // First open with no location: show the Location screen once instead
         // of a default (Greenwich) sky. Deep links to other pages are left alone.
-        const home = window.location.hash === "" || window.location.hash === "#/";
+        const home = (window.location.hash === "" || window.location.hash === "#/") && window.location.pathname === "/";
         if (home && firstLocationAsk()) replaceHash("#/location");
         reroute();
         return;
