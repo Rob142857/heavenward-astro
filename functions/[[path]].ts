@@ -3,6 +3,7 @@ import { handle } from "hono/cloudflare-pages";
 import auth from "./auth/handler.js";
 import api from "./api/handler.js";
 import admin from "./admin/handler.js";
+import mcp, { wellKnown } from "./mcp/handler.ts";
 import { handleWeather, type CacheLike } from "./weather/core.ts";
 import { verifyJWT, parseCookie } from "./middleware/auth.js";
 
@@ -14,6 +15,7 @@ interface Env {
   MICROSOFT_CLIENT_ID: string;
   MICROSOFT_CLIENT_SECRET: string;
   JWT_SECRET: string;
+  ASSETS: Fetcher;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -170,5 +172,7 @@ app.get("/api/weather", (c) =>
 app.route("/auth", auth);
 app.route("/api", api);
 app.route("/admin", admin);
+app.route("/mcp", mcp);
+app.route("/.well-known", wellKnown);
 
 export const onRequest = handle(app);

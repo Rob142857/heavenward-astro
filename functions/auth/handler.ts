@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { signJWT } from "../middleware/auth.js";
+import { parseCookie, signJWT } from "../middleware/auth.ts";
+import { b64url, randomId, safeReturnTo } from "../mcp/oauth.ts";
 
 interface Env {
   GOOGLE_CLIENT_ID: string;
@@ -98,6 +99,46 @@ p{color:#7b869c;font-size:.9rem;line-height:1.5}</style></head>
   });
 }
 
+// ── Sign-in state ───────────────────────────────────────
+// A random `state` ties each provider callback to the browser that started
+// it (login CSRF), and carries where to go afterwards (e.g. back to the MCP
+// consent page). Host-only cookie, 10 minutes, sent back on the provider's
+// top-level redirect because it is SameSite=Lax.
+
+const STATE_COOKIE = "auth_state";
+
+function startState(returnTo: string | undefined): { state: string; cookie: string } {
+  const state = randomId(16);
+  const back = b64url(new TextEncoder().encode(safeReturnTo(returnTo)));
+  return {
+    state,
+    cookie: `${STATE_COOKIE}=${state}.${back}; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+  };
+}
+
+/** The return path if the callback's state matches this browser's cookie, else null. */
+function checkState(cookieHeader: string, state: string | undefined): string | null {
+  const raw = parseCookie(cookieHeader, STATE_COOKIE);
+  if (!raw || !state) return null;
+  const [nonce, back] = raw.split(".");
+  if (!nonce || nonce !== state) return null;
+  try {
+    const bytes = Uint8Array.from(atob((back ?? "").replace(/-/g, "+").replace(/_/g, "/")), (ch) => ch.charCodeAt(0));
+    return safeReturnTo(new TextDecoder().decode(bytes));
+  } catch {
+    return "/";
+  }
+}
+
+function badState(): Response {
+  return new Response(
+    `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sign-in expired</title></head><body style="background:#0a0e1a;color:#e0e6f0;font-family:sans-serif;padding:32px;text-align:center"><p>That sign-in expired or was started in another browser.</p><p><a style="color:#d4af37" href="/">Back to Heavenward</a></p></body></html>`,
+    { status: 400, headers: { "Content-Type": "text/html;charset=utf-8", "Set-Cookie": clearState() } },
+  );
+}
+
+const clearState = () => `${STATE_COOKIE}=; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+
 /** Reject auth requests from non-production origins */
 auth.use("*", async (c, next) => {
   const host = new URL(c.req.url).hostname;
@@ -119,6 +160,9 @@ auth.get("/google", (c) => {
     scope: "openid email profile",
     access_type: "online",
   });
+  const st = startState(c.req.query("returnTo"));
+  params.set("state", st.state);
+  c.header("Set-Cookie", st.cookie);
   return c.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
 });
 
@@ -126,6 +170,8 @@ auth.get("/google/callback", async (c) => {
   try {
     const code = c.req.query("code");
     if (!code) return c.json({ ok: false, error: "Missing code" }, 400);
+    const returnTo = checkState(c.req.header("Cookie") ?? "", c.req.query("state"));
+    if (!returnTo) return badState();
 
     const redirect = new URL(c.req.url);
     redirect.search = "";
@@ -195,7 +241,7 @@ auth.get("/google/callback", async (c) => {
       c.env.JWT_SECRET,
     );
 
-    return loginRedirect(jwt);
+    return loginRedirect(jwt, returnTo);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return c.json({ ok: false, error: "Google auth error", details: msg }, 500);
@@ -214,6 +260,9 @@ auth.get("/microsoft", (c) => {
     scope: "openid email profile",
     response_mode: "query",
   });
+  const st = startState(c.req.query("returnTo"));
+  params.set("state", st.state);
+  c.header("Set-Cookie", st.cookie);
   return c.redirect(
     `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params}`,
   );
@@ -223,6 +272,8 @@ auth.get("/microsoft/callback", async (c) => {
   try {
     const code = c.req.query("code");
     if (!code) return c.json({ ok: false, error: "Missing code" }, 400);
+    const returnTo = checkState(c.req.header("Cookie") ?? "", c.req.query("state"));
+    if (!returnTo) return badState();
 
     const redirect = new URL(c.req.url);
     redirect.search = "";
@@ -304,7 +355,7 @@ auth.get("/microsoft/callback", async (c) => {
       c.env.JWT_SECRET,
     );
 
-    return loginRedirect(jwt);
+    return loginRedirect(jwt, returnTo);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return c.json(
@@ -326,7 +377,7 @@ auth.post("/logout", () => {
 });
 
 /** Build login redirect with session cookie + localStorage hint script */
-function loginRedirect(jwt: string): Response {
+function loginRedirect(jwt: string, returnTo = "/"): Response {
   const cookie = `session=${jwt}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400; Domain=${ALLOWED_ORIGIN}`;
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -348,16 +399,13 @@ h1{font-size:1.3rem;margin-bottom:8px;color:#f5e6a3}
 <div class="note">
 <strong>A quick note:</strong> Heavenward is currently free and we intend to keep it that way. If that ever changes, we'll email you in advance. By continuing, you agree that we may contact you with important service updates.
 </div>
-<button class="btn btn-go" onclick="localStorage.setItem('heavenward-has-session','1');location.replace('/')">Continue to Heavenward</button>
+<button class="btn btn-go" onclick="localStorage.setItem('heavenward-has-session','1');location.replace(${JSON.stringify(returnTo).replace(/</g, "\\u003c").replace(/&/g, "&amp;").replace(/"/g, "&quot;")})">Continue to Heavenward</button>
 </div>
 </body></html>`;
-  return new Response(html, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html;charset=utf-8",
-      "Set-Cookie": cookie,
-    },
-  });
+  const headers = new Headers({ "Content-Type": "text/html;charset=utf-8" });
+  headers.append("Set-Cookie", cookie);
+  headers.append("Set-Cookie", clearState());
+  return new Response(html, { status: 200, headers });
 }
 
 export default auth;

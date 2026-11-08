@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { authMiddleware } from "../middleware/auth.js";
+import { readSwitch, writeSwitch } from "../mcp/oauth.ts";
 
 interface Env {
   DB: D1Database;
@@ -51,6 +52,33 @@ api.put("/prefs", async (c) => {
   const body = await c.req.json();
   await c.env.USER_PREFS.put(user.sub, JSON.stringify(body));
   return c.json({ ok: true });
+});
+
+// ── MCP switch (Settings > MCP) ─────────────────────────
+
+api.get("/mcp", async (c) => {
+  const sw = await readSwitch(c.env.USER_PREFS, c.get("user").sub);
+  return c.json({ ok: true, data: { on: sw.on } });
+});
+
+api.put("/mcp", async (c) => {
+  const user = c.get("user");
+  const body = (await c.req.json().catch(() => null)) as { on?: unknown } | null;
+  if (typeof body?.on !== "boolean") return c.json({ ok: false, error: "on must be true or false" }, 400);
+  const sw = await writeSwitch(c.env.USER_PREFS, user.sub, body.on);
+  await c.env.DB.prepare(
+    `INSERT INTO events (session_id, user_id, event, path, detail, ua, ip)
+     VALUES (?, ?, 'mcp_toggle', '/api/mcp', ?, ?, ?)`,
+  )
+    .bind(
+      `mcp-${user.sub}`,
+      user.sub,
+      JSON.stringify({ on: sw.on }),
+      c.req.header("User-Agent")?.slice(0, 512) ?? null,
+      c.req.header("CF-Connecting-IP") ?? null,
+    )
+    .run();
+  return c.json({ ok: true, data: { on: sw.on } });
 });
 
 // ── API Keys ────────────────────────────────────────────

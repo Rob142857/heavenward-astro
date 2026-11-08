@@ -7,6 +7,7 @@ import {
 } from "../catalog/provenance.js";
 import { loadPrefs, savePrefs } from "../services/prefs.js";
 import { renderHeader, renderNav } from "./layout.js";
+import { fetchMcp, setMcp } from "../services/api.js";
 import { t, LOCALES, type Locale } from "../i18n/translations.js";
 import { setUILocale, getLocale } from "../i18n/i18n.js";
 import {
@@ -171,6 +172,8 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
   });
   container.appendChild(magRow);
 
+  renderMcpSection(container);
+
   const hint = document.createElement("p");
   hint.className = "hint";
   hint.textContent = t("settings.appVersion", { version: __APP_VERSION__ });
@@ -186,6 +189,79 @@ export function renderSources(container: HTMLElement, ctx: AppContext): void {
   container.appendChild(
     createLink("GitHub", "https://github.com/Rob142857/heavenward"),
   );
+}
+
+// ── MCP (signed-in accounts only) ─────────────────────────
+// Off by default. On reveals the connector URL and setup steps; off revokes
+// every MCP token for the account (server side, functions/mcp/oauth.ts).
+const MCP_TOOLS = ["sky_targets_altaz", "sky_night_window", "sky_weather", "seestar_s30pro_framing"];
+
+function renderMcpSection(container: HTMLElement): void {
+  if (!localStorage.getItem("heavenward-has-session")) return;
+  const section = document.createElement("div");
+  section.className = "mcp-settings";
+  section.hidden = true;
+  container.appendChild(section);
+
+  const heading = document.createElement("h3");
+  heading.className = "section-title";
+  heading.textContent = t("settings.mcp.heading");
+
+  const row = document.createElement("label");
+  row.className = "toggle-row";
+  const label = document.createElement("span");
+  label.className = "toggle-label";
+  label.textContent = t("settings.mcp.toggle");
+  const box = document.createElement("input");
+  box.type = "checkbox";
+  box.setAttribute("aria-label", t("settings.mcp.toggle"));
+  row.appendChild(label);
+  row.appendChild(box);
+
+  const note = document.createElement("p");
+  note.className = "hint";
+  note.textContent = t("settings.mcp.note");
+
+  const details = document.createElement("div");
+  details.className = "mcp-details";
+  const url = `${location.origin}/mcp`;
+  const lines: [string, string][] = [
+    [t("settings.mcp.url"), url],
+    [t("settings.mcp.desktop"), t("settings.mcp.desktopSteps", { url })],
+    [t("settings.mcp.cli"), `claude mcp add --transport http heavenward ${url}`],
+    [t("settings.mcp.tools"), MCP_TOOLS.join(", ")],
+  ];
+  for (const [k, v] of lines) {
+    const p = document.createElement("p");
+    p.className = "hint";
+    const strong = document.createElement("strong");
+    strong.textContent = `${k}: `;
+    const code = document.createElement("code");
+    code.textContent = v;
+    p.appendChild(strong);
+    p.appendChild(code);
+    details.appendChild(p);
+  }
+
+  const show = (on: boolean) => {
+    box.checked = on;
+    details.hidden = !on;
+  };
+
+  box.addEventListener("change", async () => {
+    const want = box.checked;
+    box.disabled = true;
+    const res = await setMcp(want);
+    box.disabled = false;
+    show(res.ok && res.data ? res.data.on : !want);
+  });
+
+  for (const el of [heading, row, note, details]) section.appendChild(el);
+  void fetchMcp().then((res) => {
+    if (!res.ok || !res.data) return; // signed out or offline: keep it hidden
+    show(res.data.on);
+    section.hidden = false;
+  });
 }
 
 function createLink(text: string, href: string): HTMLElement {

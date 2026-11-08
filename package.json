@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "pnpm run typecheck && vite build",
+    "build": "pnpm run typecheck && vite build && node --experimental-strip-types scripts/build-mcp-catalog.ts",
     "preview": "wrangler pages dev dist",
     "deploy": "pnpm run deploy:production",
     "deploy:production": "pnpm run build && wrangler pages deploy dist --branch production",

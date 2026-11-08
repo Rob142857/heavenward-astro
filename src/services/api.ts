@@ -43,6 +43,14 @@ export function updatePrefs(prefs: UserPrefs): Promise<ApiResponse<void>> {
   });
 }
 
+export function fetchMcp(): Promise<ApiResponse<{ on: boolean }>> {
+  return apiFetch<{ on: boolean }>("/api/mcp");
+}
+
+export function setMcp(on: boolean): Promise<ApiResponse<{ on: boolean }>> {
+  return apiFetch<{ on: boolean }>("/api/mcp", { method: "PUT", body: JSON.stringify({ on }) });
+}
+
 export function createApiKey(
   name: string,
 ): Promise<ApiResponse<ApiKey & { key: string }>> {
