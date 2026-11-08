@@ -72,8 +72,9 @@ async function audit(c: C, userId: string, event: string, detail: object, latLon
         typeof cf.city === "string" ? cf.city : null,
       )
       .run();
-  } catch {
-    /* auditing must never break a call */
+  } catch (e) {
+    // Auditing must never break a call, but a lost audit row is worth a log line.
+    console.error("mcp audit insert failed", e);
   }
 }
 
@@ -232,6 +233,7 @@ mcp.get("/authorize", async (c) => {
   return page(
     "Allow access",
     `<h1>Allow ${esc(req.client.n)}?</h1><p>Signed in as ${esc(user.email)}.</p>
+<p>It will send you back to <strong>${esc(new URL(req.redirectUri).host)}</strong>.</p>
 <ul><li>Read-only: target altitudes, night and Moon times, cloud forecast, Seestar framing.</li><li>Nothing in your account is read or changed.</li><li>Every call is logged. Turn MCP off in Settings to cut access.</li></ul>
 <form method="post" action="/mcp/authorize"><input type="hidden" name="consent" value="${esc(consent)}">
 <button class="btn go" type="submit" name="decision" value="allow">Allow</button>
@@ -304,15 +306,20 @@ mcp.post("/token", async (c) => {
     if (await c.env.USER_PREFS.get(usedKey)) return tokenError(c, "invalid_grant", "code already used");
     await c.env.USER_PREFS.put(usedKey, "1", { expirationTtl: 600 });
     if (await userStatus(c.env.DB, code.sub)) return tokenError(c, "invalid_grant", "account cannot use MCP");
+    if (!grantLive(await readSwitch(c.env.USER_PREFS, code.sub), code)) return tokenError(c, "invalid_grant", "access was turned off");
     await audit(c, code.sub, "mcp_grant", { step: "token" });
     return issueTokens(c, code);
   }
 
   if (s("grant_type") === "refresh_token") {
-    const g = await verify<GrantClaims>("refresh", s("refresh_token"), c.env.JWT_SECRET);
+    const g = await verify<GrantClaims & { jti: string }>("refresh", s("refresh_token"), c.env.JWT_SECRET);
     if (!g || (s("client_id") && g.cid !== s("client_id"))) return tokenError(c, "invalid_grant", "refresh token is invalid or expired");
     const sw = await readSwitch(c.env.USER_PREFS, g.sub);
     if (!grantLive(sw, g) || (await userStatus(c.env.DB, g.sub))) return tokenError(c, "invalid_grant", "access was turned off");
+    // Rotation: each refresh token works once (OAuth 2.1 public clients). Best-effort, like codes.
+    const usedKey = `mcp:used:${g.jti}`;
+    if (await c.env.USER_PREFS.get(usedKey)) return tokenError(c, "invalid_grant", "refresh token already used");
+    await c.env.USER_PREFS.put(usedKey, "1", { expirationTtl: REFRESH_TTL });
     await audit(c, g.sub, "mcp_grant", { step: "refresh" });
     return issueTokens(c, g);
   }
@@ -370,7 +377,8 @@ const rpcError = (id: RpcId, code: number, message: string) => ({ jsonrpc: "2.0"
 mcp.get("/", (c) => noStore(c.text("Use POST (MCP Streamable HTTP)", 405, { Allow: "POST" })));
 mcp.delete("/", (c) => noStore(c.body(null, 405, { Allow: "POST" })));
 
-mcp.post("/", async (c) => {
+// Also mounted at "/mcp/" by functions/[[path]].ts: Hono treats the slash as a different path.
+export const handleRpc = async (c: C) => {
   const auth = c.req.header("Authorization") ?? "";
   const grant = auth.startsWith("Bearer ") ? await verify<GrantClaims>("access", auth.slice(7).trim(), c.env.JWT_SECRET) : null;
   if (!grant) return unauthorized(c, auth ? "invalid_token" : undefined);
@@ -378,6 +386,9 @@ mcp.post("/", async (c) => {
   if (!grantLive(sw, grant) || blocked) return unauthorized(c, "invalid_token");
 
   const msg = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
+  if (msg && typeof msg === "object" && !Array.isArray(msg) && msg.jsonrpc === "2.0" && !("method" in msg) && ("result" in msg || "error" in msg)) {
+    return noStore(c.body(null, 202)); // a response from the client: nothing to do
+  }
   if (!msg || typeof msg !== "object" || Array.isArray(msg) || msg.jsonrpc !== "2.0" || typeof msg.method !== "string") {
     return noStore(c.json(rpcError(null, -32600, "Invalid request"), 400));
   }
@@ -419,6 +430,7 @@ mcp.post("/", async (c) => {
       try {
         out = await tool.run(args, deps(c));
       } catch (e) {
+        if (!(e instanceof ToolError)) console.error(`mcp tool ${tool.name} failed`, e);
         ok = false;
         out = e instanceof ToolError ? e.message : "Something went wrong working that out. Try again.";
       }
@@ -437,6 +449,8 @@ mcp.post("/", async (c) => {
     default:
       return noStore(c.json(rpcError(id, -32601, `Method not found: ${msg.method}`)));
   }
-});
+};
+
+mcp.post("/", handleRpc);
 
 export default mcp;

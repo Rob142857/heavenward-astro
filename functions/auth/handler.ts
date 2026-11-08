@@ -125,7 +125,8 @@ function checkState(cookieHeader: string, state: string | undefined): string | n
   try {
     const bytes = Uint8Array.from(atob((back ?? "").replace(/-/g, "+").replace(/_/g, "/")), (ch) => ch.charCodeAt(0));
     return safeReturnTo(new TextDecoder().decode(bytes));
-  } catch {
+  } catch (e) {
+    console.error("auth_state return path unreadable", e);
     return "/";
   }
 }

@@ -117,6 +117,11 @@ test("redirect URIs and return paths", () => {
   assert.equal(safeReturnTo("/mcp/authorize?x=1"), "/mcp/authorize?x=1");
   assert.equal(safeReturnTo("//evil.example"), "/");
   assert.equal(safeReturnTo("https://evil.example"), "/");
+  assert.equal(safeReturnTo("/	/evil.com"), "/", "tab trick");
+  assert.equal(safeReturnTo("/%09/evil.com"), "/%09/evil.com", "encoded tab stays a same-site path");
+  assert.ok(!validRedirectUri("https://evil.example/api/mcp/auth_callback"), "only Claude's callback host");
+  assert.ok(validRedirectUri("https://claude.com/api/mcp/auth_callback"));
+  assert.ok(!validRedirectUri("https://claude.ai/other"));
   assert.equal(safeReturnTo("/\\evil.example"), "/");
 });
 
@@ -154,6 +159,19 @@ test("sky_targets_altaz: samples every 15 min, best time in the dark", async () 
   assert.ok(m42.samples.length > 30 && m42.samples.length < 60);
   assert.ok(m42.best_dark_time && m42.best_dark_time.alt > 40, "Orion is high from Sydney before dawn in October");
   assert.equal(out.not_found[0].query, "nope");
+});
+
+test("default date is the site's own night; impossible dates refused", async () => {
+  const t = tool("sky_night_window");
+  // 01:00 AEDT on 19 Oct = 14:00 UTC 18 Oct: the night in progress began on the 18th.
+  const late = { ...deps, now: () => Date.parse("2026-10-18T14:00:00Z") };
+  const a = (await t.run({ ...SYDNEY }, late)) as { nights: { sunset: string }[] };
+  assert.match(a.nights[0].sunset, /^2026-10-18T0[78]/, "sunset of the 18th (about 18:20 local)");
+  // 10:00 AEDT on 19 Oct = 23:00 UTC 18 Oct: "tonight" is the 19th.
+  const morning = { ...deps, now: () => Date.parse("2026-10-18T23:00:00Z") };
+  const b = (await t.run({ ...SYDNEY }, morning)) as { nights: { sunset: string }[] };
+  assert.match(b.nights[0].sunset, /^2026-10-19T0[78]/);
+  await assert.rejects(t.run({ ...SYDNEY, date: "2026-02-30" }, deps), /real YYYY-MM-DD/);
 });
 
 test("guard rails: too many targets, too many nights, bad lat", async () => {
@@ -262,6 +280,10 @@ test("OAuth flow and MCP calls", async () => {
   // Refresh works while on; blocked user is cut off; off revokes everything.
   const refreshed = await req("/mcp/token", { method: "POST", body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: tok.refresh_token, client_id }) });
   assert.equal(refreshed.status, 200);
+  const reused = await req("/mcp/token", { method: "POST", body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: tok.refresh_token, client_id }) });
+  assert.equal(reused.status, 400, "refresh tokens rotate");
+  const evil = await req("/mcp/register", { method: "POST", body: JSON.stringify({ redirect_uris: ["https://evil.example/cb"], client_name: "Claude" }) });
+  assert.equal(evil.status, 400);
   env.DB.users.set("google-1", "blocked");
   assert.equal((await req("/mcp", { method: "POST", headers: bearer, body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "ping" }) })).status, 401);
   env.DB.users.set("google-1", "active");

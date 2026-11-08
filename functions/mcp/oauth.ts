@@ -126,7 +126,9 @@ export async function pkceMatches(verifier: string, challenge: string): Promise<
   return b64url(new Uint8Array(digest)) === challenge;
 }
 
-/** Redirect URIs a client may register: https, or http on loopback only. */
+const CLAUDE_HOSTS = ["claude.ai", "claude.com"];
+
+/** Redirect URIs a client may register: Claude's callback, or loopback. */
 export function validRedirectUri(uri: unknown): uri is string {
   if (typeof uri !== "string" || uri.length > 512) return false;
   let u: URL;
@@ -135,16 +137,28 @@ export function validRedirectUri(uri: unknown): uri is string {
   } catch {
     return false;
   }
-  if (u.hash) return false;
-  if (u.protocol === "https:") return true;
-  return u.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
+  if (u.hash || u.username || u.password) return false;
+  // Claude's connector callback (claude.ai or claude.com), or a loopback
+  // listener (Claude Code). Anything else could pose as Claude on the
+  // consent page and walk off with a code.
+  if (u.protocol === "https:" && CLAUDE_HOSTS.includes(u.hostname)) return u.pathname === "/api/mcp/auth_callback";
+  return (u.protocol === "http:" || u.protocol === "https:") && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
 }
 
 /** A same-site path to come back to after sign-in ("/mcp/authorize?..."), else "/". */
 export function safeReturnTo(v: unknown): string {
   if (typeof v !== "string" || v.length > 2048) return "/";
-  if (!v.startsWith("/") || v.startsWith("//") || v.includes("\\")) return "/";
-  return v;
+  // Control characters and spaces first: browsers strip tabs/newlines, so
+  // "/\t/evil.com" would become "//evil.com".
+  if (!v.startsWith("/") || /[\x00-\x20\\]/.test(v)) return "/";
+  const base = "https://sky.incitat.io";
+  let u: URL;
+  try {
+    u = new URL(v, base);
+  } catch {
+    return "/";
+  }
+  return u.origin === base ? u.pathname + u.search : "/";
 }
 
 // ── Per-account switch ────────────────────────────────────

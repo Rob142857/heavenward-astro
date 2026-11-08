@@ -3,7 +3,7 @@ import { handle } from "hono/cloudflare-pages";
 import auth from "./auth/handler.js";
 import api from "./api/handler.js";
 import admin from "./admin/handler.js";
-import mcp, { wellKnown } from "./mcp/handler.ts";
+import mcp, { handleRpc, wellKnown } from "./mcp/handler.ts";
 import { handleWeather, type CacheLike } from "./weather/core.ts";
 import { verifyJWT, parseCookie } from "./middleware/auth.js";
 
@@ -172,6 +172,7 @@ app.get("/api/weather", (c) =>
 app.route("/auth", auth);
 app.route("/api", api);
 app.route("/admin", admin);
+app.post("/mcp/", (c) => handleRpc(c as never)); // trailing slash, same endpoint
 app.route("/mcp", mcp);
 app.route("/.well-known", wellKnown);
 

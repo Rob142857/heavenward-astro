@@ -122,20 +122,27 @@ function timeZone(a: Args): string | undefined {
 function startDate(a: Args, loc: GeoLocation, now: number): Date {
   let day: number;
   if (a.date === undefined) {
-    day = Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate());
+    day = 0; // unused: nightsFrom starts from the night at `now`
   } else {
     if (typeof a.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(a.date)) throw new ToolError("date must be YYYY-MM-DD");
     day = Date.parse(`${a.date}T00:00:00Z`);
-    if (!Number.isFinite(day)) throw new ToolError("date must be YYYY-MM-DD");
+    if (!Number.isFinite(day) || new Date(day).toISOString().slice(0, 10) !== a.date) throw new ToolError("date must be a real YYYY-MM-DD date");
     if (Math.abs(day - now) > 366 * 86_400_000) throw new ToolError("date must be within a year of today");
   }
   return new Date(day + (12 - loc.lon / 15) * 3_600_000);
 }
 
 function nightsFrom(a: Args, loc: GeoLocation, now: number): NightWindow[] {
-  const start = startDate(a, loc, now);
-  const out: NightWindow[] = [];
-  for (let i = 0; i < nightsArg(a); i++) out.push(getNightWindow(loc, new Date(start.getTime() + i * 86_400_000)));
+  const count = nightsArg(a);
+  // No date: the night at the site right now (the one in progress after
+  // midnight, else this evening's), the same rule the app uses. A date: that
+  // evening, found from local solar noon.
+  let night = getNightWindow(loc, a.date === undefined ? new Date(now) : startDate(a, loc, now));
+  const out: NightWindow[] = [night];
+  while (out.length < count) {
+    night = getNightWindow(loc, new Date(night.end.getTime() + 3 * 3_600_000));
+    out.push(night);
+  }
   return out;
 }
 
